@@ -15,4 +15,25 @@ class SimpleMethods {
 
         return test
     }
+
+    fun simpleLoop(input: Int): Int {
+        var result = input
+        if (input < 0) {
+            result *= -1
+        }
+
+        //@ assert (result == input || result == -input) && result >= 0;
+
+        var i = 0
+
+        //@ maintaining result <= i && i >= 0;
+        //@ decreases result - i;
+        while (result < i) {
+            i++
+        }
+
+        //@ assert result == i;
+
+        return i
+    }
 }

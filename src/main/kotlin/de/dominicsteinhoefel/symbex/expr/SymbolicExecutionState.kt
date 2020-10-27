@@ -3,11 +3,11 @@ package de.dominicsteinhoefel.symbex.expr
 import de.dominicsteinhoefel.symbex.simplification.SymbolicStoreSimplifier
 
 class SymbolicExecutionState() {
-    var constraints: MutableList<SymbolicConstraint> = mutableListOf()
+    var constraints = SymbolicConstraintSet()
     var store: SymbolicStore = EmptyStore
 
-    constructor(constraints: MutableList<SymbolicConstraint>, store: SymbolicStore) : this() {
-        this.constraints = constraints
+    constructor(constraints: Collection<SymbolicConstraint>, store: SymbolicStore) : this() {
+        this.constraints = SymbolicConstraintSet().let { it.addAll(constraints); it }
         this.store = store
     }
 
@@ -23,8 +23,11 @@ class SymbolicExecutionState() {
     }
 
     fun apply(other: SymbolicExecutionState): SymbolicExecutionState {
-        constraints = constraints.map { StoreApplConstraint.create(other.store, it) }.toMutableList()
-        constraints.addAll(other.constraints)
+        SymbolicConstraintSet().let {
+            it.addAll(constraints.map { oldC -> StoreApplConstraint.create(other.store, oldC) })
+            it.addAll(other.constraints)
+            constraints = it
+        }
         store = ParallelStore.create(other.store, StoreApplStore.create(other.store, store))
         return this
     }
@@ -49,7 +52,7 @@ class SymbolicExecutionState() {
         fun merge(ses1: SymbolicExecutionState, ses2: SymbolicExecutionState): SymbolicExecutionState {
             val mc1 = ses1.constraints.fold(True, { a: SymbolicConstraint, b -> And.create(a, b) })
             val mc2 = ses2.constraints.fold(True, { a: SymbolicConstraint, b -> And.create(a, b) })
-            val constraints = arrayListOf(Or.create(mc1, mc2))
+            val constraints = linkedSetOf(Or.create(mc1, mc2))
 
             val simpSt1 = SymbolicStoreSimplifier.simplify(ses1.store)
             val simpSt2 = SymbolicStoreSimplifier.simplify(ses2.store)
@@ -70,7 +73,7 @@ class SymbolicExecutionState() {
 
         fun simplify(ses: SymbolicExecutionState) =
             SymbolicExecutionState(
-                ses.constraints.map { SymbolicStoreSimplifier.simplify(it) }.toMutableList(),
+                ses.constraints.map { SymbolicStoreSimplifier.simplify(it) }.toList(),
                 SymbolicStoreSimplifier.simplify(ses.store)
             )
     }

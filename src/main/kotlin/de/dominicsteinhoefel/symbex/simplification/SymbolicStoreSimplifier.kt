@@ -3,7 +3,8 @@ package de.dominicsteinhoefel.symbex.simplification
 import de.dominicsteinhoefel.symbex.expr.*
 
 object SymbolicStoreSimplifier {
-    fun simplify(store: SymbolicStore): SymbolicStore = dropEffectlessElementaries(toParallelNormalForm(store))
+    fun simplify(store: SymbolicStore): SymbolicStore =
+        dropEffectlessElementaries(toParallelNormalForm(store), LinkedHashSet())
 
     fun simplify(constraint: SymbolicConstraint): SymbolicConstraint =
         when (constraint) {
@@ -12,7 +13,8 @@ object SymbolicStoreSimplifier {
             is And -> And.create(simplify(constraint.left), simplify(constraint.right))
             is Or -> Or.create(simplify(constraint.left), simplify(constraint.right))
             is GreaterConstr -> GreaterConstr(simplify(constraint.left), simplify(constraint.right))
-            is EqualityConstr -> EqualityConstr(simplify(constraint.left), simplify(constraint.right))
+            is GreaterEqualConstr -> GreaterEqualConstr(simplify(constraint.left), simplify(constraint.right))
+            is EqualityConstr -> EqualityConstr.create(simplify(constraint.left), simplify(constraint.right))
 
             is StoreApplConstraint -> {
                 val subst = storeToSubst(simplify(constraint.applied))
@@ -30,6 +32,7 @@ object SymbolicStoreSimplifier {
                 simplify(expression.vElse)
             )
             is AdditionExpr -> AdditionExpr(simplify(expression.left), simplify(expression.right))
+            is MultiplicationExpr -> MultiplicationExpr(simplify(expression.left), simplify(expression.right))
 
             is StoreApplExpression -> {
                 val subst = storeToSubst(simplify(expression.applied))
@@ -40,7 +43,7 @@ object SymbolicStoreSimplifier {
 
     private fun dropEffectlessElementaries(
         store: SymbolicStore,
-        overwrittenLocs: LinkedHashSet<Symbol> = LinkedHashSet()
+        overwrittenLocs: LinkedHashSet<Symbol>
     ): SymbolicStore =
         when (store) {
             is EmptyStore -> store
@@ -48,13 +51,13 @@ object SymbolicStoreSimplifier {
                 if (overwrittenLocs.contains(store.lhs)) {
                     EmptyStore
                 } else {
-                    overwrittenLocs.add(store.lhs)
+                    overwrittenLocs += store.lhs
                     store
                 }
             }
             is ParallelStore -> {
-                val rhs = dropEffectlessElementaries(store.rhs)
-                val lhs = dropEffectlessElementaries(store.lhs)
+                val rhs = dropEffectlessElementaries(store.rhs, overwrittenLocs)
+                val lhs = dropEffectlessElementaries(store.lhs, overwrittenLocs)
                 ParallelStore.create(lhs, rhs)
             }
             is StoreApplStore -> throw UnsupportedOperationException("Store not in normal form")

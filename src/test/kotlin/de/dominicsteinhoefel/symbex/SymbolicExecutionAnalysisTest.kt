@@ -29,11 +29,19 @@ class SymbolicExecutionAnalysisTest {
         )
     }
 
+    @Test
+    fun testSimpleLoop() {
+        symbolicallyExecuteMethod(
+            "de.dominicsteinhoefel.symbex.SimpleMethods",
+            "int simpleLoop(int)"
+        )
+    }
+
     companion object {
         fun symbolicallyExecuteMethod(
             clazz: String,
             methodSig: String,
-            postProcess: (SymbolicExecutionAnalysis, UnitGraph) -> Unit
+            postProcess: (SymbolicExecutionAnalysis, UnitGraph) -> Unit = { _, _ -> }
         ) {
             val methodsToAnalyze = arrayOf("<${clazz}: ${methodSig}>")
 
