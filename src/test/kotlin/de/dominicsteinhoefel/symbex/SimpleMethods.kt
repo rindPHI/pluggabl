@@ -1,7 +1,7 @@
 package de.dominicsteinhoefel.symbex
 
-class SimpleMethod {
-    fun simpleMethod(input: Int): Int {
+class SimpleMethods {
+    fun simpleTwoBranchedMethod(input: Int): Int {
         var test = input
         test += 1
 

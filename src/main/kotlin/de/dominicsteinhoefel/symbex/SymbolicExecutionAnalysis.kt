@@ -11,20 +11,6 @@ class SymbolicExecutionAnalysis(graph: UnitGraph) :
 
     init {
         doAnalysis()
-
-        /*graph.forEach {
-            print(it); println(":");
-            print("Flow before:        "); println(getFlowBefore(it))
-            print("Fall flow after:    "); println(getFallFlowAfter(it))
-            print("Branch flows after: ");
-            println(getBranchFlowAfter(it).joinToString(", ").ifEmpty { "-" })
-            println()
-        }*/
-
-        //graph.tails.forEach{
-        //    println("Flow before \"${it}\":")
-        //    println(getFlowBefore(it))
-        //}
     }
 
     override fun newInitialFlow() = SymbolicExecutionState()
