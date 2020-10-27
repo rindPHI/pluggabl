@@ -3,6 +3,7 @@ package de.dominicsteinhoefel.symbex
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import soot.*
+import soot.jimple.toolkits.annotation.logic.LoopFinder
 import soot.toolkits.graph.ExceptionalUnitGraph
 import soot.toolkits.graph.UnitGraph
 
@@ -48,6 +49,26 @@ class SymbolicExecutionAnalysisTest {
             val transformation = object : BodyTransformer() {
                 override fun internalTransform(body: Body, phase: String, options: Map<String, String>) {
                     if (methodsToAnalyze.contains(body.method.signature)) {
+
+                        // TODO: Implement below sketch correctly, maybe as a separate transformer
+                        // SKETCH {
+                        // Remove all back edges from loops to render SE finite
+                        // TODO: We also have to anonymize loop variables: At the beginning
+                        //       of the body as well as after the back edge
+                        for (loop in LoopFinder().getLoops(body)) {
+                            val node = loop.backJumpStmt
+                            val oldTarget = loop.head
+                            val newTarget = loop.head.unitBoxes[0]
+
+                            for (targetBox in node.unitBoxes) {
+                                val target = targetBox.unit
+                                if (target === oldTarget) {
+                                    targetBox.unit = newTarget.unit
+                                }
+                            }
+                        }
+                        // } END SKETCH
+
                         val graph = ExceptionalUnitGraph(body)
                         val analysis = SymbolicExecutionAnalysis(graph)
                         postProcess(analysis, graph)
