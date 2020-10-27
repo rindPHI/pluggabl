@@ -12,17 +12,19 @@ class SymbolicExecutionAnalysis(graph: UnitGraph) :
     init {
         doAnalysis()
 
-        graph.forEach {
+        /*graph.forEach {
             print(it); println(":");
-            print("Flow before:        "); println(SymbolicExecutionState.simplify(getFlowBefore(it)))
-            print("Fall flow after:    "); println(SymbolicExecutionState.simplify(getFallFlowAfter(it)))
+            print("Flow before:        "); println(getFlowBefore(it))
+            print("Fall flow after:    "); println(getFallFlowAfter(it))
             print("Branch flows after: ");
-            println(getBranchFlowAfter(it).map { SymbolicExecutionState.simplify(it) }
-                .joinToString(", ").ifEmpty { "-" })
+            println(getBranchFlowAfter(it).joinToString(", ").ifEmpty { "-" })
             println()
-        }
+        }*/
 
-        //graph.tails.forEach{ println(SymbolicExecutionState.simplify(getFlowBefore(it))) }
+        //graph.tails.forEach{
+        //    println("Flow before \"${it}\":")
+        //    println(getFlowBefore(it))
+        //}
     }
 
     override fun newInitialFlow() = SymbolicExecutionState()
@@ -63,7 +65,7 @@ class SymbolicExecutionAnalysis(graph: UnitGraph) :
             else -> TODO("Execution of Unit type ${s?.javaClass} not yet implemented")
         }
 
-        fallOut?.forEach { it.apply(inp) }
-        branchOuts?.forEach { it.apply(inp) }
+        fallOut?.forEach { it.apply(inp).simplify() }
+        branchOuts?.forEach { it.apply(inp).simplify() }
     }
 }
