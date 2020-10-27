@@ -22,16 +22,22 @@ class SymbolicExecutionState() {
         )
     }
 
-    fun apply(other: SymbolicExecutionState) {
+    fun apply(other: SymbolicExecutionState): SymbolicExecutionState {
         constraints = constraints.map { StoreApplConstraint.create(other.store, it) }.toMutableList()
         constraints.addAll(other.constraints)
         store = ParallelStore.create(other.store, StoreApplStore.create(other.store, store))
+        return this
     }
 
     fun mergeFromSESs(ses1: SymbolicExecutionState, ses2: SymbolicExecutionState) {
         val mSES = merge(ses1, ses2)
         constraints = mSES.constraints
         store = mSES.store
+    }
+
+    fun simplify() = simplify(this).let {
+        constraints = it.constraints
+        store = it.store
     }
 
     override fun toString(): String {
