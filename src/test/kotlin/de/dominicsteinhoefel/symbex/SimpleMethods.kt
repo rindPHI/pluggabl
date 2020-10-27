@@ -16,6 +16,21 @@ class SimpleMethods {
         return test
     }
 
+    fun simpleTwoBranchedMethodWithMerge(input: Int): Int {
+        var test = input
+        test += 1
+
+        if (test == 42) {
+            test += 2
+        } else {
+            test + 3
+        }
+
+        test += 4
+
+        return test
+    }
+
     fun simpleLoop(input: Int): Int {
         var result = input
         if (input < 0) {

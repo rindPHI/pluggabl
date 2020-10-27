@@ -13,6 +13,7 @@ repositories {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
     implementation "com.github.soot-oss:soot:v4.2.0"
+    implementation group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.29'
 
     testImplementation "junit:junit:4.12"
 }
