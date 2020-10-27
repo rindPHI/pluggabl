@@ -8,7 +8,7 @@ class SimpleMethod {
         if (test == 42) {
             test += 2
         } else {
-            test += 3
+            return test + 3
         }
 
         test += 4
