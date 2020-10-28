@@ -5,6 +5,8 @@ import soot.jimple.IntConstant
 import soot.jimple.Jimple
 import soot.jimple.toolkits.annotation.logic.Loop
 import soot.jimple.toolkits.annotation.logic.LoopFinder
+import soot.toolkits.graph.BriefUnitGraph
+import soot.toolkits.graph.ExceptionalUnitGraph
 import soot.util.Chain
 
 
@@ -29,8 +31,8 @@ object CutLoopTransformation : BodyTransformer() {
         }
 
         for (loop in LoopFinder().getLoops(b)) {
-            breakLoop(loop, b)
             anonymizeLoopVars(loop, b)
+            breakLoop(loop, b)
         }
     }
 
@@ -42,16 +44,13 @@ object CutLoopTransformation : BodyTransformer() {
 
         val freshVarMap = writtenVars.associateWith { freshVar(it as Local, b.locals) }
         freshVarMap.forEach { b.locals.addLast(it.value) }
+
         freshVarMap.map { Jimple.v().newAssignStmt(it.key, it.value) }.reversed()
-            .forEach { b.units.insertAfter(it, loop.head) }
-        freshVarMap.map { Jimple.v().newAssignStmt(it.key, it.value) }.reversed()
-            .forEach {
-                loop.head.unitBoxes.forEach { loopExit -> b.units.insertBefore(it, loopExit.unit) }
-            }
+            .forEach{ b.units.insertBefore(it, loop.head) }
     }
 
     private fun freshVar(forVar: Local, locals: Chain<Local>): Local {
-        var curr = "_${forVar.name}"
+        var curr = "${forVar.name}_ANON_LOOP"
         var i = 1
         while (locals.any { it.name == curr }) {
             curr += i
@@ -62,15 +61,27 @@ object CutLoopTransformation : BodyTransformer() {
     }
 
     private fun breakLoop(loop: Loop, b: Body) {
-        val backjump = loop.backJumpStmt
+        val returnNode = BriefUnitGraph(b).tails[0]
 
-        val exitMethod = Scene.v().getMethod("<java.lang.System: void exit(int)>")
-        val exitNode = Jimple.v().newInvokeStmt(
-            Jimple.v().newStaticInvokeExpr(exitMethod.makeRef(), IntConstant.v(0))
-        )
+        // Alternative implementation:
+        // Redirect back jump to return node
+        /*
+        for (targetBox in loop.backJumpStmt.unitBoxes) {
+            val target = targetBox.unit
+            if (target === loop.head) {
+                targetBox.unit = returnNode
+            }
+        }
+        */
 
-        b.units.insertBefore(exitNode, backjump)
-        b.units.remove(backjump)
+        // Chosen solution: Add additional return node.
+        // Induces separate "tail"/leaf in CFG
+        val additionalReturnNode =
+            if (b.method.returnType is VoidType) Jimple.v().newReturnVoidStmt()
+            else Jimple.v().newReturnStmt(returnNode.useBoxes[0].value)
+
+        b.units.insertBefore(additionalReturnNode, loop.backJumpStmt)
+        b.units.remove(loop.backJumpStmt)
     }
 
     fun getDeclaredOptions() = "class method"
