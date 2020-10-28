@@ -1,6 +1,7 @@
 package de.dominicsteinhoefel.symbex.expr
 
 import de.dominicsteinhoefel.symbex.simplification.SymbolicStoreSimplifier
+import java.util.*
 
 class SymbolicExecutionState() {
     var constraints = SymbolicConstraintSet()
@@ -47,6 +48,11 @@ class SymbolicExecutionState() {
         val sConstraints = "{${constraints.joinToString()}}"
         return "(${sConstraints}, ${store})"
     }
+
+    override fun hashCode() = Objects.hash(SymbolicExecutionState::class, constraints, store)
+
+    override fun equals(other: Any?) =
+        (other as? SymbolicExecutionState).let { it?.constraints == constraints && it.store == store }
 
     companion object {
         fun merge(ses1: SymbolicExecutionState, ses2: SymbolicExecutionState): SymbolicExecutionState {

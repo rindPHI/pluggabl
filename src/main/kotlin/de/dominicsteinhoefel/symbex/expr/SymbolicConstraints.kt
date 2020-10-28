@@ -15,6 +15,11 @@ class SymbolicConstraintSet : LinkedHashSet<SymbolicConstraint>() {
 
     override fun addAll(elements: Collection<SymbolicConstraint>) =
         elements.map { add(it) }.fold(false, { acc, elem -> acc || elem })
+
+    companion object {
+        fun from(vararg constraints: SymbolicConstraint) =
+            SymbolicConstraintSet().let { set -> constraints.forEach { set.add(it) }; set }
+    }
 }
 
 interface SymbolicConstraintVisitor<T> {
