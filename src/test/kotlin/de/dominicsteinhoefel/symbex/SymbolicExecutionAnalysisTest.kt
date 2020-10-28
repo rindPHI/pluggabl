@@ -1,9 +1,11 @@
 package de.dominicsteinhoefel.symbex
 
+import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionAnalysis
+import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionAnalysisTransformer
+import de.dominicsteinhoefel.symbex.transformation.CutLoopTransformation
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import soot.*
-import soot.jimple.toolkits.annotation.logic.LoopFinder
 import soot.toolkits.graph.ExceptionalUnitGraph
 import soot.toolkits.graph.UnitGraph
 
@@ -55,12 +57,13 @@ class SymbolicExecutionAnalysisTest {
     fun testSimpleLoop() {
         symbolicallyExecuteMethod(
             "de.dominicsteinhoefel.symbex.SimpleMethods",
-            "int simpleLoop(int)"
+            "int simpleLoop(int)",
+            printSESs
         )
     }
 
     companion object {
-        private fun printSESs(graph: UnitGraph, a: SymbolicExecutionAnalysis) {
+        private val printSESs = fun (a: SymbolicExecutionAnalysis, graph: UnitGraph) {
             for (node in graph) {
                 println("Node \"$node\":")
                 println("Flow before:        ${a.getFlowBefore(node)}")
@@ -74,47 +77,28 @@ class SymbolicExecutionAnalysisTest {
             methodSig: String,
             postProcess: (SymbolicExecutionAnalysis, UnitGraph) -> Unit = { _, _ -> }
         ) {
-            val methodsToAnalyze = arrayOf("<${clazz}: ${methodSig}>")
+            val cutLoopTransform = Transform("jtp.cutloop", CutLoopTransformation)
+            cutLoopTransform.declaredOptions = CutLoopTransformation.getDeclaredOptions()
 
-            val transformation = object : BodyTransformer() {
-                override fun internalTransform(body: Body, phase: String, options: Map<String, String>) {
-                    if (methodsToAnalyze.contains(body.method.signature)) {
+            val seAnalysis = Transform("jtp.symbolicexecution", SymbolicExecutionAnalysisTransformer(postProcess))
+            seAnalysis.declaredOptions = SymbolicExecutionAnalysisTransformer.getDeclaredOptions()
 
-                        // TODO: Implement below sketch correctly, maybe as a separate transformer
-                        // SKETCH {
-                        // Remove all back edges from loops to render SE finite
-                        // TODO: We also have to anonymize loop variables: At the beginning
-                        //       of the body as well as after the back edge
-                        for (loop in LoopFinder().getLoops(body)) {
-                            val node = loop.backJumpStmt
-                            val oldTarget = loop.head
-                            val newTarget = loop.head.unitBoxes[0]
-
-                            for (targetBox in node.unitBoxes) {
-                                val target = targetBox.unit
-                                if (target === oldTarget) {
-                                    targetBox.unit = newTarget.unit
-                                }
-                            }
-                        }
-                        // } END SKETCH
-
-                        val graph = ExceptionalUnitGraph(body)
-                        val analysis = SymbolicExecutionAnalysis(graph)
-                        postProcess(analysis, graph)
-                    }
-                }
+            PackManager.v().getPack("jtp").let {
+                it.add(cutLoopTransform)
+                it.add(seAnalysis)
             }
-
-            PackManager.v().getPack("jtp").add(
-                Transform("jtp.symbolicexecution", transformation)
-            )
 
             Scene.v().sootClassPath = "./build/classes/kotlin/test"
             Scene.v().extendSootClassPath("./lib/kotlin-stdlib-1.3.72.jar")
             Scene.v().extendSootClassPath("/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/rt.jar")
 
             PhaseOptions.v().setPhaseOption("jb", "use-original-names");
+            PhaseOptions.v().setPhaseOption("jtp.cutloop", "class:$clazz");
+            PhaseOptions.v().setPhaseOption("jtp.cutloop", "method:$methodSig");
+            PhaseOptions.v().setPhaseOption("jtp.symbolicexecution", "class:$clazz");
+            PhaseOptions.v().setPhaseOption("jtp.symbolicexecution", "method:$methodSig");
+
+            Scene.v().addBasicClass("java.lang.System", SootClass.SIGNATURES);
 
             Main.main(arrayOf(clazz))
         }

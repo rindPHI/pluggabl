@@ -1,4 +1,4 @@
-package de.dominicsteinhoefel.symbex
+package de.dominicsteinhoefel.symbex.analysis
 
 import de.dominicsteinhoefel.symbex.expr.*
 import soot.Unit
@@ -6,7 +6,14 @@ import soot.jimple.internal.*
 import soot.toolkits.graph.UnitGraph
 import soot.toolkits.scalar.ForwardBranchedFlowAnalysis
 
-class SymbolicExecutionAnalysis(graph: UnitGraph) :
+/**
+ * A full symbolic execution analysis. Note that it will generally not terminate when facing loops with symbolic guards;
+ * for these use cases, you have to apply a suitable program transformation prior to using this analysis, e.g.,
+ * CutLoopTransformation.
+ *
+ * @author Dominic Steinhoefel
+ */
+class SymbolicExecutionAnalysis(private val graph: UnitGraph) :
     ForwardBranchedFlowAnalysis<SymbolicExecutionState>(graph) {
 
     init {
@@ -47,6 +54,9 @@ class SymbolicExecutionAnalysis(graph: UnitGraph) :
             }
             is JReturnStmt, is JIdentityStmt, is JGotoStmt -> {
                 print("")
+            }
+            is JInvokeStmt -> {
+                // TODO: Implement. Currently only for not getting disturbed by System.exit calls
             }
             else -> TODO("Execution of Unit type ${s?.javaClass} not yet implemented")
         }

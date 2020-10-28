@@ -43,7 +43,7 @@ class SimpleMethods {
 
         //@ maintaining result <= i && i >= 0;
         //@ decreases result - i;
-        while (result < i) {
+        while (i < result) {
             i++
         }
 
