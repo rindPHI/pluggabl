@@ -55,9 +55,6 @@ class SymbolicExecutionAnalysis(private val graph: UnitGraph) :
             is JReturnStmt, is JIdentityStmt, is JGotoStmt -> {
                 print("")
             }
-            is JInvokeStmt -> {
-                // TODO: Implement. Currently only for not getting disturbed by System.exit calls
-            }
             else -> TODO("Execution of Unit type ${s?.javaClass} not yet implemented")
         }
 

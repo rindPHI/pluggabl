@@ -2,68 +2,127 @@ package de.dominicsteinhoefel.symbex
 
 import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionAnalysisTransformer
+import de.dominicsteinhoefel.symbex.expr.*
 import de.dominicsteinhoefel.symbex.transformation.CutLoopTransformation
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import soot.*
 import soot.toolkits.graph.ExceptionalUnitGraph
 import soot.toolkits.graph.UnitGraph
+import kotlin.math.sin
 
 class SymbolicExecutionAnalysisTest {
     @Test
     fun testSimpleTwoBranchedMethod() {
-        val postProcessing = fun(a: SymbolicExecutionAnalysis, graph: UnitGraph) {
-            val expected = mapOf(
-                "return \$stack3" to
-                        "({!(((input)+(1))==(42))}, [test -> (input)+(1)]++[\$stack3 -> ((input)+(1))+(3)])",
-                "return test" to
-                        "({((input)+(1))==(42)}, [test -> (((input)+(1))+(2))+(4)])"
+        val sInput = Symbol("input", INT_TYPE)
+        val sTest = Symbol("test", INT_TYPE)
+        val sStack = Symbol("\$stack3", INT_TYPE)
+        val inputPlusOne = AdditionExpr(sInput, IntValue(1))
+        val inputPlusOneIsFortyTwo = EqualityConstr.create(inputPlusOne, IntValue(42))
+
+        val expected = listOf(
+            SymbolicExecutionState(
+                SymbolicConstraintSet.from(NegatedConstr.create(inputPlusOneIsFortyTwo)),
+                ParallelStore.create(
+                    ElementaryStore(
+                        sTest,
+                        inputPlusOne
+                    ), ElementaryStore(sStack, AdditionExpr(inputPlusOne, IntValue(3)))
+                )
+            ),
+            SymbolicExecutionState(
+                SymbolicConstraintSet.from(inputPlusOneIsFortyTwo),
+                ElementaryStore(
+                    sTest,
+                    AdditionExpr(AdditionExpr(inputPlusOne, IntValue(2)), IntValue(4))
+                )
             )
-
-            val result = graph.tails.associateWith { a.getFlowBefore(it).toString() }.mapKeys { it.key.toString() }
-
-            assertEquals(expected, result)
-        }
+        )
 
         symbolicallyExecuteMethod(
             "de.dominicsteinhoefel.symbex.SimpleMethods",
             "int simpleTwoBranchedMethod(int)",
-            postProcessing
+            compareLeaves(expected)
         )
     }
 
-
     @Test
     fun testSimpleTwoBranchedMethodWithMerge() {
-        val postProcessing = fun(a: SymbolicExecutionAnalysis, graph: UnitGraph) {
-            val expected = mapOf(
-                "return test" to
-                        "({}, [test -> (if (((input)+(1))==(42)) then (((input)+(1))+(2)) else (((input)+(1))+(3)))+(4)])"
+        val sInput = Symbol("input", INT_TYPE)
+        val sTest = Symbol("test", INT_TYPE)
+        val inputPlusOne = AdditionExpr(sInput, IntValue(1))
+
+        val expected = listOf(
+            SymbolicExecutionState(
+                SymbolicConstraintSet(),
+                ElementaryStore(
+                    sTest,
+                    AdditionExpr(
+                        ConditionalExpression.create(
+                            EqualityConstr.create(inputPlusOne, IntValue(42)),
+                            AdditionExpr(inputPlusOne, IntValue(2)),
+                            AdditionExpr(inputPlusOne, IntValue(3))
+                        ), IntValue(4)
+                    )
+                )
             )
-
-            val result = graph.tails.associateWith { a.getFlowBefore(it).toString() }.mapKeys { it.key.toString() }
-
-            assertEquals(expected, result)
-        }
+        )
 
         symbolicallyExecuteMethod(
             "de.dominicsteinhoefel.symbex.SimpleMethods",
             "int simpleTwoBranchedMethodWithMerge(int)",
-            postProcessing
+            compareLeaves(expected)
         )
     }
 
     @Test
     fun testSimpleLoop() {
+        val sInput = Symbol("input", INT_TYPE)
+        val sI = Symbol("i", INT_TYPE)
+        val sIAnonLoop = Symbol("i_ANON_LOOP", INT_TYPE)
+        val sResult = Symbol("result", INT_TYPE)
+        val conditional = ConditionalExpression.create(
+            GreaterEqualConstr(sInput, IntValue(0)),
+            sInput,
+            MultiplicationExpr(sInput, IntValue(-1))
+        )
+
+        val expected = listOf(
+            SymbolicExecutionState(
+                SymbolicConstraintSet.from(NegatedConstr.create(GreaterEqualConstr(sIAnonLoop, conditional))),
+                ParallelStore.create(
+                    ElementaryStore(sResult, conditional),
+                    ElementaryStore(sI, AdditionExpr(sIAnonLoop, IntValue(1)))
+                )
+            ),
+            SymbolicExecutionState(
+                SymbolicConstraintSet.from(GreaterEqualConstr(sIAnonLoop, conditional)),
+                ParallelStore.create(
+                    ElementaryStore(sResult, conditional),
+                    ElementaryStore(sI, sIAnonLoop)
+                )
+            )
+        )
+
         symbolicallyExecuteMethod(
             "de.dominicsteinhoefel.symbex.SimpleMethods",
             "int simpleLoop(int)",
-            printSESs
+            compareLeaves(expected)
         )
     }
 
     companion object {
-        private val printSESs = fun (a: SymbolicExecutionAnalysis, graph: UnitGraph) {
+        private fun compareLeaves(expected: List<SymbolicExecutionState>) =
+            fun(a: SymbolicExecutionAnalysis, graph: UnitGraph) {
+                val results = graph.tails.map { a.getFlowBefore(it) }
+                assertEquals(expected.size, results.size)
+                for (exp in expected) {
+                    assertTrue("$exp not contained in ${results.joinToString(", ")}", results.contains(exp))
+                }
+            }
+
+        private val printSESs = fun(a: SymbolicExecutionAnalysis, graph: UnitGraph) {
             for (node in graph) {
                 println("Node \"$node\":")
                 println("Flow before:        ${a.getFlowBefore(node)}")
@@ -77,6 +136,8 @@ class SymbolicExecutionAnalysisTest {
             methodSig: String,
             postProcess: (SymbolicExecutionAnalysis, UnitGraph) -> Unit = { _, _ -> }
         ) {
+            G.reset()
+
             val cutLoopTransform = Transform("jtp.cutloop", CutLoopTransformation)
             cutLoopTransform.declaredOptions = CutLoopTransformation.getDeclaredOptions()
 
@@ -98,7 +159,8 @@ class SymbolicExecutionAnalysisTest {
             PhaseOptions.v().setPhaseOption("jtp.symbolicexecution", "class:$clazz");
             PhaseOptions.v().setPhaseOption("jtp.symbolicexecution", "method:$methodSig");
 
-            Scene.v().addBasicClass("java.lang.System", SootClass.SIGNATURES);
+            // Add a line like the following when using JRE classes in the future:
+            // Scene.v().addBasicClass("java.lang.System", SootClass.SIGNATURES);
 
             Main.main(arrayOf(clazz))
         }
