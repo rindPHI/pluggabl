@@ -1,6 +1,7 @@
 package de.dominicsteinhoefel.symbex.analysis
 
 import de.dominicsteinhoefel.symbex.expr.*
+import org.slf4j.LoggerFactory
 import soot.Unit
 import soot.jimple.internal.*
 import soot.toolkits.graph.UnitGraph
@@ -55,10 +56,19 @@ class SymbolicExecutionAnalysis(private val graph: UnitGraph) :
             is JReturnStmt, is JIdentityStmt, is JGotoStmt -> {
                 print("")
             }
-            else -> TODO("Execution of Unit type ${s?.javaClass} not yet implemented")
+            is JInvokeStmt -> {
+                logger.warn("Ignoring JInvokeStmt ${s} for now, have to handle appropriately soon!")
+            }
+            else -> {
+                TODO("Execution of Unit type ${s?.javaClass} not yet implemented")
+            }
         }
 
         fallOut?.forEach { it.apply(inp).simplify() }
         branchOuts?.forEach { it.apply(inp).simplify() }
+    }
+
+    companion object {
+        val logger = LoggerFactory.getLogger(SymbolicExecutionAnalysis::class.simpleName)
     }
 }
