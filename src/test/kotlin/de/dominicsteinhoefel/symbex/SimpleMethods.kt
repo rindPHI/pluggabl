@@ -23,7 +23,7 @@ class SimpleMethods {
         if (test == 42) {
             test += 2
         } else {
-            test + 3
+            test += 3
         }
 
         test += 4

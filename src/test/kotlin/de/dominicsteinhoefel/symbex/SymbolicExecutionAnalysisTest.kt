@@ -33,11 +33,10 @@ class SymbolicExecutionAnalysisTest {
 
     @Test
     fun testSimpleTwoBranchedMethodWithMerge() {
-        //TODO fails
         val postProcessing = fun(a: SymbolicExecutionAnalysis, graph: UnitGraph) {
             val expected = mapOf(
                 "return test" to
-                        "({}, [test -> (if (!(((input)+(1))==(42))) then (((input)+(1))+(2)) else (((input)+(1))+(3)))+(4)])"
+                        "({}, [test -> (if (((input)+(1))==(42)) then (((input)+(1))+(2)) else (((input)+(1))+(3)))+(4)])"
             )
 
             val result = graph.tails.associateWith { a.getFlowBefore(it).toString() }.mapKeys { it.key.toString() }
@@ -61,6 +60,15 @@ class SymbolicExecutionAnalysisTest {
     }
 
     companion object {
+        private fun printSESs(graph: UnitGraph, a: SymbolicExecutionAnalysis) {
+            for (node in graph) {
+                println("Node \"$node\":")
+                println("Flow before:        ${a.getFlowBefore(node)}")
+                println("Fall flow after:    ${a.getFallFlowAfter(node)}")
+                println("Branch flows after: ${a.getBranchFlowAfter(node).map { it.toString() }.joinToString(", ")}\n")
+            }
+        }
+
         fun symbolicallyExecuteMethod(
             clazz: String,
             methodSig: String,
