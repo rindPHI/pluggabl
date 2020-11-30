@@ -1,12 +1,10 @@
 package de.dominicsteinhoefel.symbex
 
 import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.printLeafSESs
-import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.printSESs
 import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.symbolicallyExecuteMethod
-import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionAnalysis
+import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionFlowAnalysis
 import org.junit.Assert
 import org.junit.Test
-import soot.options.Options
 import soot.toolkits.graph.UnitGraph
 
 class ParenthesisParserTest {
@@ -16,7 +14,7 @@ class ParenthesisParserTest {
         symbolicallyExecuteMethod(
             "de.dominicsteinhoefel.symbex.ParenthesisParser",
             "int parse(java.lang.Character[])",
-            fun(a: SymbolicExecutionAnalysis, g: UnitGraph) {
+            fun(a: SymbolicExecutionFlowAnalysis, g: UnitGraph) {
                 printLeafSESs()(a, g)
                 Assert.assertEquals(5, g.tails.size)
                 Assert.assertEquals(

@@ -1,19 +1,18 @@
 package de.dominicsteinhoefel.symbex
 
-import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionAnalysis
+import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionFlowAnalysis
 import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionAnalysisTransformer
 import de.dominicsteinhoefel.symbex.expr.SymbolicExecutionState
 import de.dominicsteinhoefel.symbex.transformation.CutLoopTransformation
 import org.junit.Assert
 import soot.*
-import soot.options.Options
 import soot.toolkits.graph.UnitGraph
 
 object SymbolicExecutionTestHelper {
     fun symbolicallyExecuteMethod(
         clazz: String,
         methodSig: String,
-        postProcess: (SymbolicExecutionAnalysis, UnitGraph) -> Unit = { _, _ -> }
+        postProcess: (SymbolicExecutionFlowAnalysis, UnitGraph) -> Unit = { _, _ -> }
     ) {
         G.reset()
 
@@ -46,7 +45,7 @@ object SymbolicExecutionTestHelper {
     }
 
     fun compareLeaves(expected: List<SymbolicExecutionState>) =
-        fun(a: SymbolicExecutionAnalysis, graph: UnitGraph) {
+        fun(a: SymbolicExecutionFlowAnalysis, graph: UnitGraph) {
             val results = graph.tails.map { a.getFlowBefore(it) }
             Assert.assertEquals(expected.size, results.size)
             for (exp in expected) {
@@ -54,7 +53,7 @@ object SymbolicExecutionTestHelper {
             }
         }
 
-    fun printSESs() = fun(a: SymbolicExecutionAnalysis, graph: UnitGraph) {
+    fun printSESs() = fun(a: SymbolicExecutionFlowAnalysis, graph: UnitGraph) {
         for (node in graph) {
             println("Node \"$node\":")
             println("Flow before:        ${a.getFlowBefore(node)}")
@@ -63,7 +62,7 @@ object SymbolicExecutionTestHelper {
         }
     }
 
-    fun printLeafSESs() = fun(a: SymbolicExecutionAnalysis, graph: UnitGraph) {
+    fun printLeafSESs() = fun(a: SymbolicExecutionFlowAnalysis, graph: UnitGraph) {
         for (node in graph.tails) {
             println("Node \"$node\":")
             println(a.getFlowBefore(node))

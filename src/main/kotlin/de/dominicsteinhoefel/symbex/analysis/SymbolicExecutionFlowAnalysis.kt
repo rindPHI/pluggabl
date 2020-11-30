@@ -14,7 +14,7 @@ import soot.toolkits.scalar.ForwardBranchedFlowAnalysis
  *
  * @author Dominic Steinhoefel
  */
-class SymbolicExecutionAnalysis(private val graph: UnitGraph) :
+class SymbolicExecutionFlowAnalysis(private val graph: UnitGraph) :
     ForwardBranchedFlowAnalysis<SymbolicExecutionState>(graph) {
 
     init {
@@ -69,6 +69,6 @@ class SymbolicExecutionAnalysis(private val graph: UnitGraph) :
     }
 
     companion object {
-        val logger = LoggerFactory.getLogger(SymbolicExecutionAnalysis::class.simpleName)
+        val logger = LoggerFactory.getLogger(SymbolicExecutionFlowAnalysis::class.simpleName)
     }
 }

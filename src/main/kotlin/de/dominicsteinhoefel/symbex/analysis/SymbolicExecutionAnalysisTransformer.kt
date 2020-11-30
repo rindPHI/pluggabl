@@ -6,7 +6,7 @@ import soot.toolkits.graph.ExceptionalUnitGraph
 import soot.toolkits.graph.UnitGraph
 
 class SymbolicExecutionAnalysisTransformer(
-    val postProcess: (SymbolicExecutionAnalysis, UnitGraph) -> Unit = { _, _ -> }
+    val postProcess: (SymbolicExecutionFlowAnalysis, UnitGraph) -> Unit = { _, _ -> }
 ) : BodyTransformer() {
 
     override fun internalTransform(body: Body, phase: String, options: Map<String, String>) {
@@ -16,7 +16,7 @@ class SymbolicExecutionAnalysisTransformer(
 
         if (methodsToAnalyze.contains(body.method.signature)) {
             val graph = ExceptionalUnitGraph(body)
-            val analysis = SymbolicExecutionAnalysis(graph)
+            val analysis = SymbolicExecutionFlowAnalysis(graph)
             postProcess(analysis, graph)
         }
     }

@@ -12,15 +12,22 @@ class SymbolicExecutionState() {
         this.store = store
     }
 
-    fun addConstraint(c: SymbolicConstraint) = constraints.add(StoreApplConstraint.create(store, c))
+    fun copy() = SymbolicExecutionState(constraints, store)
 
-    fun addAssignment(s: Symbol, e: SymbolicExpression) {
+    fun addConstraint(c: SymbolicConstraint): SymbolicExecutionState {
+        constraints.add(StoreApplConstraint.create(store, c))
+        return this
+    }
+
+    fun addAssignment(s: Symbol, e: SymbolicExpression): SymbolicExecutionState {
         store = SymbolicStoreSimplifier.simplify(
             ParallelStore.create(
                 store,
                 StoreApplStore.create(store, ElementaryStore(s, e))
             )
         )
+
+        return this
     }
 
     fun apply(other: SymbolicExecutionState): SymbolicExecutionState {
@@ -39,9 +46,10 @@ class SymbolicExecutionState() {
         store = mSES.store
     }
 
-    fun simplify() = simplify(this).let {
+    fun simplify(): SymbolicExecutionState = simplify(this).let {
         constraints = it.constraints
         store = it.store
+        return this
     }
 
     override fun toString(): String {
@@ -55,6 +63,14 @@ class SymbolicExecutionState() {
         (other as? SymbolicExecutionState).let { it?.constraints == constraints && it.store == store }
 
     companion object {
+        fun merge(ses: List<SymbolicExecutionState>): SymbolicExecutionState {
+            var result = ses[0]
+            for (i in 1..ses.size - 1) {
+                result = merge(result, ses[i])
+            }
+            return result
+        }
+
         fun merge(ses1: SymbolicExecutionState, ses2: SymbolicExecutionState): SymbolicExecutionState {
             val mc1 = ses1.constraints.fold(True, { a: SymbolicConstraint, b -> And.create(a, b) })
             val mc2 = ses2.constraints.fold(True, { a: SymbolicConstraint, b -> And.create(a, b) })

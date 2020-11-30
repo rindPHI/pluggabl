@@ -5,7 +5,7 @@ import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.symbolicallyExec
 import de.dominicsteinhoefel.symbex.expr.*
 import org.junit.Test
 
-class SimpleSymbolicExecutionAnalysisTests {
+class SimpleSymbolicExecutionFlowAnalysisTests {
     @Test
     fun testSimpleTwoBranchedMethod() {
         val sInput = Symbol("input", INT_TYPE)
