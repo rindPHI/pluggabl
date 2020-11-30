@@ -10,8 +10,8 @@ class SymbolicExecutionAnalysisTransformer(
 ) : BodyTransformer() {
 
     override fun internalTransform(body: Body, phase: String, options: Map<String, String>) {
-        val clazz = options.get("class")
-        val methodSig = options.get("method")
+        val clazz = options["class"]
+        val methodSig = options["method"]
         val methodsToAnalyze = arrayOf("<${clazz}: ${methodSig}>")
 
         if (methodsToAnalyze.contains(body.method.signature)) {
