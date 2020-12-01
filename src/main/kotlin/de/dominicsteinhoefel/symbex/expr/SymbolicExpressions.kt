@@ -110,10 +110,11 @@ class ConditionalExpression private constructor(
             condition: SymbolicConstraint,
             vThen: SymbolicExpression,
             vElse: SymbolicExpression
-        ) =
+        ): SymbolicExpression =
             when (condition) {
                 is True -> vThen
                 is False -> vElse
+                is NegatedConstr -> create(condition.inner(), vElse, vThen)
                 else ->
                     if (vThen == vElse) vThen else
                         ConditionalExpression(condition, vThen, vElse)

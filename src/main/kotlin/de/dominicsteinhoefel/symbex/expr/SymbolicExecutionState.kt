@@ -8,49 +8,35 @@ class SymbolicExecutionState() {
     var store: SymbolicStore = EmptyStore
 
     constructor(constraints: Collection<SymbolicConstraint>, store: SymbolicStore) : this() {
-        this.constraints = SymbolicConstraintSet().let { it.addAll(constraints); it }
+        this.constraints = SymbolicConstraintSet.from(constraints)
         this.store = store
     }
 
-    fun copy() = SymbolicExecutionState(constraints, store)
+    fun addConstraint(c: SymbolicConstraint): SymbolicExecutionState =
+        SymbolicExecutionState(constraints.add(StoreApplConstraint.create(store, c)), store)
 
-    fun addConstraint(c: SymbolicConstraint): SymbolicExecutionState {
-        constraints.add(StoreApplConstraint.create(store, c))
-        return this
-    }
-
-    fun addAssignment(s: Symbol, e: SymbolicExpression): SymbolicExecutionState {
-        store = SymbolicStoreSimplifier.simplify(
-            ParallelStore.create(
-                store,
-                StoreApplStore.create(store, ElementaryStore(s, e))
+    fun addAssignment(s: Symbol, e: SymbolicExpression) =
+        SymbolicExecutionState(
+            constraints, SymbolicStoreSimplifier.simplify(
+                ParallelStore.create(
+                    store,
+                    StoreApplStore.create(store, ElementaryStore(s, e))
+                )
             )
         )
 
-        return this
-    }
+    fun apply(other: SymbolicExecutionState) =
+        SymbolicExecutionState(
+            SymbolicConstraintSet.from(
+                listOf(
+                    constraints.map { oldC -> StoreApplConstraint.create(other.store, oldC) },
+                    other.constraints
+                ).flatten()
+            ),
+            ParallelStore.create(other.store, StoreApplStore.create(other.store, store))
+        )
 
-    fun apply(other: SymbolicExecutionState): SymbolicExecutionState {
-        SymbolicConstraintSet().let {
-            it.addAll(constraints.map { oldC -> StoreApplConstraint.create(other.store, oldC) })
-            it.addAll(other.constraints)
-            constraints = it
-        }
-        store = ParallelStore.create(other.store, StoreApplStore.create(other.store, store))
-        return this
-    }
-
-    fun mergeFromSESs(ses1: SymbolicExecutionState, ses2: SymbolicExecutionState) {
-        val mSES = merge(ses1, ses2)
-        constraints = mSES.constraints
-        store = mSES.store
-    }
-
-    fun simplify(): SymbolicExecutionState = simplify(this).let {
-        constraints = it.constraints
-        store = it.store
-        return this
-    }
+    fun simplify(): SymbolicExecutionState = SymbolicExecutionState.simplify(this)
 
     override fun toString(): String {
         val sConstraints = "{${constraints.joinToString()}}"
@@ -95,7 +81,7 @@ class SymbolicExecutionState() {
 
         fun simplify(ses: SymbolicExecutionState) =
             SymbolicExecutionState(
-                ses.constraints.map { SymbolicStoreSimplifier.simplify(it) }.toList(),
+                ses.constraints.map { SymbolicStoreSimplifier.simplify(it) },
                 SymbolicStoreSimplifier.simplify(ses.store)
             )
     }

@@ -8,17 +8,41 @@ sealed class SymbolicConstraint {
     abstract fun <T> accept(v: SymbolicConstraintVisitor<T>): T
 }
 
-class SymbolicConstraintSet : LinkedHashSet<SymbolicConstraint>() {
-    override fun add(element: SymbolicConstraint) =
-        if (element is True) false
-        else super.add(element) || this.remove(True)
+class SymbolicConstraintSet : Set<SymbolicConstraint> {
+    private val backSet: LinkedHashSet<SymbolicConstraint>
 
-    override fun addAll(elements: Collection<SymbolicConstraint>) =
-        elements.map { add(it) }.fold(false, { acc, elem -> acc || elem })
+    constructor() {
+        this.backSet = LinkedHashSet()
+    }
+
+    private constructor(backSet: Collection<SymbolicConstraint>) {
+        this.backSet = LinkedHashSet(backSet)
+    }
+
+    fun add(element: SymbolicConstraint) =
+        if (element is True) this
+        else SymbolicConstraintSet(listOf(backSet, listOf(element)).flatten()).remove(True)
+
+    fun addAll(elements: Collection<SymbolicConstraint>) =
+        SymbolicConstraintSet(listOf(backSet, elements).flatten()).remove(True)
+
+    fun remove(element: SymbolicConstraint) =
+        SymbolicConstraintSet(backSet.filter { it != element })
+
+    override val size: Int get() = backSet.size
+    override fun contains(element: SymbolicConstraint) = backSet.contains(element)
+    override fun containsAll(elements: Collection<SymbolicConstraint>) = backSet.containsAll(elements)
+    override fun isEmpty() = backSet.isEmpty()
+    override fun iterator() = backSet.iterator()
+    override fun equals(other: Any?) = backSet == other
+    override fun hashCode() = Objects.hash(SymbolicConstraintSet::class, backSet)
 
     companion object {
+        fun from(constraints: Collection<SymbolicConstraint>) =
+            SymbolicConstraintSet().addAll(constraints)
+
         fun from(vararg constraints: SymbolicConstraint) =
-            SymbolicConstraintSet().let { set -> constraints.forEach { set.add(it) }; set }
+            SymbolicConstraintSet().addAll(constraints.asList())
     }
 }
 
@@ -60,7 +84,7 @@ object True : SymbolicConstraint() {
     override fun <T> accept(v: SymbolicConstraintVisitor<T>): T = v.visit(this)
 
     override fun toString() = "True"
-    override fun equals(other: Any?) = other == True
+    override fun equals(other: Any?) = other === True
     override fun hashCode() = True::class.hashCode()
 }
 
@@ -68,7 +92,7 @@ object False : SymbolicConstraint() {
     override fun <T> accept(v: SymbolicConstraintVisitor<T>): T = v.visit(this)
 
     override fun toString() = "False"
-    override fun equals(other: Any?) = other == False
+    override fun equals(other: Any?) = other === False
     override fun hashCode() = False::class.hashCode()
 }
 

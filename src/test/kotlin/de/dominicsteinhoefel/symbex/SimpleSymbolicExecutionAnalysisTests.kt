@@ -1,11 +1,11 @@
 package de.dominicsteinhoefel.symbex
 
 import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.compareLeaves
-import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.symbolicallyExecuteMethod
+import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.symbex.expr.*
 import org.junit.Test
 
-class SimpleSymbolicExecutionFlowAnalysisTests {
+class SimpleSymbolicExecutionAnalysisTests {
     @Test
     fun testSimpleTwoBranchedMethod() {
         val sInput = Symbol("input", INT_TYPE)
@@ -33,11 +33,13 @@ class SimpleSymbolicExecutionFlowAnalysisTests {
             )
         )
 
-        symbolicallyExecuteMethod(
+        val analysis = SymbolicExecutionAnalysis(
             "de.dominicsteinhoefel.symbex.SimpleMethods",
-            "int simpleTwoBranchedMethod(int)",
-            compareLeaves(expected)
+            "int simpleTwoBranchedMethod(int)"
         )
+
+        analysis.symbolicallyExecute()
+        compareLeaves(expected, analysis)
     }
 
     @Test
@@ -62,11 +64,13 @@ class SimpleSymbolicExecutionFlowAnalysisTests {
             )
         )
 
-        symbolicallyExecuteMethod(
+        val analysis = SymbolicExecutionAnalysis(
             "de.dominicsteinhoefel.symbex.SimpleMethods",
-            "int simpleTwoBranchedMethodWithMerge(int)",
-            compareLeaves(expected)
+            "int simpleTwoBranchedMethodWithMerge(int)"
         )
+
+        analysis.symbolicallyExecute()
+        compareLeaves(expected, analysis)
     }
 
     @Test
@@ -98,10 +102,10 @@ class SimpleSymbolicExecutionFlowAnalysisTests {
             )
         )
 
-        symbolicallyExecuteMethod(
-            "de.dominicsteinhoefel.symbex.SimpleMethods",
-            "int simpleLoop(int)",
-            compareLeaves(expected)
-        )
+//        symbolicallyExecuteMethod(
+//            "de.dominicsteinhoefel.symbex.SimpleMethods",
+//            "int simpleLoop(int)",
+//            compareLeaves(expected)
+//        )
     }
 }
