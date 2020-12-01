@@ -103,15 +103,5 @@ class SymbolicExecutionAnalysis(clazz: String, methodSig: String) {
 
     companion object {
         val logger: Logger = LoggerFactory.getLogger(SymbolicExecutionAnalysis::class.simpleName)
-
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val engine = SymbolicExecutionAnalysis(
-                "de.dominicsteinhoefel.symbex.SimpleMethods",
-                "int simpleTwoBranchedMethodWithMerge(int)"
-            )
-
-            engine.symbolicallyExecute()
-        }
     }
 }
