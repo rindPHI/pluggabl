@@ -1,22 +1,29 @@
 # SootSymbolicExecution
 
-A symbolic execution analysis based on the Soot analysis framework written in Kotlin. 
-Defines a branched forward-analysis "SymbolicExecutionAnalysis" and a transformer 
-"SymbolicExecutionAnalysisTransformer" that can be hooked into Soot as follows:
+A symbolic execution engine based on the Soot framework written in Kotlin.
 
-    val seAnalysis = Transform("jtp.symbolicexecution", SymbolicExecutionAnalysisTransformer(postProcess))
-    seAnalysis.declaredOptions = SymbolicExecutionAnalysisTransformer.getDeclaredOptions()
+The analysis does not use Soot's data flow analysis framework, but benefits
+from the translation to Jimple which heavily eases the process.
 
-    PackManager.v().getPack("jtp").add(seAnalysis)
-    
-The analysis generally won't terminate in the presence of loops with symbolic guards, 
-as usual for full symbolic execution. To address this, a transformer "CutLoopTransformation"
-is provided which breaks loop cycles and havocs local variables written in the body
-to retain soundness of the analysis. Alternatively, a different (not provided) transformer
-could be used to finitely unroll all loops in the program.
+User-provided specifications are neither required nor possible; this implementation
+performs "pure" (heavyweight/static) symbolic execution on Jimple code. Loops are
+treated using trivial invariants; essentially, all values changed in the loop are
+anonymized afterward. The intuition is that specifications like invariants can be
+used later, if necessary, to substitute or constrain these symbols.
 
 Complete examples on how to use the project are provided as test cases. Currently, there
-is no Main class to directly run the project as a standalone program (it's on my TODO list!).
+is no Main class to directly run the project as a standalone program. The engine is
+instantiated as follows:
+
+    val analysis = SymbolicExecutionAnalysis(
+      "my.full.class.Name",
+      "int myMethodSignature(int)"
+    )
+
+    analysis.symbolicallyExecute()
+    
+    // input/output symbolic states are associated to CFG
+    // nodes in the analysis object now.
 
 Note that this is all work in progress, and the analysis will crash for many input programs.
 The currently most complex working example is a simple parenthesis expression parser, which
