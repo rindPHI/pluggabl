@@ -106,7 +106,9 @@ class SymbolicExecutionAnalysis(clazz: String, methodSig: String) {
         inputStates: List<SymbolicExecutionState>
     ): List<SymbolicExecutionState> {
         val writtenVars = assocLoop.loopStatements.map { it.defBoxes }.flatten().map { it.value }
-        // TODO: Get loop inputs to parametrize anonymizing function
+        // TODO: Get loop inputs to parametrize anonymizing function, or better:
+        // Inspect SES at back edge to derive suitable parameters! This somehow
+        // would be related to program slicing, maybe?
 
         if (writtenVars.any { it !is Local }) {
             throw NotImplementedError("Anonymization of written heap locations currently not implemented")
