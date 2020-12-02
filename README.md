@@ -26,7 +26,10 @@ instantiated as follows:
     // nodes in the analysis object now.
 
 Note that this is all work in progress, and the analysis will crash for many input programs.
-The currently most complex working example is a simple parenthesis expression parser, which
-features loops, character arrays, and pure method invocation expressions.
+Also, additional classes and used library methods are currently not settable via parameters
+(but are hard-coded in class `SootBridge`).
+
+<!--The currently most complex working example is a simple parenthesis expression parser, which
+features loops, character arrays, and pure method invocation expressions.-->
 
 This project is maintained by [Dominic Steinhöfel](https://www.dominic-steinhoefel.de).
