@@ -1,30 +1,29 @@
 package de.dominicsteinhoefel.symbex
 
 import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.printLeafSESs
-import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.printSESs
-import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.symbolicallyExecuteMethod
 import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionAnalysis
 import org.junit.Assert
 import org.junit.Test
-import soot.options.Options
-import soot.toolkits.graph.UnitGraph
+import soot.jimple.Stmt
 
 class ParenthesisParserTest {
 
     @Test
     fun testParenthesisParserAnalysis() {
-        symbolicallyExecuteMethod(
+        val analysis = SymbolicExecutionAnalysis(
             "de.dominicsteinhoefel.symbex.ParenthesisParser",
-            "int parse(java.lang.Character[])",
-            fun(a: SymbolicExecutionAnalysis, g: UnitGraph) {
-                printLeafSESs()(a, g)
-                Assert.assertEquals(5, g.tails.size)
-                Assert.assertEquals(
-                    "({(opParCnt_ANON_LOOP)==(0), (i_ANON_LOOP)>=(input.length)}, " +
-                            "[i -> i_ANON_LOOP]++[c -> c_ANON_LOOP]++[\$stack6 -> \$stack6_ANON_LOOP]++[opParCnt -> opParCnt_ANON_LOOP]++[\$stack5 -> input.length])",
-                    a.getFlowBefore(g.tails[3]).toString()
-                )
-            }
+            "int parse(java.lang.Character[])"
+        )
+        val graph = analysis.cfg
+
+        analysis.symbolicallyExecute()
+
+        printLeafSESs(analysis)
+        Assert.assertEquals(5, graph.tails.size)
+        Assert.assertEquals(
+            "({(opParCnt_ANON_LOOP)==(0), (i_ANON_LOOP)>=(input.length)}, " +
+                    "[i -> i_ANON_LOOP]++[c -> c_ANON_LOOP]++[\$stack6 -> \$stack6_ANON_LOOP]++[opParCnt -> opParCnt_ANON_LOOP]++[\$stack5 -> input.length])",
+            analysis.getOutputSESs(graph.tails[3] as Stmt)[0].toString()
         )
 
         // TODO: Add more expressive tests.

@@ -25,7 +25,8 @@ object SymbolicStoreSimplifier {
 
     fun simplify(expression: SymbolicExpression): SymbolicExpression =
         when (expression) {
-            is Value, is Symbol -> expression
+            is Value, is LocalVariable -> expression
+            is FunctionApplication -> FunctionApplication(expression.f, expression.args.map{ simplify(it) })
             is ConditionalExpression -> ConditionalExpression.create(
                 simplify(expression.condition),
                 simplify(expression.vThen),
@@ -52,7 +53,7 @@ object SymbolicStoreSimplifier {
 
     private fun dropEffectlessElementaries(
         store: SymbolicStore,
-        overwrittenLocs: LinkedHashSet<Symbol>
+        overwrittenLocs: LinkedHashSet<LocalVariable>
     ): SymbolicStore =
         when (store) {
             is EmptyStore -> store
@@ -99,7 +100,7 @@ object SymbolicStoreSimplifier {
             }
         }
 
-    fun storeToSubst(store: SymbolicStore): LinkedHashMap<Symbol, SymbolicExpression> =
+    fun storeToSubst(store: SymbolicStore): LinkedHashMap<LocalVariable, SymbolicExpression> =
         when (store) {
             is EmptyStore -> linkedMapOf()
             is ElementaryStore -> linkedMapOf(store.lhs to store.rhs)

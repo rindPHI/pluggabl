@@ -1,74 +1,150 @@
 package de.dominicsteinhoefel.symbex.analysis
 
 import de.dominicsteinhoefel.symbex.expr.*
+import de.dominicsteinhoefel.symbex.util.NewNamesCreator
+import de.dominicsteinhoefel.symbex.util.SootBridge
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import soot.Unit
-import soot.jimple.internal.*
-import soot.toolkits.graph.UnitGraph
-import soot.toolkits.scalar.ForwardBranchedFlowAnalysis
+import soot.Body
+import soot.G
+import soot.Local
+import soot.jimple.Stmt
+import soot.jimple.toolkits.annotation.logic.Loop
+import soot.jimple.toolkits.annotation.logic.LoopFinder
+import soot.toolkits.graph.ExceptionalUnitGraph
+import java.util.*
+import kotlin.collections.HashMap
 
-/**
- * A full symbolic execution analysis. Note that it will generally not terminate when facing loops with symbolic guards;
- * for these use cases, you have to apply a suitable program transformation prior to using this analysis, e.g.,
- * CutLoopTransformation.
- *
- * @author Dominic Steinhoefel
- */
-class SymbolicExecutionAnalysis(private val graph: UnitGraph) :
-    ForwardBranchedFlowAnalysis<SymbolicExecutionState>(graph) {
+class SymbolicExecutionAnalysis(clazz: String, methodSig: String) {
+    private val body: Body
+    private val stateToInputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
+    private val stateToOutputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
+    private val newNamesCreator = NewNamesCreator()
+
+    val cfg: ExceptionalUnitGraph
+    val loops: Set<Loop>
+
+    private val rules = arrayOf(AssignRule, IfRule, LeafRule, DummyRule, IgnoreAndWarnRule)
 
     init {
-        doAnalysis()
+        G.reset()
+
+        body = SootBridge.loadJimpleBody(clazz, methodSig)
+            ?: throw IllegalStateException("Could not load method $methodSig of class $clazz")
+        cfg = ExceptionalUnitGraph(body)
+        loops = LoopFinder().getLoops(body)
     }
 
-    override fun newInitialFlow() = SymbolicExecutionState()
+    fun symbolicallyExecute() {
+        val rootStmt = cfg.heads[0] as Stmt
+        val queue = LinkedList<Stmt>()
 
-    override fun merge(in1: SymbolicExecutionState?, in2: SymbolicExecutionState?, out: SymbolicExecutionState?) {
-        if (in1 != null && in2 != null) out?.mergeFromSESs(ses1 = in1, ses2 = in2)
-    }
+        fun <E> LinkedList<E>.addLastDistinct(elem: E) {
+            if (!contains(elem)) addLast(elem)
+        }
 
-    override fun copy(source: SymbolicExecutionState?, dest: SymbolicExecutionState?) {
-        if (source != null) {
-            dest?.store = source.store
-            dest?.constraints = source.constraints
+        queue.add(rootStmt)
+        stateToInputSESMap[rootStmt] = listOf(SymbolicExecutionState())
+
+        while (!queue.isEmpty()) {
+            val currStmt = queue.pop()
+            var inputStates = stateToInputSESMap[currStmt] ?: emptyList()
+
+            val assocLoop = loops.filter { it.head == currStmt }.let { if (it.size == 1) it[0] else null }
+
+            if (cfg.getPredsOf(currStmt).size - (if (assocLoop != null) 1 else 0) > inputStates.size) {
+                // Evaluation of predecessors not yet finished
+                logger.trace(
+                    "Postponing evaluation of statement ${currStmt}, " +
+                            "${cfg.getPredsOf(currStmt).size - inputStates.size} predecessors not yet evaluated."
+                )
+
+                queue.addLast(currStmt)
+            }
+
+            if (assocLoop != null) {
+                // anonymize written variables in input states
+                val writtenVars = assocLoop.loopStatements.map { it.defBoxes }.flatten().map { it.value }
+                if (writtenVars.any { it !is Local }) {
+                    throw NotImplementedError("Anonymization of written heap locations currently not implemented")
+                }
+
+                val anonymizingStore =
+                    writtenVars.map { ExprConverter.convert(it) as LocalVariable }.associateWith {
+                        FunctionApplication(
+                            FunctionSymbol(
+                                newNamesCreator.newName(it.name + "_ANON_LOOP"),
+                                it.type,
+                                emptyList()
+                            ), emptyList()
+                        )
+                    }.map { ElementaryStore(it.key, it.value) }
+                        .fold(EmptyStore as SymbolicStore,
+                            { acc, elem -> ParallelStore.create(acc, elem) })
+
+                inputStates = inputStates.map {
+                    SymbolicExecutionState(
+                        it.constraints,
+                        ParallelStore.create(it.store, StoreApplStore.create(it.store, anonymizingStore))
+                    )
+                }
+            }
+
+            val rule = getApplicableRule(currStmt, inputStates)
+            val result = rule.apply(currStmt, inputStates).map { it.simplify() }
+
+            if (result.size != cfg.getSuccsOf(currStmt).size) {
+                throw IllegalStateException(
+                    "Expected number ${result.size} of successors in SE graph " +
+                            "does not match number of successors in CFG (${cfg.getSuccsOf(currStmt).size})"
+                )
+            }
+
+            stateToOutputSESMap[currStmt] = result
+
+            // Propagate result state
+            if (!loops.any { it.backJumpStmt == currStmt }) {
+                // ... but only if this is no back edge to a loop header
+
+                cfg.getSuccsOf(currStmt).zip(result).forEach { (cfgNode, ses) ->
+                    (cfgNode as Stmt).let {
+                        stateToInputSESMap[it] = listOf(
+                            stateToInputSESMap[it] ?: emptyList(),
+                            listOf(ses)
+                        ).flatten()
+
+                        queue.addLastDistinct(cfgNode)
+                    }
+                }
+            }
         }
     }
 
-    override fun flowThrough(
-        inp: SymbolicExecutionState?,
-        s: Unit?,
-        fallOut: MutableList<SymbolicExecutionState>?,
-        branchOuts: MutableList<SymbolicExecutionState>?
-    ) {
-        if (inp == null) return
+    fun getInputSESs(node: Stmt) = stateToInputSESMap[node] ?: emptyList()
+    fun getOutputSESs(node: Stmt) = stateToOutputSESMap[node] ?: emptyList()
 
-        when (s) {
-            is JAssignStmt -> fallOut?.get(0)?.addAssignment(
-                ExprConverter.convert(s.leftOp) as Symbol,
-                ExprConverter.convert(s.rightOp)
+    private fun getApplicableRule(
+        currStmt: Stmt,
+        inputStates: List<SymbolicExecutionState>
+    ): SERule {
+        val applicableRules = rules.filter { it.accepts(currStmt, inputStates) }
+        logger.trace(
+            "Applicable rules for statement type ${currStmt::class.simpleName}, " +
+                    "${inputStates.size} input states: " +
+                    applicableRules.joinToString(", ")
+        )
+
+        if (applicableRules.size != 1) {
+            throw IllegalStateException(
+                "Expected exactly one applicable rules for statement type " +
+                        "${currStmt::class.simpleName}, found ${applicableRules.size}"
             )
-            is JIfStmt -> {
-                val constraint = ConstrConverter.convert(s.condition)
-                branchOuts?.get(0)?.addConstraint(constraint)
-                fallOut?.get(0)?.addConstraint(NegatedConstr.create(constraint))
-
-            }
-            is JReturnStmt, is JIdentityStmt, is JGotoStmt -> {
-                print("")
-            }
-            is JInvokeStmt -> {
-                logger.warn("Ignoring JInvokeStmt ${s} for now, have to handle appropriately soon!")
-            }
-            else -> {
-                TODO("Execution of Unit type ${s?.javaClass} not yet implemented")
-            }
         }
 
-        fallOut?.forEach { it.apply(inp).simplify() }
-        branchOuts?.forEach { it.apply(inp).simplify() }
+        return applicableRules[0]
     }
 
     companion object {
-        val logger = LoggerFactory.getLogger(SymbolicExecutionAnalysis::class.simpleName)
+        val logger: Logger = LoggerFactory.getLogger(SymbolicExecutionAnalysis::class.simpleName)
     }
 }
