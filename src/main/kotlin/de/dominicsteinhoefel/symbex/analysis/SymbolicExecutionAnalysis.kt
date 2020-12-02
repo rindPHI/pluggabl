@@ -48,9 +48,13 @@ class SymbolicExecutionAnalysis(clazz: String, methodSig: String) {
 
         while (!queue.isEmpty()) {
             val currStmt = queue.pop()
-            var inputStates = stateToInputSESMap[currStmt] ?: emptyList()
 
             val assocLoop = loops.filter { it.head == currStmt }.let { if (it.size == 1) it[0] else null }
+
+            val inputStates = (stateToInputSESMap[currStmt] ?: emptyList()).let {
+                if (assocLoop != null) anonymizeWrittenVariablesInInputStates(assocLoop, it)
+                else it
+            }
 
             if (cfg.getPredsOf(currStmt).size - (if (assocLoop != null) 1 else 0) > inputStates.size) {
                 // Evaluation of predecessors not yet finished
@@ -60,34 +64,6 @@ class SymbolicExecutionAnalysis(clazz: String, methodSig: String) {
                 )
 
                 queue.addLast(currStmt)
-            }
-
-            if (assocLoop != null) {
-                // anonymize written variables in input states
-                val writtenVars = assocLoop.loopStatements.map { it.defBoxes }.flatten().map { it.value }
-                if (writtenVars.any { it !is Local }) {
-                    throw NotImplementedError("Anonymization of written heap locations currently not implemented")
-                }
-
-                val anonymizingStore =
-                    writtenVars.map { ExprConverter.convert(it) as LocalVariable }.associateWith {
-                        FunctionApplication(
-                            FunctionSymbol(
-                                newNamesCreator.newName(it.name + "_ANON_LOOP"),
-                                it.type,
-                                emptyList()
-                            ), emptyList()
-                        )
-                    }.map { ElementaryStore(it.key, it.value) }
-                        .fold(EmptyStore as SymbolicStore,
-                            { acc, elem -> ParallelStore.create(acc, elem) })
-
-                inputStates = inputStates.map {
-                    SymbolicExecutionState(
-                        it.constraints,
-                        ParallelStore.create(it.store, StoreApplStore.create(it.store, anonymizingStore))
-                    )
-                }
             }
 
             val rule = getApplicableRule(currStmt, inputStates)
@@ -117,6 +93,36 @@ class SymbolicExecutionAnalysis(clazz: String, methodSig: String) {
                     }
                 }
             }
+        }
+    }
+
+    private fun anonymizeWrittenVariablesInInputStates(
+        assocLoop: Loop,
+        inputStates: List<SymbolicExecutionState>
+    ): List<SymbolicExecutionState> {
+        val writtenVars = assocLoop.loopStatements.map { it.defBoxes }.flatten().map { it.value }
+        if (writtenVars.any { it !is Local }) {
+            throw NotImplementedError("Anonymization of written heap locations currently not implemented")
+        }
+
+        val anonymizingStore =
+            writtenVars.map { ExprConverter.convert(it) as LocalVariable }.associateWith {
+                FunctionApplication(
+                    FunctionSymbol(
+                        newNamesCreator.newName(it.name + "_ANON_LOOP"),
+                        it.type,
+                        emptyList()
+                    ), emptyList()
+                )
+            }.map { ElementaryStore(it.key, it.value) }
+                .fold(EmptyStore as SymbolicStore,
+                    { acc, elem -> ParallelStore.create(acc, elem) })
+
+        return inputStates.map {
+            SymbolicExecutionState(
+                it.constraints,
+                ParallelStore.create(it.store, StoreApplStore.create(it.store, anonymizingStore))
+            )
         }
     }
 
