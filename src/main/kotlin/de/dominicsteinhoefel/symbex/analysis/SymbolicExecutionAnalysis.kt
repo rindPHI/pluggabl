@@ -78,20 +78,24 @@ class SymbolicExecutionAnalysis(clazz: String, methodSig: String) {
 
             stateToOutputSESMap[currStmt] = result
 
-            // Propagate result state
+            // Only propagate result state if currStmt is no back edge to a loop header
             if (!loops.any { it.backJumpStmt == currStmt }) {
-                // ... but only if this is no back edge to a loop header
+                propagateResultStateToSuccs(currStmt, result)
+                cfg.getSuccsOf(currStmt).map { it as Stmt }.forEach(queue::addLastDistinct)
+            }
+        }
+    }
 
-                cfg.getSuccsOf(currStmt).zip(result).forEach { (cfgNode, ses) ->
-                    (cfgNode as Stmt).let {
-                        stateToInputSESMap[it] = listOf(
-                            stateToInputSESMap[it] ?: emptyList(),
-                            listOf(ses)
-                        ).flatten()
-
-                        queue.addLastDistinct(cfgNode)
-                    }
-                }
+    private fun propagateResultStateToSuccs(
+        currStmt: Stmt?,
+        result: List<SymbolicExecutionState>
+    ) {
+        cfg.getSuccsOf(currStmt).zip(result).forEach { (cfgNode, ses) ->
+            (cfgNode as Stmt).let {
+                stateToInputSESMap[it] = listOf(
+                    stateToInputSESMap[it] ?: emptyList(),
+                    listOf(ses)
+                ).flatten()
             }
         }
     }
