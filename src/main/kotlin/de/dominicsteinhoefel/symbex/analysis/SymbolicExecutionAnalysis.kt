@@ -9,6 +9,7 @@ import soot.Body
 import soot.G
 import soot.Local
 import soot.jimple.Stmt
+import soot.jimple.internal.JimpleLocal
 import soot.jimple.toolkits.annotation.logic.Loop
 import soot.jimple.toolkits.annotation.logic.LoopFinder
 import soot.toolkits.graph.ExceptionalUnitGraph
@@ -105,6 +106,8 @@ class SymbolicExecutionAnalysis(clazz: String, methodSig: String) {
         inputStates: List<SymbolicExecutionState>
     ): List<SymbolicExecutionState> {
         val writtenVars = assocLoop.loopStatements.map { it.defBoxes }.flatten().map { it.value }
+        // TODO: Get loop inputs to parametrize anonymizing function
+
         if (writtenVars.any { it !is Local }) {
             throw NotImplementedError("Anonymization of written heap locations currently not implemented")
         }
