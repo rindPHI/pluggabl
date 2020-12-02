@@ -1,6 +1,5 @@
 package de.dominicsteinhoefel.symbex.expr
 
-import polyglot.ast.Empty
 import java.util.*
 
 sealed class SymbolicStore
@@ -12,7 +11,7 @@ object EmptyStore : SymbolicStore() {
     override fun equals(other: Any?) = other === EmptyStore
 }
 
-class ElementaryStore(val lhs: Symbol, val rhs: SymbolicExpression) : SymbolicStore() {
+class ElementaryStore(val lhs: LocalVariable, val rhs: SymbolicExpression) : SymbolicStore() {
     override fun toString() = "[${lhs} -> ${rhs}]"
 
     override fun hashCode() = Objects.hash(ElementaryStore::class, lhs, rhs)

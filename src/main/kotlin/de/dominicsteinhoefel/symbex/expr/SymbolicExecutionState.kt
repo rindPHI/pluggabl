@@ -15,7 +15,7 @@ class SymbolicExecutionState() {
     fun addConstraint(c: SymbolicConstraint): SymbolicExecutionState =
         SymbolicExecutionState(constraints.add(StoreApplConstraint.create(store, c)), store)
 
-    fun addAssignment(s: Symbol, e: SymbolicExpression) =
+    fun addAssignment(s: LocalVariable, e: SymbolicExpression) =
         SymbolicExecutionState(
             constraints, SymbolicStoreSimplifier.simplify(
                 ParallelStore.create(

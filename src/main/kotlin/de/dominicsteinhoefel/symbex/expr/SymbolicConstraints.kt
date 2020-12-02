@@ -208,7 +208,7 @@ class And private constructor(val left: SymbolicConstraint, val right: SymbolicC
     }
 }
 
-class SymbolReplaceConstrVisitor(val replMap: Map<Symbol, SymbolicExpression>) :
+class SymbolReplaceConstrVisitor(val replMap: Map<LocalVariable, SymbolicExpression>) :
     SymbolicConstraintVisitor<SymbolicConstraint> {
     override fun visit(c: True): SymbolicConstraint = c
     override fun visit(c: False): SymbolicConstraint = c

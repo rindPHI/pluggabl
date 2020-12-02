@@ -31,6 +31,20 @@ class SimpleMethods {
         return test
     }
 
+    private var input = 0
+    private var test = 0
+    fun simpleTwoBranchedMethodWithMergeFieldAccess() {
+        test = input++
+
+        if (test == 42) {
+            test += 2
+        } else {
+            test += 3
+        }
+
+        test += 4
+    }
+
     fun simpleLoop(input: Int): Int {
         var result = input
         if (input < 0) {

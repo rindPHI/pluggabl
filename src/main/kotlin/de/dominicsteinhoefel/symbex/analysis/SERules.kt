@@ -2,6 +2,7 @@ package de.dominicsteinhoefel.symbex.analysis
 
 import de.dominicsteinhoefel.symbex.expr.*
 import org.slf4j.LoggerFactory
+import soot.jimple.ArithmeticConstant
 import soot.jimple.Stmt
 import soot.jimple.internal.*
 
@@ -12,13 +13,13 @@ interface SERule {
 
 object AssignRule : SERule {
     override fun accepts(stmt: Stmt, inpStates: List<SymbolicExecutionState>) =
-        stmt is JAssignStmt
+        stmt is JAssignStmt && ExprConverter.isSimpleExpression(stmt.rightOp)
 
     override fun apply(stmt: Stmt, inpStates: List<SymbolicExecutionState>) =
         (stmt as JAssignStmt).let {
             listOf(
                 SymbolicExecutionState.merge(inpStates).addAssignment(
-                    ExprConverter.convert(it.leftOp) as Symbol,
+                    ExprConverter.convert(it.leftOp) as LocalVariable,
                     ExprConverter.convert(it.rightOp)
                 )
             )

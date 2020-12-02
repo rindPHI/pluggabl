@@ -32,7 +32,7 @@ object TypeConverter {
 
 interface SymbolicExpressionsVisitor<T> {
     fun visit(e: IntValue): T
-    fun visit(e: Symbol): T
+    fun visit(e: LocalVariable): T
     fun visit(e: StoreApplExpression): T
     fun visit(e: ConditionalExpression): T
     fun visit(e: AdditionExpr): T
@@ -63,7 +63,7 @@ interface BinarySymbolicExpression {
     fun right(): SymbolicExpression
 }
 
-class Symbol(
+class LocalVariable(
     val name: String,
     val type: Type
 ) : SymbolicExpression() {
@@ -71,8 +71,8 @@ class Symbol(
     override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
 
     override fun toString() = name
-    override fun hashCode() = Objects.hash(Symbol::class, name, type)
-    override fun equals(other: Any?) = (other as? Symbol).let { it?.name == name && it.type == type }
+    override fun hashCode() = Objects.hash(LocalVariable::class, name, type)
+    override fun equals(other: Any?) = (other as? LocalVariable).let { it?.name == name && it.type == type }
 }
 
 class StoreApplExpression private constructor(val applied: SymbolicStore, val target: SymbolicExpression) :
@@ -167,7 +167,7 @@ class LengthExpression(val of: SymbolicExpression) : SymbolicExpression() {
     override fun equals(other: Any?) = (other as? LengthExpression)?.of == of
 }
 
-class ArrayReference(val array: Symbol, val index: SymbolicExpression) : SymbolicExpression() {
+class ArrayReference(val array: LocalVariable, val index: SymbolicExpression) : SymbolicExpression() {
     init {
         assert(index.type() == INT_TYPE)
     }
@@ -200,16 +200,30 @@ class MethodInvocationExpression(
 }
 
 object ExprConverter {
-    val logger = LoggerFactory.getLogger(ExprConverter::class.simpleName)
+    private val logger = LoggerFactory.getLogger(ExprConverter::class.simpleName)
+
+    /**
+     * Simple expressions are constant values, local variables, or
+     * composed arithmetic expressions of simple expressions. The latter
+     * case is possible since field accesses are decomposed by the
+     * conversion to Jimple; in the KeY system, for instance, more
+     * complex decomposition rules are necessary and simple expressions
+     * are only constants or variables.
+     */
+    fun isSimpleExpression(value: soot.Value): Boolean =
+        when (value) {
+            is JimpleLocal, is IntConstant, is JAddExpr, is JMulExpr -> true
+            else -> false
+        }
 
     fun convert(value: soot.Value): SymbolicExpression =
         when (value) {
-            is JimpleLocal -> Symbol(value.name, TypeConverter.convert(value.getType()))
+            is JimpleLocal -> LocalVariable(value.name, TypeConverter.convert(value.getType()))
             is IntConstant -> IntValue(value.value)
             is JAddExpr -> AdditionExpr(convert(value.op1), convert(value.op2))
             is JMulExpr -> MultiplicationExpr(convert(value.op1), convert(value.op2))
             is JLengthExpr -> LengthExpression(convert(value.op))
-            is JArrayRef -> ArrayReference(convert(value.base) as Symbol, convert(value.index))
+            is JArrayRef -> ArrayReference(convert(value.base) as LocalVariable, convert(value.index))
             is JVirtualInvokeExpr -> {
                 logger.warn("Treating method ${value.methodRef} as pure")
                 MethodInvocationExpression(
@@ -224,10 +238,10 @@ object ExprConverter {
         }
 }
 
-class SymbolReplaceExprVisitor(val replMap: Map<Symbol, SymbolicExpression>) :
+class SymbolReplaceExprVisitor(val replMap: Map<LocalVariable, SymbolicExpression>) :
     SymbolicExpressionsVisitor<SymbolicExpression> {
     override fun visit(e: IntValue): SymbolicExpression = e
-    override fun visit(e: Symbol): SymbolicExpression = replMap[e] ?: e
+    override fun visit(e: LocalVariable): SymbolicExpression = replMap[e] ?: e
 
     override fun visit(e: ConditionalExpression): SymbolicExpression =
         ConditionalExpression.create(
@@ -246,7 +260,7 @@ class SymbolReplaceExprVisitor(val replMap: Map<Symbol, SymbolicExpression>) :
         LengthExpression(e.of.accept(this))
 
     override fun visit(e: ArrayReference): SymbolicExpression =
-        ArrayReference(e.array.accept(this) as Symbol, e.index.accept(this))
+        ArrayReference(e.array.accept(this) as LocalVariable, e.index.accept(this))
 
     override fun visit(e: MethodInvocationExpression): SymbolicExpression =
         MethodInvocationExpression(
