@@ -1,6 +1,8 @@
 package de.dominicsteinhoefel.symbex
 
 import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.compareLeaves
+import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.printLeafSESs
+import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.printSESs
 import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.symbex.expr.*
 import junit.framework.Assert.fail
@@ -110,7 +112,7 @@ class SimpleSymbolicExecutionAnalysisTests {
     fun testSimpleLoop() {
         val sInput = LocalVariable("input", INT_TYPE)
         val sI = LocalVariable("i", INT_TYPE)
-        val sIAnonLoop = LocalVariable("i_ANON_LOOP", INT_TYPE)
+        val sIAnonLoop = FunctionApplication(FunctionSymbol("i_ANON_LOOP", INT_TYPE, emptyList()), emptyList())
         val sResult = LocalVariable("result", INT_TYPE)
         val conditional = ConditionalExpression.create(
             GreaterEqualConstr(sInput, IntValue(0)),
@@ -120,13 +122,6 @@ class SimpleSymbolicExecutionAnalysisTests {
 
         val expected = listOf(
             SymbolicExecutionState(
-                SymbolicConstraintSet.from(NegatedConstr.create(GreaterEqualConstr(sIAnonLoop, conditional))),
-                ParallelStore.create(
-                    ElementaryStore(sResult, conditional),
-                    ElementaryStore(sI, AdditionExpr(sIAnonLoop, IntValue(1)))
-                )
-            ),
-            SymbolicExecutionState(
                 SymbolicConstraintSet.from(GreaterEqualConstr(sIAnonLoop, conditional)),
                 ParallelStore.create(
                     ElementaryStore(sResult, conditional),
@@ -135,12 +130,12 @@ class SimpleSymbolicExecutionAnalysisTests {
             )
         )
 
-        fail("Loop analysis not yet implemented.")
+        val analysis = SymbolicExecutionAnalysis(
+            "de.dominicsteinhoefel.symbex.SimpleMethods",
+            "int simpleLoop(int)"
+        )
 
-//        symbolicallyExecuteMethod(
-//            "de.dominicsteinhoefel.symbex.SimpleMethods",
-//            "int simpleLoop(int)",
-//            compareLeaves(expected)
-//        )
+        analysis.symbolicallyExecute()
+        compareLeaves(expected, analysis)
     }
 }

@@ -26,6 +26,7 @@ object SymbolicStoreSimplifier {
     fun simplify(expression: SymbolicExpression): SymbolicExpression =
         when (expression) {
             is Value, is LocalVariable -> expression
+            is FunctionApplication -> FunctionApplication(expression.f, expression.args.map{ simplify(it) })
             is ConditionalExpression -> ConditionalExpression.create(
                 simplify(expression.condition),
                 simplify(expression.vThen),

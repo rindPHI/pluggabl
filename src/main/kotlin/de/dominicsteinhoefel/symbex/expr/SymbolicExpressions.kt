@@ -24,7 +24,7 @@ object TypeConverter {
             is IntType -> INT_TYPE
             is CharType -> CHAR_TYPE
             is soot.RefType -> ReferenceType(type.className)
-            is soot.ArrayType -> ArrayType(TypeConverter.convert(type.baseType))
+            is soot.ArrayType -> ArrayType(convert(type.baseType))
             else -> TODO("Conversion of type $type not yet implemented.")
         }
     }
@@ -33,6 +33,7 @@ object TypeConverter {
 interface SymbolicExpressionsVisitor<T> {
     fun visit(e: IntValue): T
     fun visit(e: LocalVariable): T
+    fun visit(e: FunctionApplication): T
     fun visit(e: StoreApplExpression): T
     fun visit(e: ConditionalExpression): T
     fun visit(e: AdditionExpr): T
@@ -73,6 +74,29 @@ class LocalVariable(
     override fun toString() = name
     override fun hashCode() = Objects.hash(LocalVariable::class, name, type)
     override fun equals(other: Any?) = (other as? LocalVariable).let { it?.name == name && it.type == type }
+}
+
+class FunctionSymbol(
+    val name: String,
+    val type: Type,
+    val paramTypes: List<Type>
+) {
+    override fun toString() = "$type $name(${paramTypes.joinToString(", ")})"
+    override fun hashCode() = Objects.hash(FunctionSymbol::class, name, type, paramTypes)
+    override fun equals(other: Any?) =
+        (other as? FunctionSymbol).let { it?.name == name && it.type == type && it.paramTypes == paramTypes }
+}
+
+class FunctionApplication(
+    val f: FunctionSymbol,
+    val args: List<SymbolicExpression>
+) : SymbolicExpression() {
+    override fun type() = f.type
+    override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
+
+    override fun toString() = "${f.name}(${args.joinToString(", ")})"
+    override fun hashCode() = Objects.hash(FunctionApplication::class, f, args)
+    override fun equals(other: Any?) = (other as? FunctionApplication).let { it?.f == f && it.args == args }
 }
 
 class StoreApplExpression private constructor(val applied: SymbolicStore, val target: SymbolicExpression) :
@@ -242,6 +266,9 @@ class SymbolReplaceExprVisitor(val replMap: Map<LocalVariable, SymbolicExpressio
     SymbolicExpressionsVisitor<SymbolicExpression> {
     override fun visit(e: IntValue): SymbolicExpression = e
     override fun visit(e: LocalVariable): SymbolicExpression = replMap[e] ?: e
+
+    override fun visit(e: FunctionApplication): SymbolicExpression =
+        FunctionApplication(e.f, e.args.map{ it.accept(this) })
 
     override fun visit(e: ConditionalExpression): SymbolicExpression =
         ConditionalExpression.create(
