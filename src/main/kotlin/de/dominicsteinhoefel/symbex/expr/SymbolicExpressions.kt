@@ -262,13 +262,43 @@ object ExprConverter {
         }
 }
 
+class LocalVariableExpressionCollector() : SymbolicExpressionsVisitor<Set<LocalVariable>> {
+    override fun visit(e: IntValue) = emptySet<LocalVariable>()
+
+    override fun visit(e: LocalVariable) = setOf(e)
+
+    override fun visit(e: FunctionApplication) = e.args.map { it.accept(this) }.flatten().toSet()
+
+    override fun visit(e: StoreApplExpression) =
+        listOf(e.applied.accept(LocalVariableStoreCollector()), e.target.accept(this)).flatten().toSet()
+
+    override fun visit(e: ConditionalExpression) =
+        listOf(
+            e.condition.accept(LocalVariableConstraintCollector()),
+            e.vThen.accept(this),
+            e.vElse.accept(this)
+        ).flatten().toSet()
+
+    override fun visit(e: AdditionExpr) = listOf(e.left.accept(this), e.right.accept(this)).flatten().toSet()
+
+    override fun visit(e: MultiplicationExpr) = listOf(e.left.accept(this), e.right.accept(this)).flatten().toSet()
+
+    override fun visit(e: LengthExpression) = e.of.accept(this)
+
+    override fun visit(e: ArrayReference) = listOf(listOf(e.array), e.index.accept(this)).flatten().toSet()
+
+    override fun visit(e: MethodInvocationExpression) =
+        listOf(e.obj.accept(this), e.args.map { it.accept(this) }.flatten()).flatten().toSet()
+
+}
+
 class SymbolReplaceExprVisitor(val replMap: Map<LocalVariable, SymbolicExpression>) :
     SymbolicExpressionsVisitor<SymbolicExpression> {
     override fun visit(e: IntValue): SymbolicExpression = e
     override fun visit(e: LocalVariable): SymbolicExpression = replMap[e] ?: e
 
     override fun visit(e: FunctionApplication): SymbolicExpression =
-        FunctionApplication(e.f, e.args.map{ it.accept(this) })
+        FunctionApplication(e.f, e.args.map { it.accept(this) })
 
     override fun visit(e: ConditionalExpression): SymbolicExpression =
         ConditionalExpression.create(

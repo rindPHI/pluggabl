@@ -1,12 +1,8 @@
 package de.dominicsteinhoefel.symbex
 
 import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.compareLeaves
-import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.printLeafSESs
-import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.printSESs
 import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.symbex.expr.*
-import junit.framework.Assert.fail
-import org.junit.Assert
 import org.junit.Test
 
 class SimpleSymbolicExecutionAnalysisTests {
@@ -37,7 +33,7 @@ class SimpleSymbolicExecutionAnalysisTests {
             )
         )
 
-        val analysis = SymbolicExecutionAnalysis(
+        val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.symbex.SimpleMethods",
             "int simpleTwoBranchedMethod(int)"
         )
@@ -68,7 +64,7 @@ class SimpleSymbolicExecutionAnalysisTests {
             )
         )
 
-        val analysis = SymbolicExecutionAnalysis(
+        val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.symbex.SimpleMethods",
             "int simpleTwoBranchedMethodWithMerge(int)"
         )
@@ -99,7 +95,7 @@ class SimpleSymbolicExecutionAnalysisTests {
             )
         )
 
-        val analysis = SymbolicExecutionAnalysis(
+        val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.symbex.SimpleMethods",
             "void simpleTwoBranchedMethodWithMergeFieldAccess()"
         )
@@ -112,13 +108,17 @@ class SimpleSymbolicExecutionAnalysisTests {
     fun testSimpleLoop() {
         val sInput = LocalVariable("input", INT_TYPE)
         val sI = LocalVariable("i", INT_TYPE)
-        val sIAnonLoop = FunctionApplication(FunctionSymbol("i_ANON_LOOP", INT_TYPE, emptyList()), emptyList())
         val sResult = LocalVariable("result", INT_TYPE)
         val conditional = ConditionalExpression.create(
             GreaterEqualConstr(sInput, IntValue(0)),
             sInput,
             MultiplicationExpr(sInput, IntValue(-1))
         )
+        val sIAnonLoop =
+            FunctionApplication(
+                FunctionSymbol("i_ANON_LOOP", INT_TYPE, listOf(INT_TYPE, INT_TYPE)),
+                listOf(IntValue(0), conditional)
+            )
 
         val expected = listOf(
             SymbolicExecutionState(
@@ -130,7 +130,7 @@ class SimpleSymbolicExecutionAnalysisTests {
             )
         )
 
-        val analysis = SymbolicExecutionAnalysis(
+        val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.symbex.SimpleMethods",
             "int simpleLoop(int)"
         )

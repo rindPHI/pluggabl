@@ -264,3 +264,29 @@ object ConstrConverter {
             else -> TODO("Conversion of type ${value.javaClass} to SymbolicConstraint not yet implemented.")
         }
 }
+
+class LocalVariableConstraintCollector() : SymbolicConstraintVisitor<Set<LocalVariable>> {
+    override fun visit(c: True) = emptySet<LocalVariable>()
+    override fun visit(c: False) = emptySet<LocalVariable>()
+    override fun visit(c: NegatedConstr) = c.constr.accept(this)
+    override fun visit(c: Or) = listOf(c.left.accept(this), c.right.accept(this)).flatten().toSet()
+    override fun visit(c: And) = listOf(c.left.accept(this), c.right.accept(this)).flatten().toSet()
+
+    override fun visit(c: GreaterConstr) =
+        LocalVariableExpressionCollector().let {
+            listOf(c.left.accept(it), c.right.accept(it)).flatten().toSet()
+        }
+
+    override fun visit(c: EqualityConstr) =
+        LocalVariableExpressionCollector().let {
+            listOf(c.left.accept(it), c.right.accept(it)).flatten().toSet()
+        }
+
+    override fun visit(c: GreaterEqualConstr) =
+        LocalVariableExpressionCollector().let {
+            listOf(c.left.accept(it), c.right.accept(it)).flatten().toSet()
+        }
+
+    override fun visit(c: StoreApplConstraint) =
+        listOf(c.applied.accept(LocalVariableStoreCollector()), c.target.accept(this)).flatten().toSet()
+}

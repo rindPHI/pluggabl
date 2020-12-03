@@ -12,6 +12,8 @@ class SymbolicExecutionState() {
         this.store = store
     }
 
+    fun isEmpty() = constraints.isEmpty() && store === EmptyStore
+
     fun addConstraint(c: SymbolicConstraint): SymbolicExecutionState =
         SymbolicExecutionState(constraints.add(StoreApplConstraint.create(store, c)), store)
 

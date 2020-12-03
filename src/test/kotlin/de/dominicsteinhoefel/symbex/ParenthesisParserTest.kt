@@ -10,7 +10,7 @@ class ParenthesisParserTest {
 
     @Test
     fun testParenthesisParserAnalysis() {
-        val analysis = SymbolicExecutionAnalysis(
+        val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.symbex.ParenthesisParser",
             "int parse(java.lang.Character[])"
         )

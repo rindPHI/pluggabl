@@ -30,6 +30,8 @@ class SootBridge {
             // Add a line like the following when using JRE classes in the future:
             // Scene.v().addBasicClass("java.lang.System", SootClass.SIGNATURES);
 
+            Scene.v().addBasicClass("java.lang.RuntimeException", SootClass.SIGNATURES);
+
             Main.main(arrayOf(clazz))
 
             return body
