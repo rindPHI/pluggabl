@@ -12,6 +12,11 @@ object SymbolicExecutionTestHelper {
         assertThat(results, `is`(expected))
     }
 
+    fun compareLoopLeaves(expected: List<SymbolicExecutionState>, a: SymbolicExecutionAnalysis) {
+        val results = a.getLoopLeafSESs().values.toList()
+        assertThat(results, `is`(expected))
+    }
+
     fun printSESs(a: SymbolicExecutionAnalysis) {
         for (node in a.cfg) {
             println("Node \"$node\":")

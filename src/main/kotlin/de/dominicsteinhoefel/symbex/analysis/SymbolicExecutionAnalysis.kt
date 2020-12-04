@@ -8,12 +8,14 @@ import org.slf4j.LoggerFactory
 import soot.Body
 import soot.G
 import soot.Local
+import soot.Value
 import soot.jimple.Stmt
 import soot.jimple.toolkits.annotation.logic.Loop
 import soot.jimple.toolkits.annotation.logic.LoopFinder
 import soot.toolkits.graph.ExceptionalUnitGraph
 import java.util.*
 import kotlin.collections.HashMap
+import kotlin.collections.LinkedHashMap
 import kotlin.collections.LinkedHashSet
 
 class SymbolicExecutionAnalysis private constructor(
@@ -27,7 +29,8 @@ class SymbolicExecutionAnalysis private constructor(
     private val stmtToInputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
     private val stmtToOutputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
     private val newNamesCreator = NewNamesCreator()
-    private val loops: Set<Loop> = LoopFinder().getLoops(body)
+    private val loops = LoopFinder().getLoops(body)
+    private val loopLeafSESMap = LinkedHashMap<Loop, SymbolicExecutionState>()
 
     private val rules = arrayOf(AssignRule, IfRule, LeafRule, DummyRule, IgnoreAndWarnRule)
 
@@ -55,6 +58,7 @@ class SymbolicExecutionAnalysis private constructor(
 
     fun getInputSESs(node: Stmt) = stmtToInputSESMap[node] ?: emptyList()
     fun getOutputSESs(node: Stmt) = stmtToOutputSESMap[node] ?: emptyList()
+    fun getLoopLeafSESs() = loopLeafSESMap.toMap()
 
     fun symbolicallyExecute() {
         val queue = LinkedList<Stmt>()
@@ -133,11 +137,14 @@ class SymbolicExecutionAnalysis private constructor(
     }
 
     private fun executeLoopAndAnonymize(loop: Loop) {
-        val writtenVars = loop.loopStatements.map { it.defBoxes }.flatten().map { it.value }
-
-        if (writtenVars.any { it !is Local }) {
-            throw NotImplementedError("Anonymization of written heap locations currently not implemented")
-        }
+        val writtenVars = loop.loopStatements.asSequence().map { it.defBoxes }.flatten().map { it.value }
+            .map {
+                if (it !is Local) {
+                    throw NotImplementedError("Anonymization of written heap locations currently not implemented")
+                }
+                it
+            }
+            .map { ExprConverter.convert(it) as LocalVariable }.toList()
 
         val loopAnalysis = SymbolicExecutionAnalysis(
             body,
@@ -160,43 +167,94 @@ class SymbolicExecutionAnalysis private constructor(
         )
 
         val initState = SymbolicExecutionState.merge(stmtToInputSESMap[loop.head] ?: emptyList())
+        val loopIdx = loops.indexOf(loop)
+        val loopCntVar = LocalVariable(newNamesCreator.newName("itCnt_LOOP_$loopIdx"), INT_TYPE)
 
-        val anonymizingStore =
-            writtenVars.map { ExprConverter.convert(it) as LocalVariable }
-                .associateWith { writtenVar ->
-                    val relVars = variablesRelevantFor(writtenVar, initState, resultState)
-                    FunctionApplication(
-                        FunctionSymbol(
-                            newNamesCreator.newName(writtenVar.name + "_ANON_LOOP"),
-                            writtenVar.type,
-                            relVars.map { it.type }
-                        ),
-                        relVars.toList()
-                    )
-                }.map { ElementaryStore(it.key, it.value) }
-                .fold(EmptyStore as SymbolicStore,
-                    { acc, elem -> ParallelStore.create(acc, elem) })
+        val anonymizingState =
+            SymbolicExecutionState(
+                emptySet(),
+                createAnonymizingLoopStore(writtenVars, loopCntVar, initState, resultState, "_ANON_LOOP_$loopIdx")
+            )
 
-        val anonymizingState = SymbolicExecutionState(emptySet(), anonymizingStore)
+        val allRelevantLoopVariables =
+            writtenVars.map { variablesRelevantFor(it, initState, resultState) }.flatten()
 
-        for (stmt in loop.loopStatements) {
-            val loopAnalysisInputSESs =
-                if (stmt == loop.head) listOf(SymbolicExecutionState()) // Remove back-propagated state
-                else loopAnalysis.getInputSESs(stmt)
+        val iterationNumberFunctionApp = FunctionApplication(
+            FunctionSymbol(
+                newNamesCreator.newName("iterations_LOOP_$loopIdx"),
+                INT_TYPE,
+                allRelevantLoopVariables.map { it.type }
+            ),
+            allRelevantLoopVariables
+        )
+
+        val anonymizingFinalState =
+            SymbolicExecutionState(
+                emptySet(),
+                createAnonymizingLoopStore(
+                    writtenVars, iterationNumberFunctionApp, initState, resultState, "_AFTER_LOOP_$loopIdx"
+                )
+            )
+
+        // Set SESs for loop head and propagate to its non-loop successors
+        stmtToInputSESMap[loop.head] = listOf(anonymizingState.apply(initState).simplify())
+        stmtToOutputSESMap[loop.head] =
+            loopAnalysis.getOutputSESs(loop.head).map { it.apply(anonymizingFinalState).apply(initState).simplify() }
+        propagateResultStateToSuccs(
+            loop.head,
+            stmtToOutputSESMap[loop.head]?.subList(1, stmtToOutputSESMap[loop.head]?.size ?: 0) ?: emptyList(),
+            loop.loopStatements
+        )
+
+        // Save loop leaf state, to be able to later check correctness
+        // of substituted invariants
+        loopLeafSESMap[loop] = SymbolicExecutionState.merge(
+            loopAnalysis.stmtToInputSESMap[loop.head]?.subList(
+                1,
+                loopAnalysis.stmtToOutputSESMap[loop.head]?.size ?: 0
+            ) ?: emptyList()
+        ).apply(anonymizingState.apply(initState)).simplify()
+
+
+        for (stmt in loop.loopStatements.filterNot(loop.head::equals)) {
             stmtToInputSESMap[stmt] =
-                loopAnalysisInputSESs.map { it.apply(anonymizingState).apply(initState).simplify() }
-            stmtToOutputSESMap[stmt] =
-                loopAnalysis.getOutputSESs(stmt).map { it.apply(anonymizingState).apply(initState).simplify() }
+                loopAnalysis.getInputSESs(stmt).map { it.apply(anonymizingState).apply(initState).simplify() }
 
             if (loop.loopExits.contains(stmt)) {
+                stmtToOutputSESMap[stmt] =
+                    loopAnalysis.getOutputSESs(stmt).map { it.apply(anonymizingFinalState).apply(initState).simplify() }
+
                 propagateResultStateToSuccs(
                     stmt,
-                    stmtToOutputSESMap[stmt]?.reversed() ?: emptyList(),
+                    stmtToOutputSESMap[stmt] ?: emptyList(),
                     loop.loopStatements
                 )
+            } else {
+                stmtToOutputSESMap[stmt] =
+                    loopAnalysis.getOutputSESs(stmt).map { it.apply(anonymizingState).apply(initState).simplify() }
             }
         }
     }
+
+    private fun createAnonymizingLoopStore(
+        writtenVars: List<LocalVariable>,
+        iterationCounter: SymbolicExpression,
+        initState: SymbolicExecutionState,
+        resultState: SymbolicExecutionState,
+        nameSuffix: String
+    ) = writtenVars.associateWith { writtenVar ->
+        val relVars = variablesRelevantFor(writtenVar, initState, resultState)
+        FunctionApplication(
+            FunctionSymbol(
+                newNamesCreator.newName(writtenVar.name + nameSuffix),
+                writtenVar.type,
+                listOf(listOf(iterationCounter.type()), relVars.map { it.type }).flatten()
+            ),
+            listOf(listOf(iterationCounter), relVars).flatten()
+        )
+    }.map { ElementaryStore(it.key, it.value) }
+        .fold(EmptyStore as SymbolicStore,
+            { acc, elem -> ParallelStore.create(acc, elem) })
 
     private fun variablesRelevantFor(
         lv: LocalVariable,

@@ -1,6 +1,7 @@
 package de.dominicsteinhoefel.symbex
 
 import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.compareLeaves
+import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.compareLoopLeaves
 import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.symbex.expr.*
 import org.junit.Test
@@ -114,18 +115,46 @@ class SimpleSymbolicExecutionAnalysisTests {
             sInput,
             MultiplicationExpr(sInput, IntValue(-1))
         )
-        val sIAnonLoop =
+
+        val sILoopResult =
             FunctionApplication(
-                FunctionSymbol("i_ANON_LOOP", INT_TYPE, listOf(INT_TYPE, INT_TYPE)),
-                listOf(IntValue(0), conditional)
+                FunctionSymbol("i_AFTER_LOOP_0", INT_TYPE, listOf(INT_TYPE, INT_TYPE, INT_TYPE)),
+                listOf(
+                    FunctionApplication(
+                        FunctionSymbol("iterations_LOOP_0", INT_TYPE, listOf(INT_TYPE, INT_TYPE)),
+                        listOf(IntValue(0), conditional)
+                    ),
+                    IntValue(0),
+                    conditional
+                )
             )
 
-        val expected = listOf(
+        val expectedLeaves = listOf(
             SymbolicExecutionState(
-                SymbolicConstraintSet.from(GreaterEqualConstr(sIAnonLoop, conditional)),
+                SymbolicConstraintSet.from(GreaterEqualConstr(sILoopResult, conditional)),
                 ParallelStore.create(
                     ElementaryStore(sResult, conditional),
-                    ElementaryStore(sI, sIAnonLoop)
+                    ElementaryStore(sI, sILoopResult)
+                )
+            )
+        )
+
+        val sIAnonLoop =
+            FunctionApplication(
+                FunctionSymbol("i_ANON_LOOP_0", INT_TYPE, listOf(INT_TYPE, INT_TYPE, INT_TYPE)),
+                listOf(
+                    LocalVariable("itCnt_LOOP_0", INT_TYPE),
+                    IntValue(0),
+                    conditional
+                )
+            )
+
+        val expectedLoopLeaves = listOf(
+            SymbolicExecutionState(
+                SymbolicConstraintSet.from(NegatedConstr.create(GreaterEqualConstr(sIAnonLoop, conditional))),
+                ParallelStore.create(
+                    ElementaryStore(sResult, conditional),
+                    ElementaryStore(sI, AdditionExpr(sIAnonLoop, IntValue(1)))
                 )
             )
         )
@@ -136,6 +165,7 @@ class SimpleSymbolicExecutionAnalysisTests {
         )
 
         analysis.symbolicallyExecute()
-        compareLeaves(expected, analysis)
+        compareLeaves(expectedLeaves, analysis)
+        compareLoopLeaves(expectedLoopLeaves, analysis)
     }
 }
