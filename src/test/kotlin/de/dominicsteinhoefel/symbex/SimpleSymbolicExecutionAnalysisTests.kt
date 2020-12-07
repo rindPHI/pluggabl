@@ -170,8 +170,12 @@ class SimpleSymbolicExecutionAnalysisTests {
         compareLoopLeaves(expectedLoopLeaves, analysis)
     }
 
+    // TODO: Add test case for nested loop, maybe even w/ labeled break
+
     @Test
     fun testSimpleLoopWithContinueAndBreak() {
+        //TODO: Update tests
+
         val sInput = LocalVariable("input", INT_TYPE)
         val sI = LocalVariable("i", INT_TYPE)
         val sResult = LocalVariable("result", INT_TYPE)
