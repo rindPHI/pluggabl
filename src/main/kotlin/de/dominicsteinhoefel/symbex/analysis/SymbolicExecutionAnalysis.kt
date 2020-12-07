@@ -9,6 +9,8 @@ import soot.Body
 import soot.G
 import soot.Local
 import soot.Value
+import soot.jimple.GotoStmt
+import soot.jimple.IfStmt
 import soot.jimple.Stmt
 import soot.jimple.toolkits.annotation.logic.Loop
 import soot.jimple.toolkits.annotation.logic.LoopFinder
@@ -73,9 +75,15 @@ class SymbolicExecutionAnalysis private constructor(
         while (!queue.isEmpty()) {
             val currStmt = queue.pop()
 
+            if (stopAtNodes.contains(currStmt)) {
+                continue
+            }
+
             val assocLoop = loops.filter { it.head == currStmt }.let { if (it.size == 1) it[0] else null }
 
-            if (assocLoop != null && !(ignoreTopLoop && assocLoop.head == root)) {
+            val stmtIsHeadOfAnalyzedLoop = ignoreTopLoop && assocLoop?.head == root
+
+            if (assocLoop != null && !stmtIsHeadOfAnalyzedLoop) {
                 executeLoopAndAnonymize(assocLoop)
                 queue.addAll(assocLoop.loopExits.map { cfg.getSuccsOf(it) }.flatten().map { it as Stmt }
                     .filterNot(assocLoop.loopStatements::contains))
@@ -84,7 +92,7 @@ class SymbolicExecutionAnalysis private constructor(
 
             val inputStates = (stmtToInputSESMap[currStmt] ?: emptyList())
 
-            if (cfg.getPredsOf(currStmt).size - (if (assocLoop != null) 1 else 0) > inputStates.size) {
+            if (cfg.getPredsOf(currStmt).size > inputStates.size && !stmtIsHeadOfAnalyzedLoop) {
                 // Evaluation of predecessors not yet finished
                 logger.trace(
                     "Postponing evaluation of statement ${currStmt}, " +
@@ -92,6 +100,7 @@ class SymbolicExecutionAnalysis private constructor(
                 )
 
                 queue.addLast(currStmt)
+                continue
             }
 
             val rule = getApplicableRule(currStmt, inputStates)
@@ -107,16 +116,13 @@ class SymbolicExecutionAnalysis private constructor(
             stmtToOutputSESMap[currStmt] = result
 
             // Only propagate result state if currStmt is no back edge to a loop header
-            if (!loops.any { it.backJumpStmt == currStmt }) {
+            if (!(currStmt is GotoStmt && loops.any { it.head == currStmt.target })) {
                 propagateResultStateToSuccs(currStmt, result)
-
-                if (!stopAtNodes.contains(currStmt)) {
-                    cfg.getSuccsOf(currStmt).map { it as Stmt }.forEach(queue::addLastDistinct)
-                }
+                cfg.getSuccsOf(currStmt).map { it as Stmt }.forEach(queue::addLastDistinct)
             }
 
             // But propagate if we're currently doing a loop analysis
-            if (ignoreTopLoop && loops.any { it.backJumpStmt == currStmt && it.head == root }) {
+            if (ignoreTopLoop && (currStmt is GotoStmt && loops.any { it.head == currStmt.target && it.head == root })) {
                 propagateResultStateToSuccs(currStmt, result)
             }
         }
@@ -137,6 +143,10 @@ class SymbolicExecutionAnalysis private constructor(
     }
 
     private fun executeLoopAndAnonymize(loop: Loop) {
+        val loopIdx = loops.indexOf(loop)
+
+        logger.trace("Analyzing loop ${loopIdx + 1}")
+
         val writtenVars = loop.loopStatements.asSequence().map { it.defBoxes }.flatten().map { it.value }
             .map {
                 if (it !is Local) {
@@ -144,30 +154,30 @@ class SymbolicExecutionAnalysis private constructor(
                 }
                 it
             }
-            .map { ExprConverter.convert(it) as LocalVariable }.toList()
+            .map { ExprConverter.convert(it) as LocalVariable }.toSet().toList()
+
+        val stmtsAfterExit = loop.loopExits.map {
+            if (it is GotoStmt) it.target else {
+                if (it is IfStmt) it.target else null
+            }
+        }.filterNot { it == null }.filterNot { loop.loopStatements.contains(it) }.map { it as Stmt }
 
         val loopAnalysis = SymbolicExecutionAnalysis(
             body,
             loop.head,
-            listOf(
-                loop.loopExits.toList().filterNot(loop.head::equals),
-                cfg.getSuccsOf(loop.head).map { it as Stmt }.filterNot(loop.loopStatements::contains)
-                //,listOf(loop.backJumpStmt)
-            ).flatten(),
+            stmtsAfterExit,
             true
         )
 
         loopAnalysis.symbolicallyExecute()
 
         // merge all states of all loop exits
-        // TODO: Check if this works as is for abrupt completion (breaks)
         val resultState = SymbolicExecutionState.merge(
             loopAnalysis.stmtToInputSESMap.filter { loop.loopExits.contains(it.key) }
                 .map { it.value }.flatten().filterNot(SymbolicExecutionState::isEmpty)
         )
 
         val initState = SymbolicExecutionState.merge(stmtToInputSESMap[loop.head] ?: emptyList())
-        val loopIdx = loops.indexOf(loop)
         val loopCntVar = LocalVariable(newNamesCreator.newName("itCnt_LOOP_$loopIdx"), INT_TYPE)
 
         val anonymizingState =
@@ -197,7 +207,7 @@ class SymbolicExecutionAnalysis private constructor(
             )
 
         // Set SESs for loop head and propagate to its non-loop successors
-        stmtToInputSESMap[loop.head] = listOf(anonymizingState.apply(initState).simplify())
+        //stmtToInputSESMap[loop.head] = listOf(anonymizingState.apply(initState).simplify())
         stmtToOutputSESMap[loop.head] =
             loopAnalysis.getOutputSESs(loop.head).map { it.apply(anonymizingFinalState).apply(initState).simplify() }
         propagateResultStateToSuccs(
@@ -221,6 +231,10 @@ class SymbolicExecutionAnalysis private constructor(
                 loopAnalysis.getInputSESs(stmt).map { it.apply(anonymizingState).apply(initState).simplify() }
 
             if (loop.loopExits.contains(stmt)) {
+                // For loop exits: Use parametrized function term for anonymization
+                // instead of loop iteration counter variable, and propagate results
+                // to successors.
+
                 stmtToOutputSESMap[stmt] =
                     loopAnalysis.getOutputSESs(stmt).map { it.apply(anonymizingFinalState).apply(initState).simplify() }
 
@@ -230,10 +244,15 @@ class SymbolicExecutionAnalysis private constructor(
                     loop.loopStatements
                 )
             } else {
+                // For non-exit loop statements, use the artificial loop counter variable
+                // for anonymization.
+
                 stmtToOutputSESMap[stmt] =
                     loopAnalysis.getOutputSESs(stmt).map { it.apply(anonymizingState).apply(initState).simplify() }
             }
         }
+
+        logger.trace("Done analyzing loop ${loopIdx + 1}")
     }
 
     private fun createAnonymizingLoopStore(
