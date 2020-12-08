@@ -1,4 +1,4 @@
-package de.dominicsteinhoefel.symbex
+package de.dominicsteinhoefel.pluggabl
 
 class ParenthesisParser {
     fun parse(input: Array<Char>): Int {

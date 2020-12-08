@@ -1,4 +1,4 @@
-package de.dominicsteinhoefel.symbex.util
+package de.dominicsteinhoefel.pluggabl.util
 
 import soot.*
 

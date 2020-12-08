@@ -1,7 +1,7 @@
-package de.dominicsteinhoefel.symbex
+package de.dominicsteinhoefel.pluggabl
 
-import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.printLeafSESs
-import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionAnalysis
+import de.dominicsteinhoefel.pluggabl.SymbolicExecutionTestHelper.printLeafSESs
+import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import org.junit.Assert
 import org.junit.Test
 import soot.jimple.Stmt

@@ -1,7 +1,7 @@
-package de.dominicsteinhoefel.symbex
+package de.dominicsteinhoefel.pluggabl
 
-import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionAnalysis
-import de.dominicsteinhoefel.symbex.expr.SymbolicExecutionState
+import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
+import de.dominicsteinhoefel.pluggabl.expr.SymbolicExecutionState
 import org.junit.Assert.*
 import org.hamcrest.CoreMatchers.*
 import soot.jimple.Stmt

@@ -1,10 +1,10 @@
-package de.dominicsteinhoefel.symbex
+package de.dominicsteinhoefel.pluggabl
 
-import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.compareLeaves
-import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.compareLoopLeaves
-import de.dominicsteinhoefel.symbex.SymbolicExecutionTestHelper.printSESs
-import de.dominicsteinhoefel.symbex.analysis.SymbolicExecutionAnalysis
-import de.dominicsteinhoefel.symbex.expr.*
+import de.dominicsteinhoefel.pluggabl.SymbolicExecutionTestHelper.compareLeaves
+import de.dominicsteinhoefel.pluggabl.SymbolicExecutionTestHelper.compareLoopLeaves
+import de.dominicsteinhoefel.pluggabl.SymbolicExecutionTestHelper.printSESs
+import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
+import de.dominicsteinhoefel.pluggabl.expr.*
 import org.junit.Test
 
 class SimpleSymbolicExecutionAnalysisTests {

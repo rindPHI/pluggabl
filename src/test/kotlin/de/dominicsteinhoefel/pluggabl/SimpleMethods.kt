@@ -1,4 +1,4 @@
-package de.dominicsteinhoefel.symbex
+package de.dominicsteinhoefel.pluggabl
 
 class SimpleMethods {
     fun simpleTwoBranchedMethod(input: Int): Int {

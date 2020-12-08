@@ -1,4 +1,4 @@
-package de.dominicsteinhoefel.symbex.expr
+package de.dominicsteinhoefel.pluggabl.expr
 
 import org.slf4j.LoggerFactory
 import soot.CharType

@@ -1,6 +1,6 @@
-package de.dominicsteinhoefel.symbex.simplification
+package de.dominicsteinhoefel.pluggabl.simplification
 
-import de.dominicsteinhoefel.symbex.expr.*
+import de.dominicsteinhoefel.pluggabl.expr.*
 
 object SymbolicStoreSimplifier {
     fun simplify(store: SymbolicStore): SymbolicStore =

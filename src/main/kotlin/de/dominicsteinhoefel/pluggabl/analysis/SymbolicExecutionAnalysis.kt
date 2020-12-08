@@ -1,14 +1,13 @@
-package de.dominicsteinhoefel.symbex.analysis
+package de.dominicsteinhoefel.pluggabl.analysis
 
-import de.dominicsteinhoefel.symbex.expr.*
-import de.dominicsteinhoefel.symbex.util.NewNamesCreator
-import de.dominicsteinhoefel.symbex.util.SootBridge
+import de.dominicsteinhoefel.pluggabl.expr.*
+import de.dominicsteinhoefel.pluggabl.util.NewNamesCreator
+import de.dominicsteinhoefel.pluggabl.util.SootBridge
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import soot.Body
 import soot.G
 import soot.Local
-import soot.Value
 import soot.jimple.GotoStmt
 import soot.jimple.IfStmt
 import soot.jimple.Stmt

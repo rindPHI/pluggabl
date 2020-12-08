@@ -1,6 +1,6 @@
-package de.dominicsteinhoefel.symbex.expr
+package de.dominicsteinhoefel.pluggabl.expr
 
-import de.dominicsteinhoefel.symbex.simplification.SymbolicStoreSimplifier
+import de.dominicsteinhoefel.pluggabl.simplification.SymbolicStoreSimplifier
 import java.util.*
 
 class SymbolicExecutionState() {

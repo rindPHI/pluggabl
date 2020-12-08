@@ -1,4 +1,4 @@
-package de.dominicsteinhoefel.symbex.util
+package de.dominicsteinhoefel.pluggabl.util
 
 class NewNamesCreator {
     private val names = LinkedHashSet<String>()
