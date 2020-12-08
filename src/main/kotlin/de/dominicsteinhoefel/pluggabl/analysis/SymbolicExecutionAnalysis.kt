@@ -190,6 +190,7 @@ class SymbolicExecutionAnalysis private constructor(
         val allRelevantLoopVariables =
             writtenVars.map { variablesRelevantFor(it, initState, resultState) }.flatten()
 
+        // TODO: Could narrow down number of parameters for iteration counter when only considering input path conditions for loop head
         val iterationNumberFunctionApp = FunctionApplication(
             FunctionSymbol(
                 newNamesCreator.newName("iterations_LOOP_$loopIdx"),
@@ -208,7 +209,6 @@ class SymbolicExecutionAnalysis private constructor(
             )
 
         // Set SESs for loop head and propagate to its non-loop successors
-        //stmtToInputSESMap[loop.head] = listOf(anonymizingState.apply(initState).simplify())
         stmtToOutputSESMap[loop.head] =
             loopAnalysis.getOutputSESs(loop.head).map { it.apply(anonymizingFinalState).apply(initState).simplify() }
         propagateResultStateToSuccs(
