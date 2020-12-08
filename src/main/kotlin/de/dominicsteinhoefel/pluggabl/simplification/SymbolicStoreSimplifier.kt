@@ -1,55 +1,12 @@
 package de.dominicsteinhoefel.pluggabl.simplification
 
 import de.dominicsteinhoefel.pluggabl.expr.*
+import kotlin.collections.LinkedHashMap
+import kotlin.collections.LinkedHashSet
 
 object SymbolicStoreSimplifier {
     fun simplify(store: SymbolicStore): SymbolicStore =
         dropEffectlessElementaries(toParallelNormalForm(store), LinkedHashSet())
-
-    fun simplify(constraint: SymbolicConstraint): SymbolicConstraint =
-        when (constraint) {
-            is True, is False -> constraint
-            is NegatedConstr -> NegatedConstr.create(simplify(constraint.constr))
-            is And -> And.create(simplify(constraint.left), simplify(constraint.right))
-            is Or -> Or.create(simplify(constraint.left), simplify(constraint.right))
-            is GreaterConstr -> GreaterConstr(simplify(constraint.left), simplify(constraint.right))
-            is GreaterEqualConstr -> GreaterEqualConstr(simplify(constraint.left), simplify(constraint.right))
-            is EqualityConstr -> EqualityConstr.create(simplify(constraint.left), simplify(constraint.right))
-
-            is StoreApplConstraint -> {
-                val subst = storeToSubst(simplify(constraint.applied))
-                val visitor = SymbolReplaceConstrVisitor(subst)
-                simplify(constraint.target).accept(visitor)
-            }
-        }
-
-    fun simplify(expression: SymbolicExpression): SymbolicExpression =
-        when (expression) {
-            is Value, is LocalVariable -> expression
-            is FunctionApplication -> FunctionApplication(expression.f, expression.args.map{ simplify(it) })
-            is ConditionalExpression -> ConditionalExpression.create(
-                simplify(expression.condition),
-                simplify(expression.vThen),
-                simplify(expression.vElse)
-            )
-            is AdditionExpr -> AdditionExpr(simplify(expression.left), simplify(expression.right))
-            is MultiplicationExpr -> MultiplicationExpr(simplify(expression.left), simplify(expression.right))
-            is LengthExpression -> LengthExpression(simplify(expression.of))
-            is ArrayReference -> ArrayReference(expression.array, simplify(expression.index))
-            is MethodInvocationExpression -> MethodInvocationExpression(
-                simplify(expression.obj),
-                expression.method,
-                expression.declaringClass,
-                expression.type,
-                expression.args.map { simplify(it) }
-            )
-
-            is StoreApplExpression -> {
-                val subst = storeToSubst(simplify(expression.applied))
-                val visitor = SymbolReplaceExprVisitor(subst)
-                simplify(expression.target).accept(visitor)
-            }
-        }
 
     private fun dropEffectlessElementaries(
         store: SymbolicStore,
@@ -76,7 +33,7 @@ object SymbolicStoreSimplifier {
     private fun toParallelNormalForm(store: SymbolicStore): SymbolicStore =
         when (store) {
             is EmptyStore -> EmptyStore
-            is ElementaryStore -> ElementaryStore(store.lhs, simplify(store.rhs))
+            is ElementaryStore -> ElementaryStore(store.lhs, SymbolicExpressionSimplifier.applyStores(store.rhs))
             is ParallelStore -> ParallelStore.create(toParallelNormalForm(store.lhs), toParallelNormalForm(store.rhs))
             is StoreApplStore -> {
                 when (store.target) {

@@ -174,8 +174,6 @@ class SimpleSymbolicExecutionAnalysisTests {
 
     @Test
     fun testSimpleLoopWithContinueAndBreak() {
-        //TODO: Update tests
-
         val sInput = LocalVariable("input", INT_TYPE)
         val sI = LocalVariable("i", INT_TYPE)
         val sResult = LocalVariable("result", INT_TYPE)
@@ -205,6 +203,17 @@ class SimpleSymbolicExecutionAnalysisTests {
                     ElementaryStore(sResult, conditional),
                     ElementaryStore(sI, sILoopResult)
                 )
+            ),
+            SymbolicExecutionState(
+                SymbolicConstraintSet.from(
+                    NegatedConstr.create(GreaterEqualConstr(sILoopResult, conditional)),
+                    NegatedConstr.create(EqualityConstr.create(sILoopResult, IntValue(17))),
+                    EqualityConstr.create(sILoopResult, IntValue(42))
+                ),
+                ParallelStore.create(
+                    ElementaryStore(sResult, conditional),
+                    ElementaryStore(sI, sILoopResult)
+                )
             )
         )
 
@@ -220,7 +229,13 @@ class SimpleSymbolicExecutionAnalysisTests {
 
         val expectedLoopLeaves = listOf(
             SymbolicExecutionState(
-                SymbolicConstraintSet.from(NegatedConstr.create(GreaterEqualConstr(sIAnonLoop, conditional))),
+                SymbolicConstraintSet.from(
+                    NegatedConstr.create(GreaterEqualConstr(sIAnonLoop, conditional)),
+                    Or.create(
+                        EqualityConstr.create(sIAnonLoop, IntValue(17)),
+                        NegatedConstr.create(EqualityConstr.create(sIAnonLoop, IntValue(42)))
+                    )
+                ),
                 ParallelStore.create(
                     ElementaryStore(sResult, conditional),
                     ElementaryStore(sI, AdditionExpr(sIAnonLoop, IntValue(1)))
@@ -234,7 +249,6 @@ class SimpleSymbolicExecutionAnalysisTests {
         )
 
         analysis.symbolicallyExecute()
-        printSESs(analysis)
         compareLeaves(expectedLeaves, analysis)
         compareLoopLeaves(expectedLoopLeaves, analysis)
     }

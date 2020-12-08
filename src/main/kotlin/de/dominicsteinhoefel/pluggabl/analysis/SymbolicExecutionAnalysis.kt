@@ -142,6 +142,8 @@ class SymbolicExecutionAnalysis private constructor(
     }
 
     private fun executeLoopAndAnonymize(loop: Loop) {
+        fun <E> List<E>.subList(from: Int) = this.subList(from, this.size)
+
         val loopIdx = loops.indexOf(loop)
 
         logger.trace("Analyzing loop ${loopIdx + 1}")
@@ -215,15 +217,10 @@ class SymbolicExecutionAnalysis private constructor(
             loop.loopStatements
         )
 
-        // Save loop leaf state, to be able to later check correctness
-        // of substituted invariants
-        loopLeafSESMap[loop] = SymbolicExecutionState.merge(
-            loopAnalysis.stmtToInputSESMap[loop.head]?.subList(
-                1,
-                loopAnalysis.stmtToOutputSESMap[loop.head]?.size ?: 0
-            ) ?: emptyList()
-        ).apply(anonymizingState.apply(initState)).simplify()
-
+        // Save loop leaf state, to be able to later check correctness of substituted invariants
+        loopLeafSESMap[loop] = loopAnalysis.stmtToInputSESMap[loop.head]?.subList(1)?.let {
+            SymbolicExecutionState.merge(it).apply(anonymizingState.apply(initState)).simplify()
+        } ?: SymbolicExecutionState()
 
         for (stmt in loop.loopStatements.filterNot(loop.head::equals)) {
             stmtToInputSESMap[stmt] =

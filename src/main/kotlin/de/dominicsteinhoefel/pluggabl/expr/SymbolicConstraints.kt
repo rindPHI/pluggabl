@@ -1,5 +1,6 @@
 package de.dominicsteinhoefel.pluggabl.expr
 
+import de.dominicsteinhoefel.pluggabl.simplification.SymbolicConstraintSimplifier
 import soot.jimple.internal.*
 import java.util.*
 import kotlin.collections.LinkedHashSet
@@ -16,8 +17,22 @@ class SymbolicConstraintSet : Set<SymbolicConstraint> {
     }
 
     private constructor(backSet: Collection<SymbolicConstraint>) {
-        this.backSet = LinkedHashSet(backSet)
+        if (backSet.contains(False) && backSet.size > 1) {
+            this.backSet = linkedSetOf(False)
+        } else {
+            this.backSet = LinkedHashSet(backSet)
+        }
     }
+
+    fun simplify() = SymbolicConstraintSet(
+        SymbolicConstraintSimplifier.compress(
+            SymbolicConstraintSimplifier.substituteFacts(
+                backSet
+                    .map { SymbolicConstraintSimplifier.applyStores(it) }
+                    .map { SymbolicConstraintSimplifier.toCNFClauses(it) }.flatten().toSet()
+            )
+        )
+    )
 
     fun add(element: SymbolicConstraint) =
         if (element is True) this
@@ -183,6 +198,9 @@ class Or private constructor(val left: SymbolicConstraint, val right: SymbolicCo
                             if (left is NegatedConstr && left.constr == right) True else
                                 if (right is NegatedConstr && right.constr == left) True else
                                     Or(left, right)
+
+        fun create(constraints: Collection<SymbolicConstraint>) =
+            constraints.fold(False as SymbolicConstraint, { acc, elem -> Or.create(acc, elem) })
     }
 }
 
@@ -205,6 +223,9 @@ class And private constructor(val left: SymbolicConstraint, val right: SymbolicC
                             if (left is NegatedConstr && left.constr == right) False else
                                 if (right is NegatedConstr && right.constr == left) False else
                                     And(left, right)
+
+        fun create(constraints: Collection<SymbolicConstraint>) =
+            constraints.fold(True as SymbolicConstraint, { acc, elem -> And.create(acc, elem) })
     }
 }
 

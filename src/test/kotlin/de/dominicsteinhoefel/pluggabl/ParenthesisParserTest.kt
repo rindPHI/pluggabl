@@ -11,7 +11,7 @@ class ParenthesisParserTest {
     @Test
     fun testParenthesisParserAnalysis() {
         val analysis = SymbolicExecutionAnalysis.create(
-            "de.dominicsteinhoefel.symbex.ParenthesisParser",
+            "de.dominicsteinhoefel.pluggabl.ParenthesisParser",
             "int parse(java.lang.Character[])"
         )
         val graph = analysis.cfg

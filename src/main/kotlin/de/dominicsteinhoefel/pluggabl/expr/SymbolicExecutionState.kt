@@ -1,5 +1,6 @@
 package de.dominicsteinhoefel.pluggabl.expr
 
+import de.dominicsteinhoefel.pluggabl.simplification.SymbolicConstraintSimplifier
 import de.dominicsteinhoefel.pluggabl.simplification.SymbolicStoreSimplifier
 import java.util.*
 
@@ -83,7 +84,7 @@ class SymbolicExecutionState() {
 
         fun simplify(ses: SymbolicExecutionState) =
             SymbolicExecutionState(
-                ses.constraints.map { SymbolicStoreSimplifier.simplify(it) },
+                ses.constraints.simplify(),
                 SymbolicStoreSimplifier.simplify(ses.store)
             )
     }
