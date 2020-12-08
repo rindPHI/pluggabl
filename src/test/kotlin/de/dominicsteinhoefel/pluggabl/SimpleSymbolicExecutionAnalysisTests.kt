@@ -36,7 +36,7 @@ class SimpleSymbolicExecutionAnalysisTests {
         )
 
         val analysis = SymbolicExecutionAnalysis.create(
-            "de.dominicsteinhoefel.symbex.SimpleMethods",
+            "de.dominicsteinhoefel.pluggabl.SimpleMethods",
             "int simpleTwoBranchedMethod(int)"
         )
 
@@ -67,7 +67,7 @@ class SimpleSymbolicExecutionAnalysisTests {
         )
 
         val analysis = SymbolicExecutionAnalysis.create(
-            "de.dominicsteinhoefel.symbex.SimpleMethods",
+            "de.dominicsteinhoefel.pluggabl.SimpleMethods",
             "int simpleTwoBranchedMethodWithMerge(int)"
         )
 
@@ -98,7 +98,7 @@ class SimpleSymbolicExecutionAnalysisTests {
         )
 
         val analysis = SymbolicExecutionAnalysis.create(
-            "de.dominicsteinhoefel.symbex.SimpleMethods",
+            "de.dominicsteinhoefel.pluggabl.SimpleMethods",
             "void simpleTwoBranchedMethodWithMergeFieldAccess()"
         )
 
@@ -161,7 +161,7 @@ class SimpleSymbolicExecutionAnalysisTests {
         )
 
         val analysis = SymbolicExecutionAnalysis.create(
-            "de.dominicsteinhoefel.symbex.SimpleMethods",
+            "de.dominicsteinhoefel.pluggabl.SimpleMethods",
             "int simpleLoop(int)"
         )
 
@@ -229,7 +229,7 @@ class SimpleSymbolicExecutionAnalysisTests {
         )
 
         val analysis = SymbolicExecutionAnalysis.create(
-            "de.dominicsteinhoefel.symbex.SimpleMethods",
+            "de.dominicsteinhoefel.pluggabl.SimpleMethods",
             "int simpleLoopWithContinueAndBreak(int)"
         )
 
