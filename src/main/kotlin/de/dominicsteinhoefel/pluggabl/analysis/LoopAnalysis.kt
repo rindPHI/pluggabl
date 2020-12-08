@@ -71,6 +71,22 @@ class LoopAnalysis(
         storeOutputStatesForLoopExits(writtenVars, initState, loopHeadInputState, loopExitsInputState, loopAnalysis)
     }
 
+    private fun propagateResultsToAfterLoop() {
+        propagateResultStateToSuccs(
+            loop.head,
+            stmtToOutputSESMap[loop.head]?.subList(1) ?: emptyList(),
+            loop.loopStatements
+        )
+
+        for (stmt in loop.loopStatements.filterNot(loop.head::equals).filter(loop.loopExits::contains)) {
+            propagateResultStateToSuccs(
+                stmt,
+                stmtToOutputSESMap[stmt] ?: emptyList(),
+                loop.loopStatements
+            )
+        }
+    }
+
     private fun createAnonymizingState(
         writtenVars: List<LocalVariable>,
         initState: SymbolicExecutionState,
@@ -113,22 +129,6 @@ class LoopAnalysis(
     ) {
         // Save loop leaf state, to be able to later check correctness of substituted invariants
         loopLeafSESMap[loop] = loopHeadInputState.apply(anonymizingState.apply(initState)).simplify()
-    }
-
-    private fun propagateResultsToAfterLoop() {
-        propagateResultStateToSuccs(
-            loop.head,
-            stmtToOutputSESMap[loop.head]?.subList(1) ?: emptyList(),
-            loop.loopStatements
-        )
-
-        for (stmt in loop.loopStatements.filterNot(loop.head::equals).filter(loop.loopExits::contains)) {
-            propagateResultStateToSuccs(
-                stmt,
-                stmtToOutputSESMap[stmt] ?: emptyList(),
-                loop.loopStatements
-            )
-        }
     }
 
     private fun storeOutputStatesForLoopExits(
