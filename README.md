@@ -1,4 +1,4 @@
-# pluggabl
+# pluggabl: Automatic, Exhaustive Symbolic Execution for Java Bytecode
 
 pluggabl is a symbolic execution engine for Java bytecode based on the Soot
 framework written in Kotlin.
