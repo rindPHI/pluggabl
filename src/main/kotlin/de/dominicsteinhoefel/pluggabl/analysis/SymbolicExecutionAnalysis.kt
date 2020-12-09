@@ -16,7 +16,6 @@ import java.util.*
 import kotlin.collections.HashMap
 import kotlin.collections.LinkedHashMap
 import kotlin.collections.LinkedHashSet
-import kotlin.reflect.cast
 
 class SymbolicExecutionAnalysis internal constructor(
     private val body: Body,
@@ -24,6 +23,10 @@ class SymbolicExecutionAnalysis internal constructor(
     private val stopAtNodes: List<Stmt> = emptyList(),
     private val ignoreTopLoop: Boolean = false
 ) {
+    private val rules = arrayOf(
+        AssignSimpleRule, AssignFromFieldRule, AssignToFieldRule, IfRule, LeafRule, DummyRule, IgnoreAndWarnRule
+    )
+
     val cfg: ExceptionalUnitGraph = ExceptionalUnitGraph(body)
 
     private val newNamesCreator = NewNamesCreator()
@@ -32,12 +35,10 @@ class SymbolicExecutionAnalysis internal constructor(
     private val stmtToOutputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
     private val loopLeafSESMap = LinkedHashMap<Loop, SymbolicExecutionState>()
 
-    val localVariables = LinkedList<LocalVariable>()
+    val localVariables = LinkedHashSet<LocalVariable>()
     val functionSymbols = LinkedHashSet<FunctionSymbol>()
 
     private val loops = LoopFinder().getLoops(body)
-
-    private val rules = arrayOf(AssignRule, IfRule, LeafRule, DummyRule, IgnoreAndWarnRule)
 
     companion object {
         val logger: Logger = LoggerFactory.getLogger(SymbolicExecutionAnalysis::class.simpleName)

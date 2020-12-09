@@ -1,35 +1,9 @@
 package de.dominicsteinhoefel.pluggabl.expr
 
 import org.slf4j.LoggerFactory
-import soot.CharType
 import soot.jimple.IntConstant
-import soot.IntType
 import soot.jimple.internal.*
 import java.util.*
-
-open class Type(val type: String) {
-    override fun hashCode() = Objects.hash(Type::class, type)
-    override fun equals(other: Any?) = (other as? Type)?.type == type
-    override fun toString() = type
-}
-
-val INT_TYPE = Type("int")
-val CHAR_TYPE = Type("char")
-
-open class ReferenceType(type: String) : Type(type)
-class ArrayType(val baseType: Type) : ReferenceType("[$baseType")
-
-object TypeConverter {
-    fun convert(type: soot.Type): Type {
-        return when (type) {
-            is IntType -> INT_TYPE
-            is CharType -> CHAR_TYPE
-            is soot.RefType -> ReferenceType(type.className)
-            is soot.ArrayType -> ArrayType(convert(type.baseType))
-            else -> TODO("Conversion of type $type not yet implemented.")
-        }
-    }
-}
 
 interface SymbolicExpressionsVisitor<T> {
     fun visit(e: IntValue): T
@@ -77,11 +51,17 @@ class LocalVariable(
     override fun equals(other: Any?) = (other as? LocalVariable).let { it?.name == name && it.type == type }
 }
 
-class FunctionSymbol(
+open class FunctionSymbol(
     val name: String,
     val type: Type,
     val paramTypes: List<Type>
 ) {
+    constructor(
+        name: String,
+        type: Type,
+        vararg paramTypes: Type
+    ) : this(name, type, paramTypes.toList())
+
     override fun toString() = "$type $name(${paramTypes.joinToString(", ")})"
     override fun hashCode() = Objects.hash(FunctionSymbol::class, name, type, paramTypes)
     override fun equals(other: Any?) =
@@ -92,10 +72,15 @@ class FunctionApplication(
     val f: FunctionSymbol,
     val args: List<SymbolicExpression>
 ) : SymbolicExpression() {
+    constructor(
+        f: FunctionSymbol,
+        vararg args: SymbolicExpression
+    ) : this(f, args.toList())
+
     override fun type() = f.type
     override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
 
-    override fun toString() = "${f.name}(${args.joinToString(", ")})"
+    override fun toString() = "${f.name}${args.joinToString(", ").let { if (it.isBlank()) "" else "($it)" }}"
     override fun hashCode() = Objects.hash(FunctionApplication::class, f, args)
     override fun equals(other: Any?) = (other as? FunctionApplication).let { it?.f == f && it.args == args }
 }

@@ -54,7 +54,7 @@ class LoopAnalysis(
 
         val loopHeadInputState =
             SymbolicExecutionState.merge(
-                loopAnalysis.getInputSESs(loop.head)?.subList(1)
+                loopAnalysis.getInputSESs(loop.head).subList(1)
             ).simplify()
 
         anonymizeWrittenLoopVars(initState, loopExitsInputState, loopHeadInputState, loopAnalysis)
