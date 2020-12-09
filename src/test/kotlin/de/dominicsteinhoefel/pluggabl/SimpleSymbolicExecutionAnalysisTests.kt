@@ -2,10 +2,16 @@ package de.dominicsteinhoefel.pluggabl
 
 import de.dominicsteinhoefel.pluggabl.SymbolicExecutionTestHelper.compareLeaves
 import de.dominicsteinhoefel.pluggabl.SymbolicExecutionTestHelper.compareLoopLeaves
-import de.dominicsteinhoefel.pluggabl.SymbolicExecutionTestHelper.printSESs
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.expr.*
+import de.dominicsteinhoefel.pluggabl.simplification.SymbolicExpressionSimplifier
+import de.dominicsteinhoefel.pluggabl.theories.FIELD_TYPE
+import de.dominicsteinhoefel.pluggabl.theories.HEAP_VAR
+import de.dominicsteinhoefel.pluggabl.theories.Select
+import org.junit.Assert.assertEquals
+import org.junit.Assert.fail
 import org.junit.Test
+import soot.jimple.Stmt
 
 class SimpleSymbolicExecutionAnalysisTests {
     @Test
@@ -103,7 +109,50 @@ class SimpleSymbolicExecutionAnalysisTests {
         )
 
         analysis.symbolicallyExecute()
-        compareLeaves(expected, analysis)
+        assertEquals(1, analysis.cfg.tails.size)
+        val leafState = analysis.getInputSESs(analysis.cfg.tails[0] as Stmt)[0]
+        assertEquals(true, leafState.constraints.isEmpty())
+
+        val selectTerm = FunctionApplication(
+            Select(INT_TYPE),
+            HEAP_VAR,
+            analysis.localVariables.first { it.name == "this" },
+            FunctionApplication(FunctionSymbol("<de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>", FIELD_TYPE))
+        )
+
+        val evaluatedExpression =
+            SymbolicExpressionSimplifier.applyStores(StoreApplExpression.create(leafState.store, selectTerm))
+
+        // Result state:
+        /*
+        select(
+          store(
+            this,
+            <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>,
+            (select(
+              if (
+                (select(
+                   store(
+                     this,
+                     <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>,
+                     select(heap, this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int input>)), this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>)
+                )==(42)
+              )
+              then (
+                store(
+                  this,
+                  <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>,
+                  (select(store(this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>, select(heap, this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int input>)), this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>))+(2))
+              )
+              else (store(this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>, (select(store(this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>, select(heap, this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int input>)), this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>))+(3))),
+              this,
+              <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>))+(4)),
+           this,
+           <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>
+         )
+         */
+
+        fail("Add test: Simplify evaluated expression, compare result")
     }
 
     @Test
