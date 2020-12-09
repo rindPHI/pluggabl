@@ -89,12 +89,25 @@ class SymbolicExecutionAnalysis internal constructor(
                     loopIdx,
                     stmtToInputSESMap,
                     stmtToOutputSESMap,
-                    loopLeafSESMap,
-                    this::propagateResultStateToSuccs
+                    loopLeafSESMap
                 )
 
                 logger.trace("Analyzing loop ${loopIdx + 1}")
                 loopAnalysis.executeLoopAndAnonymize()
+
+                propagateResultStateToSuccs(
+                    assocLoop.head,
+                    stmtToOutputSESMap[assocLoop.head]?.subList(1) ?: emptyList(),
+                    assocLoop.loopStatements
+                )
+
+                for (stmt in assocLoop.loopStatements.filterNot(assocLoop.head::equals).filter(assocLoop.loopExits::contains)) {
+                    propagateResultStateToSuccs(
+                        stmt,
+                        stmtToOutputSESMap[stmt] ?: emptyList(),
+                        assocLoop.loopStatements
+                    )
+                }
                 logger.trace("Done analyzing loop ${loopIdx + 1}")
 
                 queue.addAll(assocLoop.loopExits.map { cfg.getSuccsOf(it) }.flatten().map { it as Stmt }

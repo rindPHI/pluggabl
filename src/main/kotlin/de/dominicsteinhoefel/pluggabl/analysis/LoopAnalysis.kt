@@ -15,12 +15,7 @@ class LoopAnalysis(
     private val loopIdx: Int,
     private val stmtToInputSESMap: HashMap<Stmt, List<SymbolicExecutionState>>,
     private val stmtToOutputSESMap: HashMap<Stmt, List<SymbolicExecutionState>>,
-    private val loopLeafSESMap: LinkedHashMap<Loop, SymbolicExecutionState>,
-    private val propagateResultStateToSuccs: (
-        currStmt: Stmt,
-        result: List<SymbolicExecutionState>,
-        ignore: List<Stmt>
-    ) -> Unit
+    private val loopLeafSESMap: LinkedHashMap<Loop, SymbolicExecutionState>
 ) {
     private val newNamesCreator = NewNamesCreator()
 
@@ -54,7 +49,6 @@ class LoopAnalysis(
             ).simplify()
 
         anonymizeWrittenLoopVars(initState, loopExitsInputState, loopHeadInputState, loopAnalysis)
-        propagateResultsToAfterLoop()
     }
 
     private fun anonymizeWrittenLoopVars(
@@ -69,22 +63,6 @@ class LoopAnalysis(
         storeLoopLeafState(loopHeadInputState, anonymizingState, initState)
         storeInputAndOutputStatesForLoopStatements(loopAnalysis, initState, anonymizingState)
         storeOutputStatesForLoopExits(writtenVars, initState, loopHeadInputState, loopExitsInputState, loopAnalysis)
-    }
-
-    private fun propagateResultsToAfterLoop() {
-        propagateResultStateToSuccs(
-            loop.head,
-            stmtToOutputSESMap[loop.head]?.subList(1) ?: emptyList(),
-            loop.loopStatements
-        )
-
-        for (stmt in loop.loopStatements.filterNot(loop.head::equals).filter(loop.loopExits::contains)) {
-            propagateResultStateToSuccs(
-                stmt,
-                stmtToOutputSESMap[stmt] ?: emptyList(),
-                loop.loopStatements
-            )
-        }
     }
 
     private fun createAnonymizingState(
@@ -267,5 +245,3 @@ class LoopAnalysis(
     }.toSet()
 
 }
-
-fun <E> List<E>.subList(from: Int) = this.subList(from, this.size)
