@@ -73,7 +73,7 @@ class SymbolicExecutionAnalysis internal constructor(
                 continue
             }
 
-            val loop = loops.filter { it.head == currStmt }.let { if (it.size == 1) it[0] else null }
+            val loop = loops.firstOrNull { it.head == currStmt }
 
             val stmtIsHeadOfAnalyzedLoop = ignoreTopLoop && loop?.head == root
 
