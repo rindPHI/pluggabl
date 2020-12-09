@@ -42,14 +42,15 @@ class LoopAnalysis(
         loopAnalysis.symbolicallyExecute()
 
         // merge all states of all loop exits
-        val loopExitsInputState = SymbolicExecutionState.merge(
-            loopAnalysis.stmtToInputSESMap.filter { loop.loopExits.contains(it.key) }
-                .map { it.value }.flatten().filterNot(SymbolicExecutionState::isEmpty)
-        )
+        val loopExitsInputState =
+            SymbolicExecutionState.merge(
+                loop.loopExits.map { loopAnalysis.getInputSESs(it) }.flatten()
+                    .filterNot(SymbolicExecutionState::isEmpty)
+            )
 
         val loopHeadInputState =
             SymbolicExecutionState.merge(
-                loopAnalysis.stmtToInputSESMap[loop.head]?.subList(1) ?: emptyList()
+                loopAnalysis.getInputSESs(loop.head)?.subList(1)
             ).simplify()
 
         anonymizeWrittenLoopVars(initState, loopExitsInputState, loopHeadInputState, loopAnalysis)

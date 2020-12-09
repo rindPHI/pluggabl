@@ -23,7 +23,7 @@ class SymbolicExecutionAnalysis internal constructor(
 ) {
     val cfg: ExceptionalUnitGraph = ExceptionalUnitGraph(body)
 
-    internal val stmtToInputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
+    private val stmtToInputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
     private val stmtToOutputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
     private val loops = LoopFinder().getLoops(body)
     private val loopLeafSESMap = LinkedHashMap<Loop, SymbolicExecutionState>()
@@ -139,16 +139,9 @@ class SymbolicExecutionAnalysis internal constructor(
 
         loopAnalysis.getLoopLeafState()?.let { loopLeafSESMap[loop] = it }
 
-        loop.loopStatements.filterNot(loop.head::equals).forEach { nonHeadLoopStmt ->
-            stmtToInputSESMap[nonHeadLoopStmt] = loopAnalysis.getInputSESs(nonHeadLoopStmt)
-        }
-
-        loop.loopStatements.filterNot(loop.loopExits::contains).forEach { innerLoopStmt ->
-            stmtToOutputSESMap[innerLoopStmt] = loopAnalysis.getOutputSESs(innerLoopStmt)
-        }
-
-        loop.loopStatements.filter(loop.loopExits::contains).forEach { loopExitStmt ->
-            stmtToOutputSESMap[loopExitStmt] = loopAnalysis.getOutputSESs(loopExitStmt)
+        loop.loopStatements.forEach { loopStmt ->
+            stmtToInputSESMap[loopStmt] = loopAnalysis.getInputSESs(loopStmt)
+            stmtToOutputSESMap[loopStmt] = loopAnalysis.getOutputSESs(loopStmt)
         }
 
         loop.loopStatements.filter(loop.loopExits::contains).forEach { loopExitStmt ->
