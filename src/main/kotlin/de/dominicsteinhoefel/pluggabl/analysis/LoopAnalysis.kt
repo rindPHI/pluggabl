@@ -13,11 +13,17 @@ class LoopAnalysis(
     private val body: Body,
     private val loop: Loop,
     private val loopIdx: Int,
-    private val stmtToInputSESMap: HashMap<Stmt, List<SymbolicExecutionState>>,
-    private val stmtToOutputSESMap: HashMap<Stmt, List<SymbolicExecutionState>>,
-    private val loopLeafSESMap: LinkedHashMap<Loop, SymbolicExecutionState>
+    loopHeadInputStates: List<SymbolicExecutionState>
 ) {
     private val newNamesCreator = NewNamesCreator()
+    private val initState = SymbolicExecutionState.merge(loopHeadInputStates)
+    private val stmtToInputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
+    private val stmtToOutputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
+    private lateinit var loopLeafState: SymbolicExecutionState
+
+    fun getInputSESs(node: Stmt) = stmtToInputSESMap[node] ?: emptyList()
+    fun getOutputSESs(node: Stmt) = stmtToOutputSESMap[node] ?: emptyList()
+    fun getLoopLeafState() = loopLeafState
 
     fun executeLoopAndAnonymize() {
         val stmtsAfterExit = loop.loopExits.map {
@@ -34,8 +40,6 @@ class LoopAnalysis(
         )
 
         loopAnalysis.symbolicallyExecute()
-
-        val initState = SymbolicExecutionState.merge(stmtToInputSESMap[loop.head] ?: emptyList())
 
         // merge all states of all loop exits
         val loopExitsInputState = SymbolicExecutionState.merge(
@@ -60,7 +64,8 @@ class LoopAnalysis(
         val writtenVars = writtenVars()
         val anonymizingState = createAnonymizingState(writtenVars, initState, loopExitsInputState)
 
-        storeLoopLeafState(loopHeadInputState, anonymizingState, initState)
+        // Save loop leaf state, to be able to later check correctness of substituted invariants
+        loopLeafState = loopHeadInputState.apply(anonymizingState.apply(initState)).simplify()
         storeInputAndOutputStatesForLoopStatements(loopAnalysis, initState, anonymizingState)
         storeOutputStatesForLoopExits(writtenVars, initState, loopHeadInputState, loopExitsInputState, loopAnalysis)
     }
@@ -98,15 +103,6 @@ class LoopAnalysis(
                 )
             )
         return anonymizingFinalState
-    }
-
-    private fun storeLoopLeafState(
-        loopHeadInputState: SymbolicExecutionState,
-        anonymizingState: SymbolicExecutionState,
-        initState: SymbolicExecutionState
-    ) {
-        // Save loop leaf state, to be able to later check correctness of substituted invariants
-        loopLeafSESMap[loop] = loopHeadInputState.apply(anonymizingState.apply(initState)).simplify()
     }
 
     private fun storeOutputStatesForLoopExits(

@@ -1,15 +1,12 @@
 package de.dominicsteinhoefel.pluggabl.analysis
 
 import de.dominicsteinhoefel.pluggabl.expr.*
-import de.dominicsteinhoefel.pluggabl.util.NewNamesCreator
 import de.dominicsteinhoefel.pluggabl.util.SootBridge
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import soot.Body
 import soot.G
-import soot.Local
 import soot.jimple.GotoStmt
-import soot.jimple.IfStmt
 import soot.jimple.Stmt
 import soot.jimple.toolkits.annotation.logic.Loop
 import soot.jimple.toolkits.annotation.logic.LoopFinder
@@ -17,7 +14,6 @@ import soot.toolkits.graph.ExceptionalUnitGraph
 import java.util.*
 import kotlin.collections.HashMap
 import kotlin.collections.LinkedHashMap
-import kotlin.collections.LinkedHashSet
 
 class SymbolicExecutionAnalysis internal constructor(
     private val body: Body,
@@ -77,41 +73,16 @@ class SymbolicExecutionAnalysis internal constructor(
                 continue
             }
 
-            val assocLoop = loops.filter { it.head == currStmt }.let { if (it.size == 1) it[0] else null }
+            val loop = loops.filter { it.head == currStmt }.let { if (it.size == 1) it[0] else null }
 
-            val stmtIsHeadOfAnalyzedLoop = ignoreTopLoop && assocLoop?.head == root
+            val stmtIsHeadOfAnalyzedLoop = ignoreTopLoop && loop?.head == root
 
-            if (assocLoop != null && !stmtIsHeadOfAnalyzedLoop) {
-                val loopIdx = loops.indexOf(assocLoop)
-                val loopAnalysis = LoopAnalysis(
-                    body,
-                    assocLoop,
-                    loopIdx,
-                    stmtToInputSESMap,
-                    stmtToOutputSESMap,
-                    loopLeafSESMap
-                )
+            if (loop != null && !stmtIsHeadOfAnalyzedLoop) {
+                analyzeLoop(loop)
 
-                logger.trace("Analyzing loop ${loopIdx + 1}")
-                loopAnalysis.executeLoopAndAnonymize()
+                queue.addAll(loop.loopExits.map { cfg.getSuccsOf(it) }.flatten().map { it as Stmt }
+                    .filterNot(loop.loopStatements::contains))
 
-                propagateResultStateToSuccs(
-                    assocLoop.head,
-                    stmtToOutputSESMap[assocLoop.head]?.subList(1) ?: emptyList(),
-                    assocLoop.loopStatements
-                )
-
-                for (stmt in assocLoop.loopStatements.filterNot(assocLoop.head::equals).filter(assocLoop.loopExits::contains)) {
-                    propagateResultStateToSuccs(
-                        stmt,
-                        stmtToOutputSESMap[stmt] ?: emptyList(),
-                        assocLoop.loopStatements
-                    )
-                }
-                logger.trace("Done analyzing loop ${loopIdx + 1}")
-
-                queue.addAll(assocLoop.loopExits.map { cfg.getSuccsOf(it) }.flatten().map { it as Stmt }
-                    .filterNot(assocLoop.loopStatements::contains))
                 continue
             }
 
@@ -151,6 +122,50 @@ class SymbolicExecutionAnalysis internal constructor(
                 propagateResultStateToSuccs(currStmt, result)
             }
         }
+    }
+
+    private fun analyzeLoop(loop: Loop) {
+        val loopIdx = loops.indexOf(loop)
+        logger.trace("Analyzing loop ${loopIdx + 1}")
+
+        val loopAnalysis = LoopAnalysis(
+            body,
+            loop,
+            loopIdx,
+            stmtToInputSESMap[loop.head] ?: emptyList()
+        )
+
+        loopAnalysis.executeLoopAndAnonymize()
+
+        loopAnalysis.getLoopLeafState()?.let { loopLeafSESMap[loop] = it }
+
+        loop.loopStatements.filterNot(loop.head::equals).forEach { nonHeadLoopStmt ->
+            stmtToInputSESMap[nonHeadLoopStmt] = loopAnalysis.getInputSESs(nonHeadLoopStmt)
+        }
+
+        loop.loopStatements.filterNot(loop.loopExits::contains).forEach { innerLoopStmt ->
+            stmtToOutputSESMap[innerLoopStmt] = loopAnalysis.getOutputSESs(innerLoopStmt)
+        }
+
+        loop.loopStatements.filter(loop.loopExits::contains).forEach { loopExitStmt ->
+            stmtToOutputSESMap[loopExitStmt] = loopAnalysis.getOutputSESs(loopExitStmt)
+        }
+
+        loop.loopStatements.filter(loop.loopExits::contains).forEach { loopExitStmt ->
+            propagateResultStateToSuccs(
+                loopExitStmt,
+                (
+                        if (loopExitStmt == loop.head)
+                            stmtToOutputSESMap[loop.head]?.subList(1) // Remove output for entering the loop
+                        else
+                            stmtToOutputSESMap[loopExitStmt]
+                        )
+                    ?: emptyList(),
+                loop.loopStatements
+            )
+        }
+
+        logger.trace("Done analyzing loop ${loopIdx + 1}")
     }
 
     private fun propagateResultStateToSuccs(
