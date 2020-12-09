@@ -1,6 +1,7 @@
 package de.dominicsteinhoefel.pluggabl.analysis
 
 import de.dominicsteinhoefel.pluggabl.expr.*
+import de.dominicsteinhoefel.pluggabl.util.NewNamesCreator
 import de.dominicsteinhoefel.pluggabl.util.SootBridge
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -14,6 +15,8 @@ import soot.toolkits.graph.ExceptionalUnitGraph
 import java.util.*
 import kotlin.collections.HashMap
 import kotlin.collections.LinkedHashMap
+import kotlin.collections.LinkedHashSet
+import kotlin.reflect.cast
 
 class SymbolicExecutionAnalysis internal constructor(
     private val body: Body,
@@ -23,10 +26,16 @@ class SymbolicExecutionAnalysis internal constructor(
 ) {
     val cfg: ExceptionalUnitGraph = ExceptionalUnitGraph(body)
 
+    private val newNamesCreator = NewNamesCreator()
+
     private val stmtToInputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
     private val stmtToOutputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
-    private val loops = LoopFinder().getLoops(body)
     private val loopLeafSESMap = LinkedHashMap<Loop, SymbolicExecutionState>()
+
+    val localVariables = LinkedList<LocalVariable>()
+    val functionSymbols = LinkedHashSet<FunctionSymbol>()
+
+    private val loops = LoopFinder().getLoops(body)
 
     private val rules = arrayOf(AssignRule, IfRule, LeafRule, DummyRule, IgnoreAndWarnRule)
 
@@ -57,6 +66,9 @@ class SymbolicExecutionAnalysis internal constructor(
     fun getLoopLeafSESs() = loopLeafSESMap.toMap()
 
     fun symbolicallyExecute() {
+        localVariables.addAll(body.locals.map(ExprConverter::convert).map { it as LocalVariable })
+        localVariables.addAll(body.parameterLocals.map(ExprConverter::convert).map { it as LocalVariable })
+
         val queue = LinkedList<Stmt>()
 
         fun <E> LinkedList<E>.addLastDistinct(elem: E) {
@@ -132,10 +144,13 @@ class SymbolicExecutionAnalysis internal constructor(
             body,
             loop,
             loopIdx,
-            stmtToInputSESMap[loop.head] ?: emptyList()
+            stmtToInputSESMap[loop.head] ?: emptyList(),
+            newNamesCreator
         )
 
         loopAnalysis.executeLoopAndAnonymize()
+
+        functionSymbols.addAll(loopAnalysis.functionSymbols)
 
         loopAnalysis.getLoopLeafState()?.let { loopLeafSESMap[loop] = it }
 

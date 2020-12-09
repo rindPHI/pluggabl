@@ -10,6 +10,7 @@ import java.util.*
 open class Type(val type: String) {
     override fun hashCode() = Objects.hash(Type::class, type)
     override fun equals(other: Any?) = (other as? Type)?.type == type
+    override fun toString() = type
 }
 
 val INT_TYPE = Type("int")

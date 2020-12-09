@@ -8,18 +8,22 @@ import soot.jimple.GotoStmt
 import soot.jimple.IfStmt
 import soot.jimple.Stmt
 import soot.jimple.toolkits.annotation.logic.Loop
+import java.util.*
+import kotlin.collections.HashMap
+import kotlin.collections.LinkedHashSet
 
 class LoopAnalysis(
     private val body: Body,
     private val loop: Loop,
     private val loopIdx: Int,
-    loopHeadInputStates: List<SymbolicExecutionState>
+    loopHeadInputStates: List<SymbolicExecutionState>,
+    private val newNamesCreator: NewNamesCreator
 ) {
-    private val newNamesCreator = NewNamesCreator()
     private val initState = SymbolicExecutionState.merge(loopHeadInputStates)
     private val stmtToInputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
     private val stmtToOutputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
     private lateinit var loopLeafState: SymbolicExecutionState
+    val functionSymbols = LinkedHashSet<FunctionSymbol>()
 
     fun getInputSESs(node: Stmt) = stmtToInputSESMap[node] ?: emptyList()
     fun getOutputSESs(node: Stmt) = stmtToOutputSESMap[node] ?: emptyList()
@@ -156,14 +160,13 @@ class LoopAnalysis(
                 loopHeadInputState.constraints.map { it.accept(LocalVariableConstraintCollector()) }.flatten().toSet()
             )
 
-        return FunctionApplication(
-            FunctionSymbol(
-                newNamesCreator.newName("iterations_LOOP_$loopIdx"),
-                INT_TYPE,
-                terminationRelevantVariables.map { it.type }
-            ),
-            terminationRelevantVariables.toList()
-        )
+        val f = FunctionSymbol(
+            newNamesCreator.newName("iterations_LOOP_$loopIdx"),
+            INT_TYPE,
+            terminationRelevantVariables.map { it.type }
+        ).also { functionSymbols.add(it) }
+
+        return FunctionApplication(f, terminationRelevantVariables.toList())
     }
 
     private fun writtenVars() = loop.loopStatements.asSequence().map { it.defBoxes }.flatten().map { it.value }
@@ -188,7 +191,7 @@ class LoopAnalysis(
                 newNamesCreator.newName(writtenVar.name + nameSuffix),
                 writtenVar.type,
                 listOf(listOf(iterationCounter.type()), relVars.map { it.type }).flatten()
-            ),
+            ).also { functionSymbols.add(it) },
             listOf(listOf(iterationCounter), relVars).flatten()
         )
     }.map { ElementaryStore(it.key, it.value) }
