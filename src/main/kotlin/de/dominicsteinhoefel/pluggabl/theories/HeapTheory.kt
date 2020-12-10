@@ -15,7 +15,7 @@ val CREATED = FunctionSymbol("<java.lang.Object: boolean <created>", FIELD_TYPE)
 val ARRAY_FIELD = FunctionSymbol("arr", FIELD_TYPE, INT_TYPE)
 val ARRAY_LENGTH = FunctionSymbol("length", INT_TYPE, OBJECT_TYPE)
 
-val HEAP_SYMBOLS = listOf(HEAP_VAR, STORE, CREATE, ANON, CREATED, ARRAY_FIELD, ARRAY_LENGTH)
+val HEAP_SYMBOLS = listOf(STORE, CREATE, ANON, CREATED, ARRAY_FIELD, ARRAY_LENGTH)
 
 class Select(type: Type) : FunctionSymbol("select", type, HEAP_TYPE, OBJECT_TYPE, FIELD_TYPE)
 

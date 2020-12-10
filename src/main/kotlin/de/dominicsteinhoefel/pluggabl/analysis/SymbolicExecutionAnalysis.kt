@@ -1,6 +1,9 @@
 package de.dominicsteinhoefel.pluggabl.analysis
 
 import de.dominicsteinhoefel.pluggabl.expr.*
+import de.dominicsteinhoefel.pluggabl.theories.HEAP_SYMBOLS
+import de.dominicsteinhoefel.pluggabl.theories.HEAP_VAR
+import de.dominicsteinhoefel.pluggabl.theories.LOCATION_SET_SYMBOLS
 import de.dominicsteinhoefel.pluggabl.util.NewNamesCreator
 import de.dominicsteinhoefel.pluggabl.util.SootBridge
 import de.dominicsteinhoefel.pluggabl.util.subList
@@ -68,8 +71,7 @@ class SymbolicExecutionAnalysis internal constructor(
     fun getLoopLeafSESs() = loopLeafSESMap.toMap()
 
     fun symbolicallyExecute() {
-        localVariables.addAll(body.locals.map(ExprConverter::convert).map { it as LocalVariable })
-        localVariables.addAll(body.parameterLocals.map(ExprConverter::convert).map { it as LocalVariable })
+        registerSymbols()
 
         val queue = LinkedList<Stmt>()
 
@@ -135,6 +137,23 @@ class SymbolicExecutionAnalysis internal constructor(
             if (ignoreTopLoop && (currStmt is GotoStmt && loops.any { it.head == currStmt.target && it.head == root })) {
                 propagateResultStateToSuccs(currStmt, result)
             }
+        }
+    }
+
+    private fun registerSymbols() {
+        localVariables.addAll(body.locals.map(ExprConverter::convert).map { it as LocalVariable })
+        localVariables.addAll(body.parameterLocals.map(ExprConverter::convert).map { it as LocalVariable })
+        localVariables.add(HEAP_VAR)
+
+        localVariables.forEach {
+            assert(newNamesCreator.newName(it.name) == it.name)
+        }
+
+        functionSymbols.addAll(HEAP_SYMBOLS)
+        functionSymbols.addAll(LOCATION_SET_SYMBOLS)
+
+        functionSymbols.forEach {
+            assert(newNamesCreator.newName(it.name) == it.name)
         }
     }
 
