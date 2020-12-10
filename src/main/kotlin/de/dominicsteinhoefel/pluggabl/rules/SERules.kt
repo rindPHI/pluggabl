@@ -71,6 +71,7 @@ object AssignToFieldRule : SERule {
                             HEAP_VAR,
                             FunctionApplication(
                                 STORE,
+                                HEAP_VAR,
                                 ExprConverter.convert(fieldRef.base) as LocalVariable,
                                 getFieldSymbol(fieldRef),
                                 locVar

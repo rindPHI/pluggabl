@@ -9,7 +9,6 @@ import de.dominicsteinhoefel.pluggabl.theories.FIELD_TYPE
 import de.dominicsteinhoefel.pluggabl.theories.HEAP_VAR
 import de.dominicsteinhoefel.pluggabl.theories.Select
 import org.junit.Assert.assertEquals
-import org.junit.Assert.fail
 import org.junit.Test
 import soot.jimple.Stmt
 
@@ -83,35 +82,21 @@ class SimpleSymbolicExecutionAnalysisTests {
 
     @Test
     fun testSimpleTwoBranchedMethodWithMergeFieldAccess() {
-        val sInput = LocalVariable("input", INT_TYPE)
-        val sTest = LocalVariable("test", INT_TYPE)
-        val inputPlusOne = AdditionExpr(sInput, IntValue(1))
-
-        val expected = listOf(
-            SymbolicExecutionState(
-                SymbolicConstraintSet(),
-                ElementaryStore(
-                    sTest,
-                    AdditionExpr(
-                        ConditionalExpression.create(
-                            EqualityConstr.create(inputPlusOne, IntValue(42)),
-                            AdditionExpr(inputPlusOne, IntValue(2)),
-                            AdditionExpr(inputPlusOne, IntValue(3))
-                        ), IntValue(4)
-                    )
-                )
-            )
-        )
-
         val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.pluggabl.SimpleMethods",
             "void simpleTwoBranchedMethodWithMergeFieldAccess()"
         )
 
         analysis.symbolicallyExecute()
+
         assertEquals(1, analysis.cfg.tails.size)
-        val leafState = analysis.getInputSESs(analysis.cfg.tails[0] as Stmt)[0]
-        assertEquals(true, leafState.constraints.isEmpty())
+
+        val leafState = analysis.getInputSESs(analysis.cfg.tails[0] as Stmt)[0].also {
+            assertEquals(
+                true,
+                it.constraints.isEmpty()
+            )
+        }
 
         val selectTerm = FunctionApplication(
             Select(INT_TYPE),
@@ -120,39 +105,46 @@ class SimpleSymbolicExecutionAnalysisTests {
             FunctionApplication(FunctionSymbol("<de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>", FIELD_TYPE))
         )
 
+        val thisVar = analysis.localVariables.first { it.name == "this" }
+
         val evaluatedExpression =
             SymbolicExpressionSimplifier.simplify(StoreApplExpression.create(leafState.store, selectTerm))
 
-        // Result state:
-        /*
-        select(
-          store(
-            this,
-            <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>,
-            (select(
-              if (
-                (select(
-                   store(
-                     this,
-                     <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>,
-                     select(heap, this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int input>)), this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>)
-                )==(42)
-              )
-              then (
-                store(
-                  this,
-                  <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>,
-                  (select(store(this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>, select(heap, this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int input>)), this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>))+(2))
-              )
-              else (store(this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>, (select(store(this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>, select(heap, this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int input>)), this, <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>))+(3))),
-              this,
-              <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>))+(4)),
-           this,
-           <de.dominicsteinhoefel.pluggabl.SimpleMethods: int test>
-         )
-         */
+        // Expression should contain a conditional term with constraint "this.input == 42". We consider both cases.
+        val selectInput = FunctionApplication(
+            Select(INT_TYPE),
+            HEAP_VAR,
+            thisVar,
+            FunctionApplication(
+                FunctionSymbol(
+                    "<de.dominicsteinhoefel.pluggabl.SimpleMethods: int input>",
+                    FIELD_TYPE
+                )
+            )
+        )
 
-        fail("Add test: Simplify evaluated expression, compare result")
+        val condition = EqualityConstr.create(selectInput, IntValue(42))
+
+        fun replaceConditionWith(newCondition: SymbolicConstraint) =
+            fun(e: SymbolicExpression) =
+                if (e is ConditionalExpression && e.condition == condition)
+                    ConditionalExpression.create(
+                        newCondition,
+                        e.vThen,
+                        e.vElse
+                    )
+                else e
+
+        val expr1 = SymbolicExpressionSimplifier.simplify(
+            evaluatedExpression.accept(ExpressionReplacer(replaceConditionWith(True)))
+        )
+
+        val expr2 = SymbolicExpressionSimplifier.simplify(
+            evaluatedExpression.accept(ExpressionReplacer(replaceConditionWith(False)))
+        )
+
+        assertEquals(AdditionExpr(AdditionExpr(selectInput, IntValue(2)), IntValue(4)), expr1)
+        assertEquals(AdditionExpr(AdditionExpr(selectInput, IntValue(3)), IntValue(4)), expr2)
     }
 
     @Test

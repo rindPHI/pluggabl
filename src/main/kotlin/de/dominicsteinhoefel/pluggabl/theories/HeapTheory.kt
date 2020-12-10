@@ -32,12 +32,11 @@ object HeapSimplifier {
         listOf(this::selectOfStore)
 
     private val SIMPLIFY =
-        fun(heapExpr: SymbolicExpression) {
+        fun(heapExpr: SymbolicExpression) =
             SIMPLIFICATIONS.fold(heapExpr, { acc, elem -> elem(acc) })
-        }
 
     fun simplify(heapExpr: SymbolicExpression): SymbolicExpression =
-        SIMPLIFICATIONS.fold(heapExpr, { acc, elem -> elem(acc) })
+        heapExpr.accept(ExpressionReplacer(SIMPLIFY))
 
     fun isHeapExpression(expr: SymbolicExpression) =
         expr.accept(FunctionSymbolExpressionCollector()).intersect(HEAP_SYMBOLS).isNotEmpty()
