@@ -22,8 +22,8 @@ class SootBridge {
 
             Scene.v().sootClassPath = "./build/classes/kotlin/test"
             Scene.v().extendSootClassPath("./lib/kotlin-stdlib-1.3.72.jar")
-            Scene.v().extendSootClassPath("/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/rt.jar")
-            Scene.v().extendSootClassPath("/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/jce.jar")
+            Scene.v().extendSootClassPath("./lib/java-8-openjdk-amd64-rt.jar")
+            Scene.v().extendSootClassPath("./lib/java-8-openjdk-amd64-jce.jar")
 
             PhaseOptions.v().setPhaseOption("jb", "use-original-names")
 
