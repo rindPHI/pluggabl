@@ -1,14 +1,23 @@
 # pluggabl: Automatic, Exhaustive Symbolic Execution for Java Bytecode
 
-pluggabl is a symbolic execution engine for Java bytecode based on the Soot
-framework written in Kotlin.
+![Gradle Build & Tests](https://github.com/rindPHI/pluggabl/workflows/Gradle%20CI/badge.svg)
 
-User-provided specifications are neither required nor possible; this
-implementation performs "pure" (heavyweight/static) symbolic execution on
-Jimple code. Loops are treated using trivial invariants; essentially, all
-values changed in the loop are anonymized afterward. The intuition is that
-specifications like invariants can be plugged in later, if necessary, to
-substitute or constrain these symbols.
+pluggabl symbolically executes Java bytecode. Fullstop. It does not interface
+to SMT solvers, does not perform dead branch analysis, invariant reasoning,
+contract verification, or test case generation. User-provided specifications
+are neither required nor possible; for loops and calls, pluggabl creates
+abstractions (store updates using abstract function symbols).
+
+Further analyses can be plugged in afterward, thus the name. For instance, you
+can feed path conditions to an SMT solver to check their satisfiability and
+eliminate dead branches. Or you can evaluate a postcondition in all leaf
+states by using an external program prover.
+
+Loop invariants or contracts can be used by post-hoc substitutions of the
+generated abstract symbols by concrete expressions.
+
+pluggabl is based on the Soot framework and written in Kotlin. In fact, it
+executes Jimple code which Soot generates from Java bytecode.
 
 Complete examples on how to use the project are provided as test cases.
 Currently, there is no Main class to directly run the project as a standalone
