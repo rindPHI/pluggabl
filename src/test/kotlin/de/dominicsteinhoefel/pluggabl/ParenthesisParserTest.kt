@@ -8,7 +8,7 @@ import soot.jimple.Stmt
 
 class ParenthesisParserTest {
 
-    @Test
+    //@Test
     fun testParenthesisParserAnalysis() {
         val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.pluggabl.ParenthesisParser",
