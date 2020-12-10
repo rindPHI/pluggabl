@@ -6,9 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="6acfca55-121b-469b-8da1-6c2ed7a17d5f" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/rules/SERules.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/rules/SERules.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/theories/HeapTheory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/theories/HeapTheory.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/SimpleSymbolicExecutionAnalysisTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/SimpleSymbolicExecutionAnalysisTests.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,7 +46,7 @@
       <recent name="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/theories" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.SimpleSymbolicExecutionAnalysisTests.testSimpleTwoBranchedMethodWithMergeFieldAccess">
+  <component name="RunManager" selected="Gradle.SimpleSymbolicExecutionAnalysisTests">
     <configuration name="SimpleSymbolicExecutionAnalysisTests" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -115,8 +112,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Gradle.SimpleSymbolicExecutionAnalysisTests.testSimpleTwoBranchedMethodWithMergeFieldAccess" />
         <item itemvalue="Gradle.SimpleSymbolicExecutionAnalysisTests" />
+        <item itemvalue="Gradle.SimpleSymbolicExecutionAnalysisTests.testSimpleTwoBranchedMethodWithMergeFieldAccess" />
         <item itemvalue="Gradle.SimpleSymbolicExecutionAnalysisTests.testSimpleLoopWithContinueAndBreak" />
       </list>
     </recent_temporary>
