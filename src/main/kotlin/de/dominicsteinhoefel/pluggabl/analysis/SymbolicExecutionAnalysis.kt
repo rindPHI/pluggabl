@@ -154,7 +154,7 @@ class SymbolicExecutionAnalysis internal constructor(
 
         functionSymbols.addAll(loopAnalysis.functionSymbols)
 
-        loopAnalysis.getLoopLeafState()?.let { loopLeafSESMap[loop] = it }
+        loopAnalysis.getLoopLeafState().let { loopLeafSESMap[loop] = it }
 
         loop.loopStatements.forEach { loopStmt ->
             stmtToInputSESMap[loopStmt] = loopAnalysis.getInputSESs(loopStmt)
