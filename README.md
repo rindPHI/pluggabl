@@ -8,6 +8,14 @@ contract verification, or test case generation. User-provided specifications
 are neither required nor possible; for loops and calls, pluggabl creates
 abstractions (store updates using abstract function symbols).
 
+pluggabl applies quick simplifications (which do not require inference) of
+symbolic execution states. Furthermore, abstract function symbols created for
+variables changed in loops are parametrized in the values they actually
+depend on: When a loop is encountered, it is first executed in isolation. From
+the resulting states, information about dependencies is extracted and used to
+create abstractions. Afterward, the execution result is added to the main
+analysis.
+
 Further analyses can be plugged in afterward, thus the name. For instance, you
 can feed path conditions to an SMT solver to check their satisfiability and
 eliminate dead branches. Or you can evaluate a postcondition in all leaf
