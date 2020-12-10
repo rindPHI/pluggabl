@@ -1,7 +1,11 @@
 package de.dominicsteinhoefel.pluggabl.expr
 
 import de.dominicsteinhoefel.pluggabl.simplification.SymbolicConstraintSimplifier
-import soot.jimple.internal.*
+import de.dominicsteinhoefel.pluggabl.util.union
+import soot.jimple.internal.JEqExpr
+import soot.jimple.internal.JGeExpr
+import soot.jimple.internal.JGtExpr
+import soot.jimple.internal.JNeExpr
 import java.util.*
 import kotlin.collections.LinkedHashSet
 
@@ -27,7 +31,8 @@ class SymbolicConstraintSet : Set<SymbolicConstraint> {
     fun simplify() = SymbolicConstraintSet(
         SymbolicConstraintSimplifier.compress(
             SymbolicConstraintSimplifier.substituteFacts(
-                backSet
+                backSet.asSequence()
+                    .map { SymbolicConstraintSimplifier.simplifyExpressions(it) }
                     .map { SymbolicConstraintSimplifier.applyStores(it) }
                     .map { SymbolicConstraintSimplifier.toCNFClauses(it) }.flatten().toSet()
             )
@@ -226,6 +231,8 @@ class And private constructor(val left: SymbolicConstraint, val right: SymbolicC
 
         fun create(constraints: Collection<SymbolicConstraint>) =
             constraints.fold(True as SymbolicConstraint, { acc, elem -> And.create(acc, elem) })
+
+        fun create(vararg constraints: SymbolicConstraint) = create(constraints.toList())
     }
 }
 
@@ -286,28 +293,38 @@ object ConstrConverter {
         }
 }
 
-class LocalVariableConstraintCollector() : SymbolicConstraintVisitor<Set<LocalVariable>> {
-    override fun visit(c: True) = emptySet<LocalVariable>()
-    override fun visit(c: False) = emptySet<LocalVariable>()
-    override fun visit(c: NegatedConstr) = c.constr.accept(this)
-    override fun visit(c: Or) = listOf(c.left.accept(this), c.right.accept(this)).flatten().toSet()
-    override fun visit(c: And) = listOf(c.left.accept(this), c.right.accept(this)).flatten().toSet()
+open class ConstraintCollector<T>(private val coll: (SymbolicConstraint) -> Set<T>) :
+    SymbolicConstraintVisitor<Set<T>> {
+    override fun visit(c: True) = coll(c)
+    override fun visit(c: False) = coll(c)
+    override fun visit(c: GreaterConstr) = coll(c)
+    override fun visit(c: EqualityConstr) = coll(c)
+    override fun visit(c: GreaterEqualConstr) = coll(c)
 
-    override fun visit(c: GreaterConstr) =
-        LocalVariableExpressionCollector().let {
-            listOf(c.left.accept(it), c.right.accept(it)).flatten().toSet()
-        }
-
-    override fun visit(c: EqualityConstr) =
-        LocalVariableExpressionCollector().let {
-            listOf(c.left.accept(it), c.right.accept(it)).flatten().toSet()
-        }
-
-    override fun visit(c: GreaterEqualConstr) =
-        LocalVariableExpressionCollector().let {
-            listOf(c.left.accept(it), c.right.accept(it)).flatten().toSet()
-        }
-
-    override fun visit(c: StoreApplConstraint) =
-        listOf(c.applied.accept(LocalVariableStoreCollector()), c.target.accept(this)).flatten().toSet()
+    override fun visit(c: NegatedConstr) = union(coll(c), c.constr.accept(this))
+    override fun visit(c: StoreApplConstraint) = union(coll(c), c.target.accept(this))
+    override fun visit(c: Or) = union(coll(c), c.left.accept(this), c.right.accept(this))
+    override fun visit(c: And) = union(coll(c), c.left.accept(this), c.right.accept(this))
 }
+
+class LocalVariableConstraintCollector() : ConstraintCollector<LocalVariable>({ c ->
+    when (c) {
+        is BinarySymbolicConstraint ->
+            LocalVariableExpressionCollector().let {
+                union(c.left().accept(it), c.right().accept(it))
+            }
+        is StoreApplConstraint -> c.applied.accept(LocalVariableStoreCollector())
+        else -> emptySet()
+    }
+})
+
+class FunctionSymbolConstraintCollector() : ConstraintCollector<FunctionSymbol>({ c ->
+    when (c) {
+        is BinarySymbolicConstraint ->
+            FunctionSymbolExpressionCollector().let {
+                union(c.left().accept(it), c.right().accept(it))
+            }
+        is StoreApplConstraint -> c.applied.accept(FunctionSymbolStoreCollector())
+        else -> emptySet()
+    }
+})

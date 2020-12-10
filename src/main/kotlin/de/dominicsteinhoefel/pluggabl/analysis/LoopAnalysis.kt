@@ -8,9 +8,7 @@ import soot.jimple.GotoStmt
 import soot.jimple.IfStmt
 import soot.jimple.Stmt
 import soot.jimple.toolkits.annotation.logic.Loop
-import java.util.*
-import kotlin.collections.HashMap
-import kotlin.collections.LinkedHashSet
+import de.dominicsteinhoefel.pluggabl.util.subList
 
 class LoopAnalysis(
     private val body: Body,

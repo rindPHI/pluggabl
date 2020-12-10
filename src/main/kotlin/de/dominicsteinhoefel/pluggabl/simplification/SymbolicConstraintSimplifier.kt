@@ -5,6 +5,34 @@ import java.util.*
 import kotlin.collections.LinkedHashSet
 
 object SymbolicConstraintSimplifier {
+    fun simplifyExpressions(constraint: SymbolicConstraint): SymbolicConstraint =
+        when (constraint) {
+            is GreaterConstr -> GreaterConstr(
+                SymbolicExpressionSimplifier.simplify(constraint.left),
+                SymbolicExpressionSimplifier.simplify(constraint.right)
+            )
+            is GreaterEqualConstr -> GreaterEqualConstr(
+                SymbolicExpressionSimplifier.simplify(constraint.left),
+                SymbolicExpressionSimplifier.simplify(constraint.right)
+            )
+            is EqualityConstr -> EqualityConstr.create(
+                SymbolicExpressionSimplifier.simplify(constraint.left),
+                SymbolicExpressionSimplifier.simplify(constraint.right)
+            )
+
+            is True, is False -> constraint
+            is NegatedConstr -> NegatedConstr.create(simplifyExpressions(constraint.constr))
+            is And -> And.create(simplifyExpressions(constraint.left), simplifyExpressions(constraint.right))
+            is Or -> Or.create(simplifyExpressions(constraint.left), simplifyExpressions(constraint.right))
+
+            is StoreApplConstraint ->
+                StoreApplConstraint.create(
+                    SymbolicStoreSimplifier.simplifyExpressions(constraint.applied),
+                    simplifyExpressions(constraint.target)
+                )
+
+        }
+
     fun applyStores(constraint: SymbolicConstraint): SymbolicConstraint =
         when (constraint) {
             is True, is False -> constraint

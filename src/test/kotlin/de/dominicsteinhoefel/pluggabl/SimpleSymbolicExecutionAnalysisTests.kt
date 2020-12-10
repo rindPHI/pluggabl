@@ -121,7 +121,7 @@ class SimpleSymbolicExecutionAnalysisTests {
         )
 
         val evaluatedExpression =
-            SymbolicExpressionSimplifier.applyStores(StoreApplExpression.create(leafState.store, selectTerm))
+            SymbolicExpressionSimplifier.simplify(StoreApplExpression.create(leafState.store, selectTerm))
 
         // Result state:
         /*

@@ -1,12 +1,21 @@
 package de.dominicsteinhoefel.pluggabl.simplification
 
 import de.dominicsteinhoefel.pluggabl.expr.*
-import kotlin.collections.LinkedHashMap
-import kotlin.collections.LinkedHashSet
 
 object SymbolicStoreSimplifier {
     fun simplify(store: SymbolicStore): SymbolicStore =
-        dropEffectlessElementaries(toParallelNormalForm(store), LinkedHashSet())
+        dropEffectlessElementaries(toParallelNormalForm(simplifyExpressions(store)), LinkedHashSet())
+
+    fun simplifyExpressions(store: SymbolicStore): SymbolicStore =
+        when (store) {
+            EmptyStore -> store
+            is ElementaryStore -> ElementaryStore(store.lhs, SymbolicExpressionSimplifier.simplify(store.rhs))
+            is ParallelStore -> ParallelStore.create(simplifyExpressions(store.lhs), simplifyExpressions(store.rhs))
+            is StoreApplStore -> StoreApplStore.create(
+                simplifyExpressions(store.applied),
+                simplifyExpressions(store.target)
+            )
+        }
 
     private fun dropEffectlessElementaries(
         store: SymbolicStore,
@@ -33,7 +42,7 @@ object SymbolicStoreSimplifier {
     private fun toParallelNormalForm(store: SymbolicStore): SymbolicStore =
         when (store) {
             is EmptyStore -> EmptyStore
-            is ElementaryStore -> ElementaryStore(store.lhs, SymbolicExpressionSimplifier.applyStores(store.rhs))
+            is ElementaryStore -> ElementaryStore(store.lhs, SymbolicExpressionSimplifier.simplify(store.rhs))
             is ParallelStore -> ParallelStore.create(toParallelNormalForm(store.lhs), toParallelNormalForm(store.rhs))
             is StoreApplStore -> {
                 when (store.target) {

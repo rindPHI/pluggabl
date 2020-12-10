@@ -1,5 +1,6 @@
 package de.dominicsteinhoefel.pluggabl.expr
 
+import de.dominicsteinhoefel.pluggabl.util.union
 import java.util.*
 
 sealed class SymbolicStore {
@@ -66,16 +67,32 @@ class StoreApplStore private constructor(val applied: SymbolicStore, val target:
     }
 }
 
-class LocalVariableStoreCollector() : SymbolicStoreVisitor<Set<LocalVariable>> {
-    override fun visit(store: EmptyStore) = emptySet<LocalVariable>()
+open class SymbolicStoreCollector<T>(private val coll: (SymbolicStore) -> Set<T>) : SymbolicStoreVisitor<Set<T>> {
+    override fun visit(store: EmptyStore) = coll(store)
 
-    override fun visit(store: ElementaryStore) =
-        listOf(listOf(store.lhs), store.rhs.accept(LocalVariableExpressionCollector())).flatten().toSet()
+    override fun visit(store: ElementaryStore) = coll(store)
 
     override fun visit(store: ParallelStore) =
-        listOf(store.lhs.accept(this), store.rhs.accept(this)).flatten().toSet()
+        union(coll(store), store.lhs.accept(this), store.rhs.accept(this))
 
     override fun visit(store: StoreApplStore) =
-        listOf(store.applied.accept(this), store.target.accept(this)).flatten().toSet()
-
+        union(coll(store), store.applied.accept(this))
 }
+
+class LocalVariableStoreCollector() : SymbolicStoreCollector<LocalVariable>(
+    { store ->
+        when (store) {
+            is ElementaryStore -> union(setOf(store.lhs), store.rhs.accept(LocalVariableExpressionCollector()))
+            else -> emptySet()
+        }
+    }
+)
+
+class FunctionSymbolStoreCollector() : SymbolicStoreCollector<FunctionSymbol>(
+    { store ->
+        when (store) {
+            is ElementaryStore -> store.rhs.accept(FunctionSymbolExpressionCollector())
+            else -> emptySet()
+        }
+    }
+)

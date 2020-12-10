@@ -1,8 +1,15 @@
 package de.dominicsteinhoefel.pluggabl.simplification
 
 import de.dominicsteinhoefel.pluggabl.expr.*
+import de.dominicsteinhoefel.pluggabl.theories.HeapSimplifier
 
 object SymbolicExpressionSimplifier {
+    fun simplify(expression: SymbolicExpression): SymbolicExpression =
+        applyStores(expression).let {
+            if (HeapSimplifier.isHeapExpression(expression)) HeapSimplifier.simplify(it)
+            else it
+        }
+
     fun applyStores(expression: SymbolicExpression): SymbolicExpression =
         when (expression) {
             is Value, is LocalVariable -> expression

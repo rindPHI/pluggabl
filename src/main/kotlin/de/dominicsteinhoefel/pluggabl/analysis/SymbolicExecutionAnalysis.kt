@@ -3,6 +3,7 @@ package de.dominicsteinhoefel.pluggabl.analysis
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.util.NewNamesCreator
 import de.dominicsteinhoefel.pluggabl.util.SootBridge
+import de.dominicsteinhoefel.pluggabl.util.subList
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import soot.Body
