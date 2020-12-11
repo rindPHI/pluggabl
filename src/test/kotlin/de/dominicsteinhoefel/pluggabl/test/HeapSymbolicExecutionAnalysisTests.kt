@@ -83,6 +83,8 @@ class HeapSymbolicExecutionAnalysisTests {
         analysis.symbolicallyExecute()
         printSESs(analysis)
 
+        TODO("Test outcome.")
+
         /*
         Result value holds:
         result -> <java.lang.Integer: int intValue()>(
