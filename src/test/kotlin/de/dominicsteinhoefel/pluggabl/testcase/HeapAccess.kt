@@ -15,4 +15,13 @@ class HeapAccess {
 
         test += 4
     }
+
+    // Result: \old(arr[1]) - arr[2]
+    // Side effects: arr[0] == arr[1] - arr[2] + 1
+    //               arr[1] == arr[1] + 1
+    fun simpleArrayAccess(arr: Array<Int>): Int {
+        arr[0] = arr[1]++ - arr[2]
+        return arr[0] + 1
+    }
+
 }

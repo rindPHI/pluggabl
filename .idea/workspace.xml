@@ -6,15 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="6acfca55-121b-469b-8da1-6c2ed7a17d5f" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/HeapAccess.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/testcase/HeapAccess.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/HeapSymbolicExecutionAnalysisTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/HeapSymbolicExecutionAnalysisTests.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/LoopSymbolicExecutionAnalysisTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/LoopSymbolicExecutionAnalysisTests.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/Loops.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/testcase/Loops.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/ParenthesisParser.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/testcase/ParenthesisParser.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/ParenthesisParserTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/ParenthesisParserTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/SimpleMethods.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/testcase/SimpleMethods.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/SimpleSymbolicExecutionAnalysisTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/SimpleSymbolicExecutionAnalysisTests.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/SymbolicExecutionTestHelper.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/SymbolicExecutionTestHelper.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/HeapSymbolicExecutionAnalysisTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/HeapSymbolicExecutionAnalysisTests.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/testcase/HeapAccess.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/testcase/HeapAccess.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,7 +54,28 @@
       <recent name="de.dominicsteinhoefel.pluggabl" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.Tests in 'de.dominicsteinhoefel.pluggabl'">
+  <component name="RunManager" selected="Gradle.HeapSymbolicExecutionAnalysisTests.testSimpleArrayAccess">
+    <configuration name="HeapSymbolicExecutionAnalysisTests.testSimpleArrayAccess" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="--tests &quot;de.dominicsteinhoefel.pluggabl.test.HeapSymbolicExecutionAnalysisTests.testSimpleArrayAccess&quot;" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <method v="2" />
+    </configuration>
     <configuration name="SimpleSymbolicExecutionAnalysisTests" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -148,6 +162,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.HeapSymbolicExecutionAnalysisTests.testSimpleArrayAccess" />
         <item itemvalue="Gradle.Tests in 'de.dominicsteinhoefel.pluggabl'" />
         <item itemvalue="Gradle.SimpleSymbolicExecutionAnalysisTests" />
         <item itemvalue="Gradle.SimpleSymbolicExecutionAnalysisTests.testSimpleTwoBranchedMethodWithMergeFieldAccess" />
@@ -194,6 +209,10 @@
         <breakpoint enabled="true" type="java-exception">
           <properties class="java.lang.IndexOutOfBoundsException" package="java.lang" />
           <option name="timeStamp" value="41" />
+        </breakpoint>
+        <breakpoint enabled="true" type="java-exception">
+          <properties class="java.lang.AssertionError" package="java.lang" />
+          <option name="timeStamp" value="50" />
         </breakpoint>
       </breakpoints>
     </breakpoint-manager>

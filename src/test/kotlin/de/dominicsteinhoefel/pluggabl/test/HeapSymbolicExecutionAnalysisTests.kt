@@ -5,6 +5,8 @@ import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.compareLo
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.simplification.SymbolicExpressionSimplifier
+import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.printLeafSESs
+import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.printSESs
 import de.dominicsteinhoefel.pluggabl.theories.FIELD_TYPE
 import de.dominicsteinhoefel.pluggabl.theories.HEAP_VAR
 import de.dominicsteinhoefel.pluggabl.theories.Select
@@ -79,5 +81,16 @@ class HeapSymbolicExecutionAnalysisTests {
 
         Assert.assertEquals(AdditionExpr(AdditionExpr(selectInput, IntValue(2)), IntValue(4)), expr1)
         Assert.assertEquals(AdditionExpr(AdditionExpr(selectInput, IntValue(3)), IntValue(4)), expr2)
+    }
+
+    //@Test
+    fun testSimpleArrayAccess() {
+        val analysis = SymbolicExecutionAnalysis.create(
+            "de.dominicsteinhoefel.pluggabl.testcase.HeapAccess",
+            "int simpleArrayAccess(java.lang.Integer[])"
+        )
+
+        analysis.symbolicallyExecute()
+        printSESs(analysis)
     }
 }
