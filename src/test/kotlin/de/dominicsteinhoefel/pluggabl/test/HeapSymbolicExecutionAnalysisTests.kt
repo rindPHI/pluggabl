@@ -29,7 +29,7 @@ class HeapSymbolicExecutionAnalysisTests {
             )
         }
 
-        val thisVar = analysis.symbolsManager.getLocalVariables().first { it.name == "this" }
+        val thisVar = analysis.getLocal("this")
 
         val selectTerm = FunctionApplication(
             Select(INT_TYPE),

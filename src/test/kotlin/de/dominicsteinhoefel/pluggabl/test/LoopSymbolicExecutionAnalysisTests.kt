@@ -1,24 +1,27 @@
 package de.dominicsteinhoefel.pluggabl.test
 
-import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.compareLeaves
-import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.compareLoopLeaves
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.expr.*
-import de.dominicsteinhoefel.pluggabl.simplification.SymbolicExpressionSimplifier
-import de.dominicsteinhoefel.pluggabl.theories.FIELD_TYPE
-import de.dominicsteinhoefel.pluggabl.theories.HEAP_VAR
-import de.dominicsteinhoefel.pluggabl.theories.Select
-import org.junit.Assert.assertEquals
+import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.compareLeaves
+import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.compareLoopLeaves
 import org.junit.Test
-import soot.jimple.Stmt
+import soot.jimple.internal.JimpleLocal
 
 class LoopSymbolicExecutionAnalysisTests {
 
     @Test
     fun testSimpleLoop() {
-        val sInput = LocalVariable("input", INT_TYPE)
-        val sI = LocalVariable("i", INT_TYPE)
-        val sResult = LocalVariable("result_0", INT_TYPE)
+        val analysis = SymbolicExecutionAnalysis.create(
+            "de.dominicsteinhoefel.pluggabl.testcase.Loops",
+            "int simpleLoop(int)"
+        )
+
+        analysis.symbolicallyExecute()
+
+        val sInput = analysis.getLocal("input")
+        val sI = analysis.getLocal("i")
+        val sResult = analysis.getLocal("result")
+
         val conditional = ConditionalExpression.create(
             GreaterEqualConstr(sInput, IntValue(0)),
             sInput,
@@ -27,10 +30,10 @@ class LoopSymbolicExecutionAnalysisTests {
 
         val sILoopResult =
             FunctionApplication(
-                FunctionSymbol("i_AFTER_LOOP_0", INT_TYPE, listOf(INT_TYPE, INT_TYPE, INT_TYPE)),
+                analysis.getFunctionSymbol("i_AFTER_LOOP_0"),
                 listOf(
                     FunctionApplication(
-                        FunctionSymbol("iterations_LOOP_0", INT_TYPE, listOf(INT_TYPE, INT_TYPE)),
+                        analysis.getFunctionSymbol("iterations_LOOP_0"),
                         listOf(IntValue(0), conditional)
                     ),
                     IntValue(0),
@@ -50,9 +53,9 @@ class LoopSymbolicExecutionAnalysisTests {
 
         val sIAnonLoop =
             FunctionApplication(
-                FunctionSymbol("i_ANON_LOOP_0", INT_TYPE, listOf(INT_TYPE, INT_TYPE, INT_TYPE)),
+                analysis.getFunctionSymbol( "i_ANON_LOOP_0"),
                 listOf(
-                    LocalVariable("itCnt_LOOP_0", INT_TYPE),
+                    analysis.getLocal("itCnt_LOOP_0"),
                     IntValue(0),
                     conditional
                 )
@@ -68,12 +71,6 @@ class LoopSymbolicExecutionAnalysisTests {
             )
         )
 
-        val analysis = SymbolicExecutionAnalysis.create(
-            "de.dominicsteinhoefel.pluggabl.testcase.Loops",
-            "int simpleLoop(int)"
-        )
-
-        analysis.symbolicallyExecute()
         compareLeaves(expectedLeaves, analysis)
         compareLoopLeaves(expectedLoopLeaves, analysis)
     }
@@ -82,9 +79,17 @@ class LoopSymbolicExecutionAnalysisTests {
 
     @Test
     fun testSimpleLoopWithContinueAndBreak() {
-        val sInput = LocalVariable("input", INT_TYPE)
-        val sI = LocalVariable("i", INT_TYPE)
-        val sResult = LocalVariable("result_0", INT_TYPE)
+        val analysis = SymbolicExecutionAnalysis.create(
+            "de.dominicsteinhoefel.pluggabl.testcase.Loops",
+            "int simpleLoopWithContinueAndBreak(int)"
+        )
+
+        analysis.symbolicallyExecute()
+
+        val sInput = analysis.getLocal("input")
+        val sI = analysis.getLocal("i")
+        val sResult = analysis.getLocal("result")
+
         val conditional = ConditionalExpression.create(
             GreaterEqualConstr(sInput, IntValue(0)),
             sInput,
@@ -93,10 +98,10 @@ class LoopSymbolicExecutionAnalysisTests {
 
         val sILoopResult =
             FunctionApplication(
-                FunctionSymbol("i_AFTER_LOOP_0", INT_TYPE, listOf(INT_TYPE, INT_TYPE, INT_TYPE)),
+                analysis.getFunctionSymbol("i_AFTER_LOOP_0"),
                 listOf(
                     FunctionApplication(
-                        FunctionSymbol("iterations_LOOP_0", INT_TYPE, listOf(INT_TYPE, INT_TYPE)),
+                        analysis.getFunctionSymbol("iterations_LOOP_0"),
                         listOf(IntValue(0), conditional)
                     ),
                     IntValue(0),
@@ -127,9 +132,9 @@ class LoopSymbolicExecutionAnalysisTests {
 
         val sIAnonLoop =
             FunctionApplication(
-                FunctionSymbol("i_ANON_LOOP_0", INT_TYPE, listOf(INT_TYPE, INT_TYPE, INT_TYPE)),
+                analysis.getFunctionSymbol("i_ANON_LOOP_0"),
                 listOf(
-                    LocalVariable("itCnt_LOOP_0", INT_TYPE),
+                    analysis.getLocal("itCnt_LOOP_0"),
                     IntValue(0),
                     conditional
                 )
@@ -151,12 +156,6 @@ class LoopSymbolicExecutionAnalysisTests {
             )
         )
 
-        val analysis = SymbolicExecutionAnalysis.create(
-            "de.dominicsteinhoefel.pluggabl.testcase.Loops",
-            "int simpleLoopWithContinueAndBreak(int)"
-        )
-
-        analysis.symbolicallyExecute()
         compareLeaves(expectedLeaves, analysis)
         compareLoopLeaves(expectedLoopLeaves, analysis)
     }

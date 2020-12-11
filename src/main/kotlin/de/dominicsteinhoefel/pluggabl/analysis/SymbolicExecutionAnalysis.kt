@@ -23,7 +23,7 @@ import kotlin.collections.HashMap
 import kotlin.collections.LinkedHashMap
 
 class SymbolicExecutionAnalysis internal constructor(
-    private val body: Body,
+    val body: Body,
     private val root: Stmt = body.units.first as Stmt,
     private val stopAtNodes: List<Stmt> = emptyList(),
     private val ignoreTopLoop: Boolean = false
@@ -67,6 +67,15 @@ class SymbolicExecutionAnalysis internal constructor(
     fun getInputSESs(node: Stmt) = stmtToInputSESMap[node] ?: emptyList()
     fun getOutputSESs(node: Stmt) = stmtToOutputSESMap[node] ?: emptyList()
     fun getLoopLeafSESs() = loopLeafSESMap.toMap()
+
+    fun getLocal(varName: String): LocalVariable =
+        body.locals.firstOrNull { it.name == varName }
+            ?.let { it as JimpleLocal }
+            ?.let { symbolsManager.localVariableFor(it) }
+            ?: symbolsManager.getLocalVariables().first { it.name == varName }
+
+    fun getFunctionSymbol(funcName: String) =
+        symbolsManager.getFunctionSymbols().first { it.name == funcName }
 
     fun symbolicallyExecute() {
         registerSymbols()

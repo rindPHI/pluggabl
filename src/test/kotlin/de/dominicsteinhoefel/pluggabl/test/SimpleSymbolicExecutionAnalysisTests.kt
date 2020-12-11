@@ -15,9 +15,17 @@ import soot.jimple.Stmt
 class SimpleSymbolicExecutionAnalysisTests {
     @Test
     fun testSimpleTwoBranchedMethod() {
-        val sInput = LocalVariable("input", INT_TYPE)
-        val sTest = LocalVariable("test", INT_TYPE)
-        val sStack = LocalVariable("\$stack3", INT_TYPE)
+        val analysis = SymbolicExecutionAnalysis.create(
+            "de.dominicsteinhoefel.pluggabl.testcase.SimpleMethods",
+            "int simpleTwoBranchedMethod(int)"
+        )
+
+        analysis.symbolicallyExecute()
+
+        val sInput = analysis.getLocal("input")
+        val sTest = analysis.getLocal("test")
+        val sStack = analysis.getLocal("\$stack3")
+
         val inputPlusOne = AdditionExpr(sInput, IntValue(1))
         val inputPlusOneIsFortyTwo = EqualityConstr.create(inputPlusOne, IntValue(42))
 
@@ -40,19 +48,21 @@ class SimpleSymbolicExecutionAnalysisTests {
             )
         )
 
-        val analysis = SymbolicExecutionAnalysis.create(
-            "de.dominicsteinhoefel.pluggabl.testcase.SimpleMethods",
-            "int simpleTwoBranchedMethod(int)"
-        )
-
-        analysis.symbolicallyExecute()
         compareLeaves(expected, analysis)
     }
 
     @Test
     fun testSimpleTwoBranchedMethodWithMerge() {
-        val sInput = LocalVariable("input", INT_TYPE)
-        val sTest = LocalVariable("test", INT_TYPE)
+        val analysis = SymbolicExecutionAnalysis.create(
+            "de.dominicsteinhoefel.pluggabl.testcase.SimpleMethods",
+            "int simpleTwoBranchedMethodWithMerge(int)"
+        )
+
+        analysis.symbolicallyExecute()
+
+        val sInput = analysis.getLocal("input")
+        val sTest = analysis.getLocal("test")
+
         val inputPlusOne = AdditionExpr(sInput, IntValue(1))
 
         val expected = listOf(
@@ -71,12 +81,6 @@ class SimpleSymbolicExecutionAnalysisTests {
             )
         )
 
-        val analysis = SymbolicExecutionAnalysis.create(
-            "de.dominicsteinhoefel.pluggabl.testcase.SimpleMethods",
-            "int simpleTwoBranchedMethodWithMerge(int)"
-        )
-
-        analysis.symbolicallyExecute()
         compareLeaves(expected, analysis)
     }
 }
