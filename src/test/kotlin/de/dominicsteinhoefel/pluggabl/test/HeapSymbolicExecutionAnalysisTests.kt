@@ -73,7 +73,7 @@ class HeapSymbolicExecutionAnalysisTests {
         Assert.assertEquals(AdditionExpr(AdditionExpr(selectInput, IntValue(3)), IntValue(4)), expr2)
     }
 
-    //@Test
+    @Test
     fun testSimpleArrayAccess() {
         val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.pluggabl.testcase.HeapAccess",
@@ -82,5 +82,36 @@ class HeapSymbolicExecutionAnalysisTests {
 
         analysis.symbolicallyExecute()
         printSESs(analysis)
+
+        /*
+        Result value holds:
+        result -> <java.lang.Integer: int intValue()>(
+                    <java.lang.Integer: java.lang.Integer valueOf(int)>(
+                      <java.lang.Integer: int intValue()>(select(heap, arr, arr(1))) -
+                      <java.lang.Integer: int intValue()>(
+                        if ((arr(2)==arr(1)) && !(arr(1)==(<java.lang.Object: boolean <created>)))
+                        then (<java.lang.Integer: java.lang.Integer valueOf(int)>(<java.lang.Integer: int intValue()>(select(heap, arr, arr(1))))+1)
+                        else (select(heap, arr, arr(2)))))
+                  ) + 1]
+         */
+
+        /*
+        Heap is:
+        heap -> store(
+          store(heap, arr, arr(1), <java.lang.Integer: java.lang.Integer valueOf(int)>(<java.lang.Integer: int intValue()>(select(heap, arr, arr(1))) + 1)),
+          arr,
+          arr(0),
+          <java.lang.Integer: java.lang.Integer valueOf(int)>(
+            <java.lang.Integer: int intValue()>(select(heap, arr, arr(1))) +
+            <java.lang.Integer: int intValue()>(
+              if ((arr(2)==arr(1)) && (!(arr(1)==<java.lang.Object: boolean <created>)))
+              then (<java.lang.Integer: java.lang.Integer valueOf(int)>(
+                <java.lang.Integer: int intValue()>(select(heap, arr, arr(1))) + 1
+              ))
+              else (select(heap, arr, arr(2)))
+            )
+          )
+        )
+         */
     }
 }

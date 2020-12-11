@@ -20,16 +20,8 @@ object SymbolicExpressionSimplifier {
                 applyStores(expression.vElse)
             )
             is AdditionExpr -> AdditionExpr(applyStores(expression.left), applyStores(expression.right))
+            is SubtractionExpr -> SubtractionExpr(applyStores(expression.left), applyStores(expression.right))
             is MultiplicationExpr -> MultiplicationExpr(applyStores(expression.left), applyStores(expression.right))
-            is LengthExpression -> LengthExpression(applyStores(expression.of))
-            is ArrayReference -> ArrayReference(expression.array, applyStores(expression.index))
-            is MethodInvocationExpression -> MethodInvocationExpression(
-                applyStores(expression.obj),
-                expression.method,
-                expression.declaringClass,
-                expression.type,
-                expression.args.map { applyStores(it) }
-            )
 
             is StoreApplExpression -> {
                 val subst = SymbolicStoreSimplifier.storeToSubst(SymbolicStoreSimplifier.simplify(expression.applied))

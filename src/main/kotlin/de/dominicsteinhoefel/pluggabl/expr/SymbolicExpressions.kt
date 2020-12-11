@@ -14,10 +14,8 @@ interface SymbolicExpressionsVisitor<T> {
     fun visit(e: StoreApplExpression): T
     fun visit(e: ConditionalExpression): T
     fun visit(e: AdditionExpr): T
+    fun visit(e: SubtractionExpr): T
     fun visit(e: MultiplicationExpr): T
-    fun visit(e: LengthExpression): T
-    fun visit(e: ArrayReference): T
-    fun visit(e: MethodInvocationExpression): T
 }
 
 sealed class SymbolicExpression {
@@ -150,6 +148,22 @@ class AdditionExpr(
     override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
 }
 
+class SubtractionExpr(
+    val left: SymbolicExpression,
+    val right: SymbolicExpression
+) : SymbolicExpression(), BinarySymbolicExpression {
+    override fun left() = left
+    override fun right() = right
+    override fun type() = left.type() // TODO: Have to take common supertype
+
+    override fun toString() = "(${left()})-(${right()})"
+    override fun hashCode() = Objects.hash(SubtractionExpr::class, left, right)
+    override fun equals(other: Any?) =
+        (other as? SubtractionExpr).let { it?.left == left && it.right == right }
+
+    override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
+}
+
 class MultiplicationExpr(
     val left: SymbolicExpression,
     val right: SymbolicExpression
@@ -166,51 +180,6 @@ class MultiplicationExpr(
     override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
 }
 
-class LengthExpression(val of: SymbolicExpression) : SymbolicExpression() {
-    init {
-        assert(of.type() is ArrayType)
-    }
-
-    override fun type() = INT_TYPE
-    override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
-
-    override fun toString() = "${of}.length"
-    override fun hashCode() = Objects.hash(LengthExpression::class, of)
-    override fun equals(other: Any?) = (other as? LengthExpression)?.of == of
-}
-
-class ArrayReference(val array: LocalVariable, val index: SymbolicExpression) : SymbolicExpression() {
-    init {
-        assert(index.type() == INT_TYPE)
-    }
-
-    override fun type() = (array.type as? ArrayType)!!.baseType
-    override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
-
-    override fun toString() = "$array[$index]"
-    override fun hashCode() = Objects.hash(ArrayReference::class, array, index)
-    override fun equals(other: Any?) =
-        (other as? ArrayReference).let { it?.array == array && it.index == index }
-}
-
-class MethodInvocationExpression(
-    val obj: SymbolicExpression,
-    val method: String,
-    val declaringClass: ReferenceType,
-    val type: Type,
-    val args: List<SymbolicExpression>
-) : SymbolicExpression() {
-    override fun type() = type
-    override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
-
-    override fun toString() = "${obj}.${method}(${args.joinToString(", ")})"
-    override fun hashCode() = Objects.hash(MethodInvocationExpression::class, obj, method, declaringClass, type, args)
-    override fun equals(other: Any?) =
-        (other as? MethodInvocationExpression).let {
-            it?.obj == obj && it.method == method && it.declaringClass == declaringClass && it.type == type && it.args == args
-        }
-}
-
 object ExprConverter {
     private val logger = LoggerFactory.getLogger(ExprConverter::class.simpleName)
 
@@ -224,7 +193,7 @@ object ExprConverter {
      */
     fun isSimpleExpression(value: soot.Value): Boolean =
         when (value) {
-            is JimpleLocal, is IntConstant, is JAddExpr, is JMulExpr -> true
+            is JimpleLocal, is IntConstant, is JAddExpr, is JSubExpr, is JMulExpr -> true
             else -> false
         }
 
@@ -233,21 +202,18 @@ object ExprConverter {
             is JimpleLocal -> symbolsManager.localVariableFor(value)
             is IntConstant -> IntValue(value.value)
             is JAddExpr -> AdditionExpr(convert(value.op1, symbolsManager), convert(value.op2, symbolsManager))
+            is JSubExpr -> SubtractionExpr(convert(value.op1, symbolsManager), convert(value.op2, symbolsManager))
             is JMulExpr -> MultiplicationExpr(convert(value.op1, symbolsManager), convert(value.op2, symbolsManager))
-            is JLengthExpr -> LengthExpression(convert(value.op, symbolsManager))
-            is JArrayRef -> ArrayReference(
-                convert(value.base, symbolsManager) as LocalVariable, convert(
-                    value.index,
-                    symbolsManager
-                )
-            )
             is JVirtualInvokeExpr -> {
-                logger.warn("Treating method ${value.methodRef} as pure")
-                MethodInvocationExpression(
-                    convert(value.base, symbolsManager),
-                    value.methodRef.name,
-                    TypeConverter.convert(value.methodRef.declaringClass.type) as ReferenceType,
-                    TypeConverter.convert(value.methodRef.returnType),
+                FunctionApplication(
+                    symbolsManager.getMethodResultSymbol(value.methodRef),
+                    listOf(listOf(convert(value.base, symbolsManager)),
+                        value.args.map { convert(it, symbolsManager) }).flatten()
+                )
+            }
+            is JStaticInvokeExpr -> {
+                FunctionApplication(
+                    symbolsManager.getMethodResultSymbol(value.methodRef),
                     value.args.map { convert(it, symbolsManager) }.toList()
                 )
             }
@@ -273,12 +239,8 @@ open class ExpressionCollector<T>(private val coll: (SymbolicExpression) -> Set<
         )
 
     override fun visit(e: AdditionExpr) = union(coll(e), e.left.accept(this), e.right.accept(this))
+    override fun visit(e: SubtractionExpr) = union(coll(e), e.left.accept(this), e.right.accept(this))
     override fun visit(e: MultiplicationExpr) = union(coll(e), e.left.accept(this), e.right.accept(this))
-    override fun visit(e: LengthExpression) = union(coll(e), e.of.accept(this))
-    override fun visit(e: ArrayReference) = union(coll(e), e.index.accept(this))
-
-    override fun visit(e: MethodInvocationExpression) =
-        union(coll(e), e.obj.accept(this), e.args.map { it.accept(this) }.flatten().toSet())
 }
 
 class LocalVariableExpressionCollector() : ExpressionCollector<LocalVariable>({ e ->
@@ -286,7 +248,6 @@ class LocalVariableExpressionCollector() : ExpressionCollector<LocalVariable>({ 
         is LocalVariable -> setOf(e)
         is StoreApplExpression -> e.applied.accept(LocalVariableStoreCollector())
         is ConditionalExpression -> e.condition.accept(LocalVariableConstraintCollector())
-        is ArrayReference -> setOf(e.array)
         else -> emptySet()
     }
 })
@@ -303,9 +264,7 @@ class FunctionSymbolExpressionCollector() : ExpressionCollector<FunctionSymbol>(
 open class ExpressionReplacer(private val repl: (SymbolicExpression) -> SymbolicExpression) :
     SymbolicExpressionsVisitor<SymbolicExpression> {
     override fun visit(e: IntValue) = repl(e)
-
     override fun visit(e: LocalVariable) = repl(e)
-
     override fun visit(e: FunctionApplication) = repl(FunctionApplication(e.f, e.args.map { it.accept(this) }))
 
     override fun visit(e: StoreApplExpression) =
@@ -321,22 +280,8 @@ open class ExpressionReplacer(private val repl: (SymbolicExpression) -> Symbolic
         )
 
     override fun visit(e: AdditionExpr) = repl(AdditionExpr(e.left.accept(this), e.right.accept(this)))
-
+    override fun visit(e: SubtractionExpr) = repl(AdditionExpr(e.left.accept(this), e.right.accept(this)))
     override fun visit(e: MultiplicationExpr) = repl(MultiplicationExpr(e.left.accept(this), e.right.accept(this)))
-
-    override fun visit(e: LengthExpression) = repl(LengthExpression(e.of.accept(this)))
-
-    override fun visit(e: ArrayReference) =
-        repl(ArrayReference(e.array.accept(this) as LocalVariable, e.index.accept(this)))
-
-    override fun visit(e: MethodInvocationExpression) = repl(
-        MethodInvocationExpression(
-            e.obj.accept(this),
-            e.method,
-            e.declaringClass,
-            e.type,
-            e.args.map { it.accept(this) })
-    )
 
 }
 

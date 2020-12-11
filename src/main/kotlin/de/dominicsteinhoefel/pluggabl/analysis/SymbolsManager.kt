@@ -3,6 +3,7 @@ package de.dominicsteinhoefel.pluggabl.analysis
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.theories.FIELD_TYPE
 import de.dominicsteinhoefel.pluggabl.util.NewNamesCreator
+import soot.SootMethodRef
 import soot.jimple.internal.JInstanceFieldRef
 import soot.jimple.internal.JimpleLocal
 
@@ -16,7 +17,8 @@ class SymbolsManager {
 
     private val functionSymbols = LinkedHashSet<FunctionSymbol>()
     private val funcSymbNamesCreator = NewNamesCreator()
-    private val classFieldNameNameToFieldSymbolsMap = LinkedHashMap<Pair<String, String>, FunctionApplication>()
+    private val classNameFieldNameToFieldSymbolsMap = LinkedHashMap<Pair<String, String>, FunctionApplication>()
+    private val classMethodSigToMethodResultSymbolsMap = LinkedHashMap<Pair<String, String>, FunctionSymbol>()
 
     fun getLocalVariables() = localVariables.toSet()
 
@@ -53,6 +55,8 @@ class SymbolsManager {
             throw IllegalStateException("Result variable is already initialized")
     }
 
+    fun getResultVariable() = resultVariable
+
     fun getFunctionSymbols() = functionSymbols.toSet()
 
     fun newFunctionSymbol(name: String, type: Type, paramTypes: List<Type>) =
@@ -85,10 +89,30 @@ class SymbolsManager {
                 ),
                 FIELD_TYPE
             )
-        ).also { classFieldNameNameToFieldSymbolsMap[Pair(className, fieldName)] = it }
+        ).also { classNameFieldNameToFieldSymbolsMap[Pair(className, fieldName)] = it }
             .also { functionSymbols.add(it.f) }
     }
 
+    fun getMethodResultSymbol(methodRef: SootMethodRef): FunctionSymbol {
+        val className = methodRef.declaringClass.toString()
+        val methodSig = "${methodRef.returnType} ${methodRef.name}(${methodRef.parameterTypes.joinToString(", ")})"
+
+        return getMethodResultSymbol(className, methodSig) ?: FunctionSymbol(
+            funcSymbNamesCreator.newName(
+                "<$className: $methodSig>"
+            ),
+            TypeConverter.convert(methodRef.returnType),
+            methodRef.parameterTypes.map { TypeConverter.convert(it) }.let {
+                if (methodRef.isStatic) it
+                else listOf(listOf(TypeConverter.convert(methodRef.declaringClass.type)), it).flatten()
+            }
+        ).also { classMethodSigToMethodResultSymbolsMap[Pair(className, methodSig)] = it }
+            .also { functionSymbols.add(it) }
+    }
+
     fun getFieldSymbol(className: String, fieldName: String) =
-        classFieldNameNameToFieldSymbolsMap[Pair(className, fieldName)]
+        classNameFieldNameToFieldSymbolsMap[Pair(className, fieldName)]
+
+    fun getMethodResultSymbol(className: String, methodSig: String) =
+        classMethodSigToMethodResultSymbolsMap[Pair(className, methodSig)]
 }

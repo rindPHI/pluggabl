@@ -1,8 +1,10 @@
 package de.dominicsteinhoefel.pluggabl.analysis
 
+import de.dominicsteinhoefel.pluggabl.analysis.rules.SERule
 import de.dominicsteinhoefel.pluggabl.expr.LocalVariable
 import de.dominicsteinhoefel.pluggabl.expr.SymbolicExecutionState
 import de.dominicsteinhoefel.pluggabl.expr.TypeConverter
+import de.dominicsteinhoefel.pluggabl.rules.*
 import de.dominicsteinhoefel.pluggabl.theories.HEAP_SYMBOLS
 import de.dominicsteinhoefel.pluggabl.theories.HEAP_VAR
 import de.dominicsteinhoefel.pluggabl.theories.LOCATION_SET_SYMBOLS
@@ -14,6 +16,7 @@ import soot.Body
 import soot.G
 import soot.jimple.GotoStmt
 import soot.jimple.Stmt
+import soot.jimple.internal.JReturnStmt
 import soot.jimple.internal.JimpleLocal
 import soot.jimple.toolkits.annotation.logic.Loop
 import soot.jimple.toolkits.annotation.logic.LoopFinder
@@ -29,7 +32,18 @@ class SymbolicExecutionAnalysis internal constructor(
     private val ignoreTopLoop: Boolean = false
 ) {
     private val rules = arrayOf(
-        AssignSimpleRule, AssignFromFieldRule, AssignToFieldRule, IfRule, LeafRule, DummyRule, IgnoreAndWarnRule
+        AssignSimpleRule,
+        AssignFromFieldRule,
+        AssignToFieldRule,
+        AssignFromArrayRule,
+        AssignToArrayRule,
+        AssignFromPureVirtualInvokationRule,
+        AssignFromPureStaticInvokationRule,
+        ReturnValueRule,
+        ReturnVoidRule,
+        IfRule,
+        DummyRule,
+        IgnoreAndWarnRule
     )
 
     val cfg: ExceptionalUnitGraph = ExceptionalUnitGraph(body)
@@ -125,7 +139,7 @@ class SymbolicExecutionAnalysis internal constructor(
             val rule = getApplicableRule(currStmt, inputStates)
             val result = rule.apply(currStmt, inputStates, symbolsManager).map { it.simplify() }
 
-            if (result.size != cfg.getSuccsOf(currStmt).size) {
+            if (result.size != cfg.getSuccsOf(currStmt).size && !(currStmt is JReturnStmt)) {
                 throw IllegalStateException(
                     "Expected number ${result.size} of successors in SE graph " +
                             "does not match number of successors in CFG (${cfg.getSuccsOf(currStmt).size})"
