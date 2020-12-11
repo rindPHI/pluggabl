@@ -1,4 +1,4 @@
-package de.dominicsteinhoefel.pluggabl
+package de.dominicsteinhoefel.pluggabl.testcase
 
 class ParenthesisParser {
     fun parse(input: Array<Char>): Int {

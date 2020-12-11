@@ -1,6 +1,6 @@
-package de.dominicsteinhoefel.pluggabl
+package de.dominicsteinhoefel.pluggabl.test
 
-import de.dominicsteinhoefel.pluggabl.SymbolicExecutionTestHelper.printLeafSESs
+import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.printLeafSESs
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import org.junit.Assert
 import org.junit.Test

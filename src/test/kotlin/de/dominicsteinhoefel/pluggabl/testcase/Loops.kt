@@ -1,4 +1,4 @@
-package de.dominicsteinhoefel.pluggabl
+package de.dominicsteinhoefel.pluggabl.testcase
 
 class Loops {
     fun simpleLoop(input: Int): Int {

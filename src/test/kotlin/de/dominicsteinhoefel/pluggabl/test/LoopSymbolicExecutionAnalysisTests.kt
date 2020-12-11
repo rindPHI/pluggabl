@@ -1,7 +1,7 @@
-package de.dominicsteinhoefel.pluggabl
+package de.dominicsteinhoefel.pluggabl.test
 
-import de.dominicsteinhoefel.pluggabl.SymbolicExecutionTestHelper.compareLeaves
-import de.dominicsteinhoefel.pluggabl.SymbolicExecutionTestHelper.compareLoopLeaves
+import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.compareLeaves
+import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.compareLoopLeaves
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.simplification.SymbolicExpressionSimplifier
@@ -69,7 +69,7 @@ class LoopSymbolicExecutionAnalysisTests {
         )
 
         val analysis = SymbolicExecutionAnalysis.create(
-            "de.dominicsteinhoefel.pluggabl.Loops",
+            "de.dominicsteinhoefel.pluggabl.testcase.Loops",
             "int simpleLoop(int)"
         )
 
@@ -152,7 +152,7 @@ class LoopSymbolicExecutionAnalysisTests {
         )
 
         val analysis = SymbolicExecutionAnalysis.create(
-            "de.dominicsteinhoefel.pluggabl.Loops",
+            "de.dominicsteinhoefel.pluggabl.testcase.Loops",
             "int simpleLoopWithContinueAndBreak(int)"
         )
 

@@ -1,7 +1,7 @@
-package de.dominicsteinhoefel.pluggabl
+package de.dominicsteinhoefel.pluggabl.test
 
-import de.dominicsteinhoefel.pluggabl.SymbolicExecutionTestHelper.compareLeaves
-import de.dominicsteinhoefel.pluggabl.SymbolicExecutionTestHelper.compareLoopLeaves
+import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.compareLeaves
+import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.compareLoopLeaves
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.simplification.SymbolicExpressionSimplifier
@@ -17,7 +17,7 @@ class HeapSymbolicExecutionAnalysisTests {
     @Test
     fun testSimpleTwoBranchedMethodWithMergeFieldAccess() {
         val analysis = SymbolicExecutionAnalysis.create(
-            "de.dominicsteinhoefel.pluggabl.HeapAccess",
+            "de.dominicsteinhoefel.pluggabl.testcase.HeapAccess",
             "void simpleTwoBranchedMethodWithMergeFieldAccess()"
         )
 
@@ -36,7 +36,7 @@ class HeapSymbolicExecutionAnalysisTests {
             Select(INT_TYPE),
             HEAP_VAR,
             analysis.localVariables.first { it.name == "this" },
-            FunctionApplication(FunctionSymbol("<de.dominicsteinhoefel.pluggabl.HeapAccess: int test>", FIELD_TYPE))
+            FunctionApplication(FunctionSymbol("<de.dominicsteinhoefel.pluggabl.testcase.HeapAccess: int test>", FIELD_TYPE))
         )
 
         val thisVar = analysis.localVariables.first { it.name == "this" }
@@ -51,7 +51,7 @@ class HeapSymbolicExecutionAnalysisTests {
             thisVar,
             FunctionApplication(
                 FunctionSymbol(
-                    "<de.dominicsteinhoefel.pluggabl.HeapAccess: int input>",
+                    "<de.dominicsteinhoefel.pluggabl.testcase.HeapAccess: int input>",
                     FIELD_TYPE
                 )
             )

@@ -1,4 +1,4 @@
-package de.dominicsteinhoefel.pluggabl
+package de.dominicsteinhoefel.pluggabl.testcase
 
 class HeapAccess {
     private var input = 0

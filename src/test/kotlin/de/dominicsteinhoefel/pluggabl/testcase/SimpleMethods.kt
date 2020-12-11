@@ -1,4 +1,4 @@
-package de.dominicsteinhoefel.pluggabl
+package de.dominicsteinhoefel.pluggabl.testcase
 
 class SimpleMethods {
     fun simpleTwoBranchedMethod(input: Int): Int {
