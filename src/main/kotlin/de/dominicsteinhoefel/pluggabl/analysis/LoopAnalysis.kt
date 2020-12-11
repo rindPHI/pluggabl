@@ -1,21 +1,20 @@
 package de.dominicsteinhoefel.pluggabl.analysis
 
 import de.dominicsteinhoefel.pluggabl.expr.*
-import de.dominicsteinhoefel.pluggabl.util.NewNamesCreator
+import de.dominicsteinhoefel.pluggabl.util.subList
 import soot.Body
 import soot.Local
 import soot.jimple.GotoStmt
 import soot.jimple.IfStmt
 import soot.jimple.Stmt
 import soot.jimple.toolkits.annotation.logic.Loop
-import de.dominicsteinhoefel.pluggabl.util.subList
 
 class LoopAnalysis(
     private val body: Body,
     private val loop: Loop,
     private val loopIdx: Int,
     loopHeadInputStates: List<SymbolicExecutionState>,
-    private val newNamesCreator: NewNamesCreator
+    private val symbolsManager: SymbolsManager
 ) {
     private val initState = SymbolicExecutionState.merge(loopHeadInputStates)
     private val stmtToInputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
@@ -81,7 +80,7 @@ class LoopAnalysis(
         emptySet(),
         createAnonymizingLoopStore(
             writtenVars,
-            LocalVariable(newNamesCreator.newName("itCnt_LOOP_$loopIdx"), INT_TYPE),
+            symbolsManager.newLocalVariable("itCnt_LOOP_$loopIdx", INT_TYPE),
             initState,
             loopExitsInputState,
             "_ANON_LOOP_$loopIdx"
@@ -158,8 +157,8 @@ class LoopAnalysis(
                 loopHeadInputState.constraints.map { it.accept(LocalVariableConstraintCollector()) }.flatten().toSet()
             )
 
-        val f = FunctionSymbol(
-            newNamesCreator.newName("iterations_LOOP_$loopIdx"),
+        val f = symbolsManager.newFunctionSymbol(
+            "iterations_LOOP_$loopIdx",
             INT_TYPE,
             terminationRelevantVariables.map { it.type }
         ).also { functionSymbols.add(it) }
@@ -174,7 +173,7 @@ class LoopAnalysis(
             }
             it
         }
-        .map { ExprConverter.convert(it) as LocalVariable }.toSet().toList()
+        .map { ExprConverter.convert(it, symbolsManager) as LocalVariable }.toSet().toList()
 
     private fun createAnonymizingLoopStore(
         writtenVars: List<LocalVariable>,
@@ -185,8 +184,8 @@ class LoopAnalysis(
     ) = writtenVars.associateWith { writtenVar ->
         val relVars = variablesRelevantFor(writtenVar, initState, resultState)
         FunctionApplication(
-            FunctionSymbol(
-                newNamesCreator.newName(writtenVar.name + nameSuffix),
+            symbolsManager.newFunctionSymbol(
+                writtenVar.name + nameSuffix,
                 writtenVar.type,
                 listOf(listOf(iterationCounter.type()), relVars.map { it.type }).flatten()
             ).also { functionSymbols.add(it) },
@@ -238,7 +237,7 @@ class LoopAnalysis(
         listOf(
             initState.constraints.map { it.accept(LocalVariableConstraintCollector()) }.flatten(),
             initState.store.accept(LocalVariableStoreCollector()),
-            body.parameterLocals.map { ExprConverter.convert(it) as LocalVariable }
+            body.parameterLocals.map { ExprConverter.convert(it, symbolsManager) as LocalVariable }
         ).flatten().contains(it)
     }.toSet()
 

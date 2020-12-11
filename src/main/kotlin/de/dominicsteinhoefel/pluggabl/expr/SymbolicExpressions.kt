@@ -1,5 +1,6 @@
 package de.dominicsteinhoefel.pluggabl.expr
 
+import de.dominicsteinhoefel.pluggabl.analysis.SymbolsManager
 import de.dominicsteinhoefel.pluggabl.util.union
 import org.slf4j.LoggerFactory
 import soot.jimple.IntConstant
@@ -227,22 +228,27 @@ object ExprConverter {
             else -> false
         }
 
-    fun convert(value: soot.Value): SymbolicExpression =
+    fun convert(value: soot.Value, symbolsManager: SymbolsManager): SymbolicExpression =
         when (value) {
-            is JimpleLocal -> LocalVariable(value.name, TypeConverter.convert(value.getType()))
+            is JimpleLocal -> symbolsManager.localVariableFor(value)
             is IntConstant -> IntValue(value.value)
-            is JAddExpr -> AdditionExpr(convert(value.op1), convert(value.op2))
-            is JMulExpr -> MultiplicationExpr(convert(value.op1), convert(value.op2))
-            is JLengthExpr -> LengthExpression(convert(value.op))
-            is JArrayRef -> ArrayReference(convert(value.base) as LocalVariable, convert(value.index))
+            is JAddExpr -> AdditionExpr(convert(value.op1, symbolsManager), convert(value.op2, symbolsManager))
+            is JMulExpr -> MultiplicationExpr(convert(value.op1, symbolsManager), convert(value.op2, symbolsManager))
+            is JLengthExpr -> LengthExpression(convert(value.op, symbolsManager))
+            is JArrayRef -> ArrayReference(
+                convert(value.base, symbolsManager) as LocalVariable, convert(
+                    value.index,
+                    symbolsManager
+                )
+            )
             is JVirtualInvokeExpr -> {
                 logger.warn("Treating method ${value.methodRef} as pure")
                 MethodInvocationExpression(
-                    convert(value.base),
+                    convert(value.base, symbolsManager),
                     value.methodRef.name,
                     TypeConverter.convert(value.methodRef.declaringClass.type) as ReferenceType,
                     TypeConverter.convert(value.methodRef.returnType),
-                    value.args.map { convert(it) }.toList()
+                    value.args.map { convert(it, symbolsManager) }.toList()
                 )
             }
             else -> TODO("Conversion of type ${value.javaClass} to SymbolicExpression not yet implemented.")

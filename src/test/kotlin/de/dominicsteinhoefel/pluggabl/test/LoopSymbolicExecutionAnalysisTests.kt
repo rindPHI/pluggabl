@@ -18,7 +18,7 @@ class LoopSymbolicExecutionAnalysisTests {
     fun testSimpleLoop() {
         val sInput = LocalVariable("input", INT_TYPE)
         val sI = LocalVariable("i", INT_TYPE)
-        val sResult = LocalVariable("result", INT_TYPE)
+        val sResult = LocalVariable("result_0", INT_TYPE)
         val conditional = ConditionalExpression.create(
             GreaterEqualConstr(sInput, IntValue(0)),
             sInput,
@@ -84,7 +84,7 @@ class LoopSymbolicExecutionAnalysisTests {
     fun testSimpleLoopWithContinueAndBreak() {
         val sInput = LocalVariable("input", INT_TYPE)
         val sI = LocalVariable("i", INT_TYPE)
-        val sResult = LocalVariable("result", INT_TYPE)
+        val sResult = LocalVariable("result_0", INT_TYPE)
         val conditional = ConditionalExpression.create(
             GreaterEqualConstr(sInput, IntValue(0)),
             sInput,

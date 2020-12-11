@@ -1,17 +1,12 @@
 package de.dominicsteinhoefel.pluggabl.test
 
-import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.compareLeaves
-import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.compareLoopLeaves
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.simplification.SymbolicExpressionSimplifier
-import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.printLeafSESs
 import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.printSESs
-import de.dominicsteinhoefel.pluggabl.theories.FIELD_TYPE
 import de.dominicsteinhoefel.pluggabl.theories.HEAP_VAR
 import de.dominicsteinhoefel.pluggabl.theories.Select
 import org.junit.Assert
-import org.junit.Assert.assertEquals
 import org.junit.Test
 import soot.jimple.Stmt
 
@@ -34,14 +29,14 @@ class HeapSymbolicExecutionAnalysisTests {
             )
         }
 
+        val thisVar = analysis.symbolsManager.getLocalVariables().first { it.name == "this" }
+
         val selectTerm = FunctionApplication(
             Select(INT_TYPE),
             HEAP_VAR,
-            analysis.localVariables.first { it.name == "this" },
-            FunctionApplication(FunctionSymbol("<de.dominicsteinhoefel.pluggabl.testcase.HeapAccess: int test>", FIELD_TYPE))
+            thisVar,
+            analysis.symbolsManager.getFieldSymbol("de.dominicsteinhoefel.pluggabl.testcase.HeapAccess", "test")!!
         )
-
-        val thisVar = analysis.localVariables.first { it.name == "this" }
 
         val evaluatedExpression =
             SymbolicExpressionSimplifier.simplify(StoreApplExpression.create(leafState.store, selectTerm))
@@ -51,12 +46,7 @@ class HeapSymbolicExecutionAnalysisTests {
             Select(INT_TYPE),
             HEAP_VAR,
             thisVar,
-            FunctionApplication(
-                FunctionSymbol(
-                    "<de.dominicsteinhoefel.pluggabl.testcase.HeapAccess: int input>",
-                    FIELD_TYPE
-                )
-            )
+            analysis.symbolsManager.getFieldSymbol("de.dominicsteinhoefel.pluggabl.testcase.HeapAccess", "input")!!
         )
 
         val condition = EqualityConstr.create(selectInput, IntValue(42))

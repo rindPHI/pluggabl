@@ -1,10 +1,11 @@
 package de.dominicsteinhoefel.pluggabl.analysis
 
-import de.dominicsteinhoefel.pluggabl.expr.*
+import de.dominicsteinhoefel.pluggabl.expr.LocalVariable
+import de.dominicsteinhoefel.pluggabl.expr.SymbolicExecutionState
+import de.dominicsteinhoefel.pluggabl.expr.TypeConverter
 import de.dominicsteinhoefel.pluggabl.theories.HEAP_SYMBOLS
 import de.dominicsteinhoefel.pluggabl.theories.HEAP_VAR
 import de.dominicsteinhoefel.pluggabl.theories.LOCATION_SET_SYMBOLS
-import de.dominicsteinhoefel.pluggabl.util.NewNamesCreator
 import de.dominicsteinhoefel.pluggabl.util.SootBridge
 import de.dominicsteinhoefel.pluggabl.util.subList
 import org.slf4j.Logger
@@ -13,13 +14,13 @@ import soot.Body
 import soot.G
 import soot.jimple.GotoStmt
 import soot.jimple.Stmt
+import soot.jimple.internal.JimpleLocal
 import soot.jimple.toolkits.annotation.logic.Loop
 import soot.jimple.toolkits.annotation.logic.LoopFinder
 import soot.toolkits.graph.ExceptionalUnitGraph
 import java.util.*
 import kotlin.collections.HashMap
 import kotlin.collections.LinkedHashMap
-import kotlin.collections.LinkedHashSet
 
 class SymbolicExecutionAnalysis internal constructor(
     private val body: Body,
@@ -33,14 +34,11 @@ class SymbolicExecutionAnalysis internal constructor(
 
     val cfg: ExceptionalUnitGraph = ExceptionalUnitGraph(body)
 
-    private val newNamesCreator = NewNamesCreator()
+    val symbolsManager = SymbolsManager()
 
     private val stmtToInputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
     private val stmtToOutputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
     private val loopLeafSESMap = LinkedHashMap<Loop, SymbolicExecutionState>()
-
-    val localVariables = LinkedHashSet<LocalVariable>()
-    val functionSymbols = LinkedHashSet<FunctionSymbol>()
 
     private val loops = LoopFinder().getLoops(body)
 
@@ -116,7 +114,7 @@ class SymbolicExecutionAnalysis internal constructor(
             }
 
             val rule = getApplicableRule(currStmt, inputStates)
-            val result = rule.apply(currStmt, inputStates).map { it.simplify() }
+            val result = rule.apply(currStmt, inputStates, symbolsManager).map { it.simplify() }
 
             if (result.size != cfg.getSuccsOf(currStmt).size) {
                 throw IllegalStateException(
@@ -141,20 +139,18 @@ class SymbolicExecutionAnalysis internal constructor(
     }
 
     private fun registerSymbols() {
-        localVariables.addAll(body.locals.map(ExprConverter::convert).map { it as LocalVariable })
-        localVariables.addAll(body.parameterLocals.map(ExprConverter::convert).map { it as LocalVariable })
-        localVariables.add(HEAP_VAR)
-
-        localVariables.forEach {
-            assert(newNamesCreator.newName(it.name) == it.name)
+        symbolsManager.registerHeapVar(HEAP_VAR)
+        body.method.returnType.let {
+            if (it != G.v().soot_VoidType()) {
+                symbolsManager.registerResultVar(LocalVariable("result", TypeConverter.convert(it)))
+            }
         }
 
-        functionSymbols.addAll(HEAP_SYMBOLS)
-        functionSymbols.addAll(LOCATION_SET_SYMBOLS)
+        body.locals.forEach { symbolsManager.registerJimpleLocal(it as JimpleLocal) }
+        body.parameterLocals.forEach { symbolsManager.registerJimpleLocal(it as JimpleLocal) }
 
-        functionSymbols.forEach {
-            assert(newNamesCreator.newName(it.name) == it.name)
-        }
+        symbolsManager.registerFunctionSymbols(HEAP_SYMBOLS)
+        symbolsManager.registerFunctionSymbols(LOCATION_SET_SYMBOLS)
     }
 
     private fun analyzeLoop(loop: Loop) {
@@ -166,12 +162,10 @@ class SymbolicExecutionAnalysis internal constructor(
             loop,
             loopIdx,
             stmtToInputSESMap[loop.head] ?: emptyList(),
-            newNamesCreator
+            symbolsManager
         )
 
         loopAnalysis.executeLoopAndAnonymize()
-
-        functionSymbols.addAll(loopAnalysis.functionSymbols)
 
         loopAnalysis.getLoopLeafState().let { loopLeafSESMap[loop] = it }
 

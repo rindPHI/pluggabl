@@ -1,7 +1,9 @@
 package de.dominicsteinhoefel.pluggabl.expr
 
+import de.dominicsteinhoefel.pluggabl.analysis.SymbolsManager
 import de.dominicsteinhoefel.pluggabl.simplification.SymbolicConstraintSimplifier
 import de.dominicsteinhoefel.pluggabl.util.union
+import soot.Value
 import soot.jimple.internal.JEqExpr
 import soot.jimple.internal.JGeExpr
 import soot.jimple.internal.JGtExpr
@@ -270,24 +272,24 @@ class SymbolReplaceConstrVisitor(val replMap: Map<LocalVariable, SymbolicExpress
 }
 
 object ConstrConverter {
-    fun convert(value: soot.Value): SymbolicConstraint =
+    fun convert(value: Value, symbolsManager: SymbolsManager): SymbolicConstraint =
         when (value) {
             is JEqExpr ->
                 EqualityConstr.create(
-                    ExprConverter.convert(value.op1),
-                    ExprConverter.convert(value.op2)
+                    ExprConverter.convert(value.op1, symbolsManager),
+                    ExprConverter.convert(value.op2, symbolsManager)
                 )
             is JNeExpr -> NegatedConstr.create(
                 EqualityConstr.create(
-                    ExprConverter.convert(value.op1),
-                    ExprConverter.convert(value.op2)
+                    ExprConverter.convert(value.op1, symbolsManager),
+                    ExprConverter.convert(value.op2, symbolsManager)
                 )
             )
             is JGeExpr -> GreaterEqualConstr(
-                ExprConverter.convert(value.op1), ExprConverter.convert(value.op2)
+                ExprConverter.convert(value.op1, symbolsManager), ExprConverter.convert(value.op2, symbolsManager)
             )
             is JGtExpr -> GreaterConstr(
-                ExprConverter.convert(value.op1), ExprConverter.convert(value.op2)
+                ExprConverter.convert(value.op1, symbolsManager), ExprConverter.convert(value.op2, symbolsManager)
             )
             else -> TODO("Conversion of type ${value.javaClass} to SymbolicConstraint not yet implemented.")
         }

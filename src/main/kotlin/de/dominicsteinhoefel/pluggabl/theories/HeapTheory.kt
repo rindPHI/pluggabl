@@ -19,14 +19,6 @@ val HEAP_SYMBOLS = listOf(STORE, CREATE, ANON, CREATED, ARRAY_FIELD, ARRAY_LENGT
 
 class Select(type: Type) : FunctionSymbol("select", type, HEAP_TYPE, OBJECT_TYPE, FIELD_TYPE)
 
-fun getFieldSymbol(fieldRef: JInstanceFieldRef) =
-    FunctionApplication(
-        FunctionSymbol(
-            "<${fieldRef.fieldRef.declaringClass()}: ${fieldRef.type} ${fieldRef.fieldRef.name()}>",
-            FIELD_TYPE
-        )
-    )
-
 object HeapSimplifier {
     private val SIMPLIFICATIONS: List<(SymbolicExpression) -> SymbolicExpression> =
         listOf(this::selectOfStore)
