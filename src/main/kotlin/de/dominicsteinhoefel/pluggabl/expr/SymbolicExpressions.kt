@@ -54,13 +54,15 @@ class LocalVariable(
 open class FunctionSymbol(
     val name: String,
     val type: Type,
-    val paramTypes: List<Type>
+    val paramTypes: List<Type>,
+    val unique: Boolean = false
 ) {
     constructor(
         name: String,
         type: Type,
-        vararg paramTypes: Type
-    ) : this(name, type, paramTypes.toList())
+        vararg paramTypes: Type,
+        unique: Boolean = false
+    ) : this(name, type, paramTypes.toList(), unique)
 
     override fun toString() = "$type $name(${paramTypes.joinToString(", ")})"
     override fun hashCode() = Objects.hash(FunctionSymbol::class, name, type, paramTypes)

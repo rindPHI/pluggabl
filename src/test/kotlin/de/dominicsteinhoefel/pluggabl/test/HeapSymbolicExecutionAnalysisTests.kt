@@ -4,9 +4,11 @@ import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.simplification.SymbolicExpressionSimplifier
 import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.printSESs
+import de.dominicsteinhoefel.pluggabl.theories.ARRAY_FIELD
 import de.dominicsteinhoefel.pluggabl.theories.HEAP_VAR
 import de.dominicsteinhoefel.pluggabl.theories.Select
 import org.junit.Assert
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import soot.jimple.Stmt
 
@@ -32,7 +34,7 @@ class HeapSymbolicExecutionAnalysisTests {
         val thisVar = analysis.getLocal("this")
 
         val selectTerm = FunctionApplication(
-            Select(INT_TYPE),
+            Select.create(INT_TYPE),
             HEAP_VAR,
             thisVar,
             analysis.symbolsManager.getFieldSymbol("de.dominicsteinhoefel.pluggabl.testcase.HeapAccess", "test")!!
@@ -43,7 +45,7 @@ class HeapSymbolicExecutionAnalysisTests {
 
         // Expression should contain a conditional term with constraint "this.input == 42". We consider both cases.
         val selectInput = FunctionApplication(
-            Select(INT_TYPE),
+            Select.create(INT_TYPE),
             HEAP_VAR,
             thisVar,
             analysis.symbolsManager.getFieldSymbol("de.dominicsteinhoefel.pluggabl.testcase.HeapAccess", "input")!!
@@ -83,37 +85,72 @@ class HeapSymbolicExecutionAnalysisTests {
         analysis.symbolicallyExecute()
         printSESs(analysis)
 
+        val intValueSym = analysis.symbolsManager.getMethodResultSymbol(
+            "java.lang.Integer", "int intValue()"
+        )!!
+
+        val intValueOfSym = analysis.symbolsManager.getMethodResultSymbol(
+            "java.lang.Integer", "java.lang.Integer valueOf(int)"
+        )!!
+
+        val arrVar = analysis.getLocal("arr")
+        val heapVar = analysis.getLocal("heap")
+        val resultVar = analysis.getLocal("result")
+
+        val selectArr1 = FunctionApplication(
+            Select.create(INT_TYPE), heapVar, arrVar, FunctionApplication(ARRAY_FIELD, IntValue(1))
+        )
+
+        val selectArr2 = FunctionApplication(
+            Select.create(INT_TYPE), heapVar, arrVar, FunctionApplication(ARRAY_FIELD, IntValue(2))
+        )
+
+        val expectedResultExpr = AdditionExpr(
+            FunctionApplication(
+                intValueSym,
+                FunctionApplication(
+                    intValueOfSym,
+                    AdditionExpr(
+                        FunctionApplication(intValueSym, selectArr1),
+                        FunctionApplication(intValueSym, selectArr2)
+                    )
+                )
+            ), IntValue(1)
+        )
+
+        val actualResultExpr =
+            analysis.getOutputSESs(analysis.cfg.tails[0] as Stmt)[0].store.accept(SymbolicStoreCollector { c ->
+                if (c is ElementaryStore && c.lhs == resultVar)
+                    setOf(c.rhs)
+                else emptySet()
+            }).toList()[0]
+
+        assertEquals(expectedResultExpr, actualResultExpr)
+
         TODO("Test outcome.")
 
         /*
         Result value holds:
-        result -> <java.lang.Integer: int intValue()>(
-                    <java.lang.Integer: java.lang.Integer valueOf(int)>(
-                      <java.lang.Integer: int intValue()>(select(heap, arr, arr(1))) -
-                      <java.lang.Integer: int intValue()>(
-                        if ((arr(2)==arr(1)) && !(arr(1)==(<java.lang.Object: boolean <created>)))
-                        then (<java.lang.Integer: java.lang.Integer valueOf(int)>(<java.lang.Integer: int intValue()>(select(heap, arr, arr(1))))+1)
-                        else (select(heap, arr, arr(2)))))
-                  ) + 1]
+          <java.lang.Integer: int intValue()>(
+            <java.lang.Integer: java.lang.Integer valueOf(int)>(
+              <java.lang.Integer: int intValue()>(select(heap, arr, arr(1))) +
+              <java.lang.Integer: int intValue()>(select(heap, arr, arr(2)))))
+          +1
          */
 
         /*
         Heap is:
-        heap -> store(
-          store(heap, arr, arr(1), <java.lang.Integer: java.lang.Integer valueOf(int)>(<java.lang.Integer: int intValue()>(select(heap, arr, arr(1))) + 1)),
-          arr,
-          arr(0),
-          <java.lang.Integer: java.lang.Integer valueOf(int)>(
-            <java.lang.Integer: int intValue()>(select(heap, arr, arr(1))) +
-            <java.lang.Integer: int intValue()>(
-              if ((arr(2)==arr(1)) && (!(arr(1)==<java.lang.Object: boolean <created>)))
-              then (<java.lang.Integer: java.lang.Integer valueOf(int)>(
-                <java.lang.Integer: int intValue()>(select(heap, arr, arr(1))) + 1
-              ))
-              else (select(heap, arr, arr(2)))
-            )
-          )
-        )
+        heap ->
+          store(
+            store(
+              heap,
+              arr,
+              arr(1),
+              <java.lang.Integer: java.lang.Integer valueOf(int)>((<java.lang.Integer: int intValue()>(select(heap, arr, arr(1))))+(1))),
+            arr,
+            arr(0),
+            <java.lang.Integer: java.lang.Integer valueOf(int)>(<java.lang.Integer: int intValue()>(select(heap, arr, arr(1)))+
+              (<java.lang.Integer: int intValue()>(select(heap, arr, arr(2))))))]++
          */
     }
 }

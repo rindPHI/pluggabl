@@ -5,7 +5,18 @@ import java.util.*
 import kotlin.collections.LinkedHashSet
 
 object SymbolicConstraintSimplifier {
-    fun simplifyExpressions(constraint: SymbolicConstraint): SymbolicConstraint =
+    private val simplifications: List<(SymbolicConstraint) -> SymbolicConstraint> =
+        listOf(
+            SymbolicConstraintSimplifier::simplifyExpressions,
+            SymbolicConstraintSimplifier::applyStores,
+            SymbolicConstraintSimplifier::equalUniqueFuncExprs,
+            SymbolicConstraintSimplifier::equalValueExprs
+        )
+
+    fun simplify(constraint: SymbolicConstraint): SymbolicConstraint =
+        simplifications.fold(constraint, { acc, elem -> elem(acc) })
+
+    private fun simplifyExpressions(constraint: SymbolicConstraint): SymbolicConstraint =
         when (constraint) {
             is GreaterConstr -> GreaterConstr(
                 SymbolicExpressionSimplifier.simplify(constraint.left),
@@ -30,7 +41,6 @@ object SymbolicConstraintSimplifier {
                     SymbolicStoreSimplifier.simplifyExpressions(constraint.applied),
                     simplifyExpressions(constraint.target)
                 )
-
         }
 
     fun applyStores(constraint: SymbolicConstraint): SymbolicConstraint =
@@ -62,6 +72,46 @@ object SymbolicConstraintSimplifier {
     fun compress(constraints: Set<SymbolicConstraint>): Set<SymbolicConstraint> =
         if (constraints.contains(False)) setOf(False)
         else constraints.filterNot(True::class::isInstance).toSet()
+
+    private fun equalUniqueFuncExprs(constraint: SymbolicConstraint): SymbolicConstraint =
+        constraint.accept(ConstraintReplacer { c ->
+            when (c) {
+                is EqualityConstr -> {
+                    if (c.left is FunctionApplication && c.right is FunctionApplication) {
+                        val left = c.left
+                        val right = c.right
+
+                        if (left.f.unique && right.f.unique) {
+                            if (left.f == right.f)
+                                And.create(
+                                    left.args.zip(right.args).fold(
+                                        True as SymbolicConstraint,
+                                        { acc, elem ->
+                                            And.create(
+                                                acc,
+                                                equalUniqueFuncExprs(EqualityConstr.create(elem.first, elem.second))
+                                            )
+                                        })
+                                )
+                            else False
+                        } else c
+                    } else c
+                }
+                else -> c
+            }
+        })
+
+    private fun equalValueExprs(constraint: SymbolicConstraint): SymbolicConstraint =
+        constraint.accept(ConstraintReplacer { c ->
+            when (c) {
+                is EqualityConstr -> {
+                    if (c.left is IntValue && c.right is IntValue) {
+                        if (c.left.value == c.right.value) True else False
+                    } else c
+                }
+                else -> c
+            }
+        })
 
     fun substituteFacts(constraints: Set<SymbolicConstraint>): Set<SymbolicConstraint> {
         if (constraints.size < 2) {

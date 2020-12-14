@@ -34,8 +34,7 @@ class SymbolicConstraintSet : Set<SymbolicConstraint> {
         SymbolicConstraintSimplifier.compress(
             SymbolicConstraintSimplifier.substituteFacts(
                 backSet.asSequence()
-                    .map { SymbolicConstraintSimplifier.simplifyExpressions(it) }
-                    .map { SymbolicConstraintSimplifier.applyStores(it) }
+                    .map { SymbolicConstraintSimplifier.simplify(it) }
                     .map { SymbolicConstraintSimplifier.toCNFClauses(it) }.flatten().toSet()
             )
         )
@@ -175,6 +174,8 @@ class NegatedConstr private constructor(
     companion object {
         fun create(constr: SymbolicConstraint) =
             when (constr) {
+                is True -> False
+                is False -> True
                 is NegatedConstr -> constr.constr
                 else -> NegatedConstr(constr)
             }
@@ -330,3 +331,19 @@ class FunctionSymbolConstraintCollector() : ConstraintCollector<FunctionSymbol>(
         else -> emptySet()
     }
 })
+
+open class ConstraintReplacer(private val repl: (SymbolicConstraint) -> SymbolicConstraint) :
+    SymbolicConstraintVisitor<SymbolicConstraint> {
+    override fun visit(c: True) = repl(c)
+    override fun visit(c: False) = repl(c)
+    override fun visit(c: GreaterConstr) = repl(c)
+    override fun visit(c: EqualityConstr) = repl(c)
+    override fun visit(c: GreaterEqualConstr) = repl(c)
+
+    override fun visit(c: NegatedConstr) = repl(NegatedConstr.create(c.constr.accept(this)))
+    override fun visit(c: Or) = repl(Or.create(c.left.accept(this), c.right.accept(this)))
+    override fun visit(c: And) = repl(And.create(c.left.accept(this), c.right.accept(this)))
+
+    override fun visit(c: StoreApplConstraint) = repl(StoreApplConstraint.create(c.applied, c.target.accept(this)))
+
+}

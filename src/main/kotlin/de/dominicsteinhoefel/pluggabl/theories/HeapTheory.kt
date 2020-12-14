@@ -1,7 +1,6 @@
 package de.dominicsteinhoefel.pluggabl.theories
 
 import de.dominicsteinhoefel.pluggabl.expr.*
-import soot.jimple.internal.JInstanceFieldRef
 
 val HEAP_TYPE = Type("Heap")
 val FIELD_TYPE = Type("Field")
@@ -11,13 +10,19 @@ val STORE = FunctionSymbol("store", HEAP_TYPE, HEAP_TYPE, OBJECT_TYPE, FIELD_TYP
 val CREATE = FunctionSymbol("create", HEAP_TYPE, HEAP_TYPE, OBJECT_TYPE)
 val ANON = FunctionSymbol("anon", HEAP_TYPE, LOCATION_SET_TYPE, HEAP_TYPE)
 
-val CREATED = FunctionSymbol("<java.lang.Object: boolean <created>", FIELD_TYPE)
-val ARRAY_FIELD = FunctionSymbol("arr", FIELD_TYPE, INT_TYPE)
+val CREATED = FunctionSymbol("<java.lang.Object: boolean <created>", FIELD_TYPE, unique = true)
+val ARRAY_FIELD = FunctionSymbol("arr", FIELD_TYPE, INT_TYPE, unique = true)
 val ARRAY_LENGTH = FunctionSymbol("length", INT_TYPE, OBJECT_TYPE)
 
 val HEAP_SYMBOLS = listOf(STORE, CREATE, ANON, CREATED, ARRAY_FIELD, ARRAY_LENGTH)
 
-class Select(type: Type) : FunctionSymbol("select", type, HEAP_TYPE, OBJECT_TYPE, FIELD_TYPE)
+class Select private constructor(type: Type) : FunctionSymbol("select", type, HEAP_TYPE, OBJECT_TYPE, FIELD_TYPE) {
+    companion object {
+        private val cache = LinkedHashMap<Type, Select>()
+        fun create(type: Type) =
+            cache[type] ?: Select(type).also { cache[type] = it }
+    }
+}
 
 object HeapSimplifier {
     private val SIMPLIFICATIONS: List<(SymbolicExpression) -> SymbolicExpression> =
@@ -28,9 +33,9 @@ object HeapSimplifier {
             SIMPLIFICATIONS.fold(heapExpr, { acc, elem -> elem(acc) })
 
     fun simplify(heapExpr: SymbolicExpression): SymbolicExpression =
-        heapExpr.accept(ExpressionReplacer(SIMPLIFY))
+        if (isHeapExpression(heapExpr)) heapExpr.accept(ExpressionReplacer(SIMPLIFY)) else heapExpr
 
-    fun isHeapExpression(expr: SymbolicExpression) =
+    private fun isHeapExpression(expr: SymbolicExpression) =
         expr.accept(FunctionSymbolExpressionCollector()).intersect(HEAP_SYMBOLS).isNotEmpty()
 
     private fun selectOfStore(heapExpr: SymbolicExpression) =

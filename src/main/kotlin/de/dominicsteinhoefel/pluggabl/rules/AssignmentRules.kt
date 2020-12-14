@@ -40,7 +40,7 @@ object AssignFromFieldRule : SERule {
                         SymbolicExecutionState.merge(inpStates).addAssignment(
                             locVar,
                             FunctionApplication(
-                                Select(TypeConverter.convert(fieldRef.type)),
+                                Select.create(TypeConverter.convert(fieldRef.type)),
                                 HEAP_VAR,
                                 ExprConverter.convert(fieldRef.base, symbolsManager) as LocalVariable,
                                 symbolsManager.getFieldSymbol(fieldRef)
@@ -93,7 +93,7 @@ object AssignFromArrayRule : SERule {
                         SymbolicExecutionState.merge(inpStates).addAssignment(
                             locVar,
                             FunctionApplication(
-                                Select(TypeConverter.convert(arrayRef.type)),
+                                Select.create(TypeConverter.convert(arrayRef.type)),
                                 HEAP_VAR,
                                 ExprConverter.convert(arrayRef.base, symbolsManager) as LocalVariable,
                                 FunctionApplication(
