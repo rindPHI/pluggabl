@@ -1,5 +1,6 @@
 package de.dominicsteinhoefel.pluggabl.rules
 
+import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolsManager
 import de.dominicsteinhoefel.pluggabl.analysis.rules.SERule
 import de.dominicsteinhoefel.pluggabl.expr.*
@@ -139,14 +140,10 @@ object AssignToArrayRule : SERule {
     override fun toString() = "AssignToArrayRule"
 }
 
-// TODO: Store pure methods in a config file! Also: Quite brittle approach of course. But it seams that Soot's
-// doing it the same way. Would be nice to do a purity analysis of the JRE library classes and store results...
-val PURE_METHODS = setOf("<java.lang.Integer: int intValue()>", "<java.lang.Integer: java.lang.Integer valueOf(int)>")
-
 object AssignFromPureVirtualInvokationRule : SERule {
     override fun accepts(stmt: Stmt, inpStates: List<SymbolicExecutionState>) =
         stmt is JAssignStmt && stmt.leftOp is JimpleLocal && stmt.rightOp.let {
-            it is JVirtualInvokeExpr && PURE_METHODS.contains(it.methodRef.toString())
+            it is JVirtualInvokeExpr && SymbolicExecutionAnalysis.isPureMethod(it.methodRef.toString())
         }
 
     override fun apply(stmt: Stmt, inpStates: List<SymbolicExecutionState>, symbolsManager: SymbolsManager) =
@@ -165,7 +162,7 @@ object AssignFromPureVirtualInvokationRule : SERule {
 object AssignFromPureStaticInvokationRule : SERule {
     override fun accepts(stmt: Stmt, inpStates: List<SymbolicExecutionState>) =
         stmt is JAssignStmt && stmt.leftOp is JimpleLocal && stmt.rightOp.let {
-            it is JStaticInvokeExpr && PURE_METHODS.contains(it.methodRef.toString())
+            it is JStaticInvokeExpr && SymbolicExecutionAnalysis.isPureMethod(it.methodRef.toString())
         }
 
     override fun apply(stmt: Stmt, inpStates: List<SymbolicExecutionState>, symbolsManager: SymbolsManager) =

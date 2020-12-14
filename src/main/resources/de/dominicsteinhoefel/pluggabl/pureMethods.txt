@@ -1,0 +1,2 @@
+java.lang.Integer: int intValue()
+java.lang.Integer: java.lang.Integer valueOf(int)

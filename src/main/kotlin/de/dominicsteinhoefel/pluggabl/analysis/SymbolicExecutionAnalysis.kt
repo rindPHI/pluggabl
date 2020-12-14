@@ -76,6 +76,23 @@ class SymbolicExecutionAnalysis internal constructor(
             G.reset()
             return SymbolicExecutionAnalysis(body, root, forceLeaves, ignoreTopLoop)
         }
+
+        // Would be nice to do a purity analysis of the JRE library classes and store results...
+        private lateinit var pureMethods: Set<String>
+        private const val PURE_METHODS_LIST_FILE = "/de/dominicsteinhoefel/pluggabl/pureMethods.txt"
+
+        private fun getPureMethods(): Set<String> {
+            if (!this::pureMethods.isInitialized) {
+                pureMethods =
+                    SymbolicExecutionAnalysis::class.java.getResource(PURE_METHODS_LIST_FILE)
+                        .readText().split("\n")
+                        .map { "<$it>" }.toSet()
+            }
+
+            return pureMethods
+        }
+
+        fun isPureMethod(methodSig: String) = getPureMethods().contains(methodSig)
     }
 
     fun getInputSESs(node: Stmt) = stmtToInputSESMap[node] ?: emptyList()
