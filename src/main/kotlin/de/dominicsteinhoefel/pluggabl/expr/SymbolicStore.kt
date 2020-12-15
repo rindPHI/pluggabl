@@ -15,14 +15,6 @@ sealed class SymbolicStore {
     }
 
     abstract fun <T> accept(visitor: SymbolicStoreVisitor<T>): T
-
-    fun toElementaryStores() = accept(SymbolicStoreCollector { c ->
-        when (c) {
-            is ElementaryStore -> setOf(c)
-            is StoreApplStore -> throw IllegalArgumentException("Only normalized stores allowed, encountered ${this::class}")
-            else -> emptySet()
-        }
-    })
 }
 
 interface SymbolicStoreVisitor<T> {

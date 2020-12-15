@@ -10,8 +10,8 @@ import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.HEAP_VAR
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.STORE
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.INT_TYPE
-import de.dominicsteinhoefel.pluggabl.theories.IntTheory.plus
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.minus
+import de.dominicsteinhoefel.pluggabl.theories.IntTheory.plus
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -104,7 +104,8 @@ class HeapSymbolicExecutionAnalysisTests {
         val integerType = ReferenceType("java.lang.Integer")
 
         fun makeSelectTerm(v: Int) = FunctionApplication(
-            HeapTheory.Select.create(integerType), heapVar, arrVar, FunctionApplication(ARRAY_FIELD,
+            HeapTheory.Select.create(integerType), heapVar, arrVar, FunctionApplication(
+                ARRAY_FIELD,
                 IntTheory.IntValue(v)
             )
         )
@@ -122,9 +123,11 @@ class HeapSymbolicExecutionAnalysisTests {
             ), IntTheory.IntValue(1)
         )
 
-        val resultStores = analysis.getOutputSESs(
-            analysis.cfg.tails.also { assertEquals(1, it.size) }[0] as Stmt
-        ).also { assertEquals(1, it.size) }[0].store.toElementaryStores()
+        val resultStores = SymbolicStore.elementaries(
+            analysis.getOutputSESs(
+                analysis.cfg.tails.also { assertEquals(1, it.size) }[0] as Stmt
+            ).also { assertEquals(1, it.size) }[0].store
+        )
 
         val actualResultValue =
             resultStores.filter { it.lhs == resultVar }.also { assertEquals(1, it.size) }[0].rhs

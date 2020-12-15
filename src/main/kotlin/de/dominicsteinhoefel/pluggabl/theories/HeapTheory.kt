@@ -37,5 +37,4 @@ object HeapTheory : Theory {
                 cache[type] ?: Select(type).also { cache[type] = it }
         }
     }
-
 }

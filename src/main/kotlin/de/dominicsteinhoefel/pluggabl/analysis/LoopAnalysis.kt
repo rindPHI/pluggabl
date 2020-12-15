@@ -50,7 +50,7 @@ class LoopAnalysis(
             SymbolicExecutionState.merge(
                 loop.loopExits.map { loopAnalysis.getInputSESs(it) }.flatten()
                     .filterNot(SymbolicExecutionState::isEmpty)
-            )
+            ).simplify()
 
         val loopHeadInputState =
             SymbolicExecutionState.merge(
