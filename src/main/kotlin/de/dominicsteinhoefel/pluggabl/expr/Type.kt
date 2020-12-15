@@ -10,7 +10,11 @@ open class Type(val type: String, private val superType: Type? = null) {
     override fun equals(other: Any?) = (other as? Type)?.type == type
     override fun toString() = type
 
-    fun extends(other: Type) = other == ANY_TYPE || allSuperTypes(this).contains(other)
+    private val allSuperTypes: Set<Type> by lazy {
+        allSuperTypes(this)
+    }
+
+    fun extends(other: Type) = other == ANY_TYPE || allSuperTypes.contains(other)
 
     companion object {
         private fun allSuperTypes(type: Type?): Set<Type> =
@@ -23,7 +27,7 @@ open class Type(val type: String, private val superType: Type? = null) {
 val ANY_TYPE = Type("any")
 val INT_TYPE = Type("int")
 val CHAR_TYPE = Type("char")
-val OBJECT_TYPE = Type("java.lang.Object", null)
+val OBJECT_TYPE = Type("java.lang.Object", ANY_TYPE)
 
 open class ReferenceType(type: String, superType: Type? = null) : Type(type, superType)
 class ArrayType(val baseType: Type) : ReferenceType("[$baseType") // super type?
