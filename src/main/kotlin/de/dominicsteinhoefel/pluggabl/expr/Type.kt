@@ -1,6 +1,9 @@
 package de.dominicsteinhoefel.pluggabl.expr
 
+import de.dominicsteinhoefel.pluggabl.theories.IntTheory
 import de.dominicsteinhoefel.pluggabl.theories.Theory
+import soot.CharType
+import soot.IntType
 import java.util.*
 import kotlin.collections.LinkedHashMap
 
@@ -24,7 +27,6 @@ open class Type(val type: String, private val superType: Type? = null) {
 }
 
 val ANY_TYPE = Type("any")
-val CHAR_TYPE = Type("char")
 val OBJECT_TYPE = Type("java.lang.Object", ANY_TYPE)
 
 open class ReferenceType(type: String, superType: Type? = null) : Type(type, superType)
@@ -34,13 +36,11 @@ class TypeConverter(private val theories: Set<Theory>) {
     private val typesRegistry = LinkedHashMap<soot.Type, Type>()
 
     fun convert(type: soot.Type): Type {
-        return typesRegistry[type] ?: (theories.firstOrNull { it.getSootType() == type }).let { theory ->
-            when (type) {
-                theory?.getSootType() -> theory?.getType()
-                is soot.RefType -> ReferenceType(type.className, superType(type))
-                is soot.ArrayType -> ArrayType(convert(type.baseType))
-                else -> TODO("Conversion of type $type not yet implemented.")
-            }
+        return typesRegistry[type] ?: when (type) {
+            is IntType, is CharType -> IntTheory.getType()
+            is soot.RefType -> ReferenceType(type.className, superType(type))
+            is soot.ArrayType -> ArrayType(convert(type.baseType))
+            else -> TODO("Conversion of type $type not yet implemented.")
         }.also { typesRegistry[type] = it }
     }
 
