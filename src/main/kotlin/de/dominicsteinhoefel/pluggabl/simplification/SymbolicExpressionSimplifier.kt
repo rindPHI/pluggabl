@@ -1,7 +1,6 @@
 package de.dominicsteinhoefel.pluggabl.simplification
 
 import de.dominicsteinhoefel.pluggabl.expr.*
-import de.dominicsteinhoefel.pluggabl.theories.HeapSimplifier
 
 object SymbolicExpressionSimplifier {
     private val SIMPLIFICATIONS: List<(SymbolicExpression) -> SymbolicExpression> =
@@ -31,9 +30,6 @@ object SymbolicExpressionSimplifier {
                 applyStores(expression.vThen),
                 applyStores(expression.vElse)
             )
-            is AdditionExpr -> AdditionExpr(applyStores(expression.left), applyStores(expression.right))
-            is SubtractionExpr -> SubtractionExpr(applyStores(expression.left), applyStores(expression.right))
-            is MultiplicationExpr -> MultiplicationExpr(applyStores(expression.left), applyStores(expression.right))
 
             is StoreApplExpression -> {
                 val subst = SymbolicStoreSimplifier.storeToSubst(SymbolicStoreSimplifier.simplify(expression.applied))

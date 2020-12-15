@@ -272,25 +272,25 @@ class SymbolReplaceConstrVisitor(val replMap: Map<LocalVariable, SymbolicExpress
         throw UnsupportedOperationException("Symbol replacement below the scope of store application unsupported, normalize first")
 }
 
-object ConstrConverter {
-    fun convert(value: Value, symbolsManager: SymbolsManager): SymbolicConstraint =
+class ConstrConverter(private val exprConverter: ExprConverter) {
+    fun convert(value: Value): SymbolicConstraint =
         when (value) {
             is JEqExpr ->
                 EqualityConstr.create(
-                    ExprConverter.convert(value.op1, symbolsManager),
-                    ExprConverter.convert(value.op2, symbolsManager)
+                    exprConverter.convert(value.op1),
+                    exprConverter.convert(value.op2)
                 )
             is JNeExpr -> NegatedConstr.create(
                 EqualityConstr.create(
-                    ExprConverter.convert(value.op1, symbolsManager),
-                    ExprConverter.convert(value.op2, symbolsManager)
+                    exprConverter.convert(value.op1),
+                    exprConverter.convert(value.op2)
                 )
             )
             is JGeExpr -> GreaterEqualConstr(
-                ExprConverter.convert(value.op1, symbolsManager), ExprConverter.convert(value.op2, symbolsManager)
+                exprConverter.convert(value.op1), exprConverter.convert(value.op2)
             )
             is JGtExpr -> GreaterConstr(
-                ExprConverter.convert(value.op1, symbolsManager), ExprConverter.convert(value.op2, symbolsManager)
+                exprConverter.convert(value.op1), exprConverter.convert(value.op2)
             )
             else -> TODO("Conversion of type ${value.javaClass} to SymbolicConstraint not yet implemented.")
         }

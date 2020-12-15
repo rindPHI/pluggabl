@@ -4,10 +4,14 @@ import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.simplification.SymbolicExpressionSimplifier
 import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.printSESs
-import de.dominicsteinhoefel.pluggabl.theories.ARRAY_FIELD
-import de.dominicsteinhoefel.pluggabl.theories.HEAP_VAR
-import de.dominicsteinhoefel.pluggabl.theories.STORE
-import de.dominicsteinhoefel.pluggabl.theories.Select
+import de.dominicsteinhoefel.pluggabl.theories.HeapTheory
+import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.ARRAY_FIELD
+import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.HEAP_VAR
+import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.STORE
+import de.dominicsteinhoefel.pluggabl.theories.IntTheory
+import de.dominicsteinhoefel.pluggabl.theories.IntTheory.INT_TYPE
+import de.dominicsteinhoefel.pluggabl.theories.IntTheory.plus
+import de.dominicsteinhoefel.pluggabl.theories.IntTheory.minus
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -23,10 +27,10 @@ class HeapSymbolicExecutionAnalysisTests {
 
         analysis.symbolicallyExecute()
 
-        Assert.assertEquals(1, analysis.cfg.tails.size)
+        assertEquals(1, analysis.cfg.tails.size)
 
         val leafState = analysis.getInputSESs(analysis.cfg.tails[0] as Stmt)[0].also {
-            Assert.assertEquals(
+            assertEquals(
                 true,
                 it.constraints.isEmpty()
             )
@@ -35,7 +39,7 @@ class HeapSymbolicExecutionAnalysisTests {
         val thisVar = analysis.getLocal("this")
 
         val selectTerm = FunctionApplication(
-            Select.create(INT_TYPE),
+            HeapTheory.Select.create(INT_TYPE),
             HEAP_VAR,
             thisVar,
             analysis.symbolsManager.getFieldSymbol("de.dominicsteinhoefel.pluggabl.testcase.HeapAccess", "test")!!
@@ -46,13 +50,13 @@ class HeapSymbolicExecutionAnalysisTests {
 
         // Expression should contain a conditional term with constraint "this.input == 42". We consider both cases.
         val selectInput = FunctionApplication(
-            Select.create(INT_TYPE),
+            HeapTheory.Select.create(INT_TYPE),
             HEAP_VAR,
             thisVar,
             analysis.symbolsManager.getFieldSymbol("de.dominicsteinhoefel.pluggabl.testcase.HeapAccess", "input")!!
         )
 
-        val condition = EqualityConstr.create(selectInput, IntValue(42))
+        val condition = EqualityConstr.create(selectInput, IntTheory.IntValue(42))
 
         fun replaceConditionWith(newCondition: SymbolicConstraint) =
             fun(e: SymbolicExpression) =
@@ -72,8 +76,8 @@ class HeapSymbolicExecutionAnalysisTests {
             evaluatedExpression.accept(ExpressionReplacer(replaceConditionWith(False)))
         )
 
-        Assert.assertEquals(AdditionExpr(AdditionExpr(selectInput, IntValue(2)), IntValue(4)), expr1)
-        Assert.assertEquals(AdditionExpr(AdditionExpr(selectInput, IntValue(3)), IntValue(4)), expr2)
+        Assert.assertEquals(plus(plus(selectInput, IntTheory.IntValue(2)), IntTheory.IntValue(4)), expr1)
+        Assert.assertEquals(plus(plus(selectInput, IntTheory.IntValue(3)), IntTheory.IntValue(4)), expr2)
     }
 
     @Test
@@ -100,20 +104,22 @@ class HeapSymbolicExecutionAnalysisTests {
         val integerType = ReferenceType("java.lang.Integer")
 
         fun makeSelectTerm(v: Int) = FunctionApplication(
-            Select.create(integerType), heapVar, arrVar, FunctionApplication(ARRAY_FIELD, IntValue(v))
+            HeapTheory.Select.create(integerType), heapVar, arrVar, FunctionApplication(ARRAY_FIELD,
+                IntTheory.IntValue(v)
+            )
         )
 
-        val expectedResultValue = AdditionExpr(
+        val expectedResultValue = plus(
             FunctionApplication(
                 intValueSym,
                 FunctionApplication(
                     valueOfSym,
-                    AdditionExpr(
+                    minus(
                         FunctionApplication(intValueSym, makeSelectTerm(1)),
                         FunctionApplication(intValueSym, makeSelectTerm(2))
                     )
                 )
-            ), IntValue(1)
+            ), IntTheory.IntValue(1)
         )
 
         val resultStores = analysis.getOutputSESs(
@@ -131,18 +137,18 @@ class HeapSymbolicExecutionAnalysisTests {
         val expectedHeapValue = FunctionApplication(
             STORE,
             FunctionApplication(
-                STORE, heapVar, arrVar, FunctionApplication(ARRAY_FIELD, IntValue(1)),
+                STORE, heapVar, arrVar, FunctionApplication(ARRAY_FIELD, IntTheory.IntValue(1)),
                 FunctionApplication(
                     valueOfSym,
-                    AdditionExpr(
+                    plus(
                         FunctionApplication(intValueSym, makeSelectTerm(1)),
-                        IntValue(1)
+                        IntTheory.IntValue(1)
                     )
                 )
-            ), arrVar, FunctionApplication(ARRAY_FIELD, IntValue(0)),
+            ), arrVar, FunctionApplication(ARRAY_FIELD, IntTheory.IntValue(0)),
             FunctionApplication(
                 valueOfSym,
-                AdditionExpr(
+                minus(
                     FunctionApplication(intValueSym, makeSelectTerm(1)),
                     FunctionApplication(intValueSym, makeSelectTerm(2))
                 )

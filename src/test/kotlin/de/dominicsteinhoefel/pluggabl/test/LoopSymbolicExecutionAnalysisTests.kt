@@ -4,8 +4,10 @@ import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.compareLeaves
 import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.compareLoopLeaves
+import de.dominicsteinhoefel.pluggabl.theories.IntTheory
+import de.dominicsteinhoefel.pluggabl.theories.IntTheory.mult
+import de.dominicsteinhoefel.pluggabl.theories.IntTheory.plus
 import org.junit.Test
-import soot.jimple.internal.JimpleLocal
 
 class LoopSymbolicExecutionAnalysisTests {
 
@@ -23,9 +25,9 @@ class LoopSymbolicExecutionAnalysisTests {
         val sResult = analysis.getLocal("result")
 
         val conditional = ConditionalExpression.create(
-            GreaterEqualConstr(sInput, IntValue(0)),
+            GreaterEqualConstr(sInput, IntTheory.IntValue(0)),
             sInput,
-            MultiplicationExpr(sInput, IntValue(-1))
+            mult(sInput, IntTheory.IntValue(-1))
         )
 
         val sILoopResult =
@@ -34,9 +36,9 @@ class LoopSymbolicExecutionAnalysisTests {
                 listOf(
                     FunctionApplication(
                         analysis.getFunctionSymbol("iterations_LOOP_0"),
-                        listOf(IntValue(0), conditional)
+                        listOf(IntTheory.IntValue(0), conditional)
                     ),
-                    IntValue(0),
+                    IntTheory.IntValue(0),
                     conditional
                 )
             )
@@ -56,7 +58,7 @@ class LoopSymbolicExecutionAnalysisTests {
                 analysis.getFunctionSymbol( "i_ANON_LOOP_0"),
                 listOf(
                     analysis.getLocal("itCnt_LOOP_0"),
-                    IntValue(0),
+                    IntTheory.IntValue(0),
                     conditional
                 )
             )
@@ -66,7 +68,7 @@ class LoopSymbolicExecutionAnalysisTests {
                 SymbolicConstraintSet.from(NegatedConstr.create(GreaterEqualConstr(sIAnonLoop, conditional))),
                 ParallelStore.create(
                     ElementaryStore(sResult, conditional),
-                    ElementaryStore(sI, AdditionExpr(sIAnonLoop, IntValue(1)))
+                    ElementaryStore(sI, plus(sIAnonLoop, IntTheory.IntValue(1)))
                 )
             )
         )
@@ -91,9 +93,9 @@ class LoopSymbolicExecutionAnalysisTests {
         val sResult = analysis.getLocal("result")
 
         val conditional = ConditionalExpression.create(
-            GreaterEqualConstr(sInput, IntValue(0)),
+            GreaterEqualConstr(sInput, IntTheory.IntValue(0)),
             sInput,
-            MultiplicationExpr(sInput, IntValue(-1))
+            mult(sInput, IntTheory.IntValue(-1))
         )
 
         val sILoopResult =
@@ -102,9 +104,9 @@ class LoopSymbolicExecutionAnalysisTests {
                 listOf(
                     FunctionApplication(
                         analysis.getFunctionSymbol("iterations_LOOP_0"),
-                        listOf(IntValue(0), conditional)
+                        listOf(IntTheory.IntValue(0), conditional)
                     ),
-                    IntValue(0),
+                    IntTheory.IntValue(0),
                     conditional
                 )
             )
@@ -120,8 +122,8 @@ class LoopSymbolicExecutionAnalysisTests {
             SymbolicExecutionState(
                 SymbolicConstraintSet.from(
                     NegatedConstr.create(GreaterEqualConstr(sILoopResult, conditional)),
-                    NegatedConstr.create(EqualityConstr.create(sILoopResult, IntValue(17))),
-                    EqualityConstr.create(sILoopResult, IntValue(42))
+                    NegatedConstr.create(EqualityConstr.create(sILoopResult, IntTheory.IntValue(17))),
+                    EqualityConstr.create(sILoopResult, IntTheory.IntValue(42))
                 ),
                 ParallelStore.create(
                     ElementaryStore(sResult, conditional),
@@ -135,7 +137,7 @@ class LoopSymbolicExecutionAnalysisTests {
                 analysis.getFunctionSymbol("i_ANON_LOOP_0"),
                 listOf(
                     analysis.getLocal("itCnt_LOOP_0"),
-                    IntValue(0),
+                    IntTheory.IntValue(0),
                     conditional
                 )
             )
@@ -145,13 +147,13 @@ class LoopSymbolicExecutionAnalysisTests {
                 SymbolicConstraintSet.from(
                     NegatedConstr.create(GreaterEqualConstr(sIAnonLoop, conditional)),
                     Or.create(
-                        EqualityConstr.create(sIAnonLoop, IntValue(17)),
-                        NegatedConstr.create(EqualityConstr.create(sIAnonLoop, IntValue(42)))
+                        EqualityConstr.create(sIAnonLoop, IntTheory.IntValue(17)),
+                        NegatedConstr.create(EqualityConstr.create(sIAnonLoop, IntTheory.IntValue(42)))
                     )
                 ),
                 ParallelStore.create(
                     ElementaryStore(sResult, conditional),
-                    ElementaryStore(sI, AdditionExpr(sIAnonLoop, IntValue(1)))
+                    ElementaryStore(sI, plus(sIAnonLoop, IntTheory.IntValue(1)))
                 )
             )
         )

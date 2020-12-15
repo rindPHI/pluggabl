@@ -1,6 +1,7 @@
 package de.dominicsteinhoefel.pluggabl.expr
 
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolsManager
+import de.dominicsteinhoefel.pluggabl.theories.Theory
 import de.dominicsteinhoefel.pluggabl.util.union
 import org.slf4j.LoggerFactory
 import soot.jimple.IntConstant
@@ -8,14 +9,11 @@ import soot.jimple.internal.*
 import java.util.*
 
 interface SymbolicExpressionsVisitor<T> {
-    fun visit(e: IntValue): T
+    fun visit(e: Value): T
     fun visit(e: LocalVariable): T
     fun visit(e: FunctionApplication): T
-    fun visit(e: StoreApplExpression): T
     fun visit(e: ConditionalExpression): T
-    fun visit(e: AdditionExpr): T
-    fun visit(e: SubtractionExpr): T
-    fun visit(e: MultiplicationExpr): T
+    fun visit(e: StoreApplExpression): T
 }
 
 sealed class SymbolicExpression {
@@ -24,15 +22,6 @@ sealed class SymbolicExpression {
 }
 
 abstract class Value : SymbolicExpression()
-
-class IntValue(val value: Int) : Value() {
-    override fun type() = INT_TYPE
-    override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
-
-    override fun toString() = value.toString()
-    override fun hashCode() = Objects.hash(IntValue::class, value.hashCode())
-    override fun equals(other: Any?) = (other as? IntValue)?.value == value
-}
 
 interface BinarySymbolicExpression {
     fun left(): SymbolicExpression
@@ -134,98 +123,51 @@ class ConditionalExpression private constructor(
     }
 }
 
-class AdditionExpr(
-    val left: SymbolicExpression,
-    val right: SymbolicExpression
-) : SymbolicExpression(), BinarySymbolicExpression {
-    override fun left() = left
-    override fun right() = right
-    override fun type() = left.type() // TODO: Have to take common supertype
-
-    override fun toString() = "(${left()})+(${right()})"
-    override fun hashCode() = Objects.hash(AdditionExpr::class, left, right)
-    override fun equals(other: Any?) =
-        (other as? AdditionExpr).let { it?.left == left && it.right == right }
-
-    override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
-}
-
-class SubtractionExpr(
-    val left: SymbolicExpression,
-    val right: SymbolicExpression
-) : SymbolicExpression(), BinarySymbolicExpression {
-    override fun left() = left
-    override fun right() = right
-    override fun type() = left.type() // TODO: Have to take common supertype
-
-    override fun toString() = "(${left()})-(${right()})"
-    override fun hashCode() = Objects.hash(SubtractionExpr::class, left, right)
-    override fun equals(other: Any?) =
-        (other as? SubtractionExpr).let { it?.left == left && it.right == right }
-
-    override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
-}
-
-class MultiplicationExpr(
-    val left: SymbolicExpression,
-    val right: SymbolicExpression
-) : SymbolicExpression(), BinarySymbolicExpression {
-    override fun left() = left
-    override fun right() = right
-    override fun type() = left.type() // TODO: Have to take common supertype
-
-    override fun toString() = "(${left()})*(${right()})"
-    override fun hashCode() = Objects.hash(MultiplicationExpr::class, left, right)
-    override fun equals(other: Any?) =
-        (other as? MultiplicationExpr).let { it?.left == left && it.right == right }
-
-    override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
-}
-
-object ExprConverter {
+class ExprConverter(private val symbolsManager: SymbolsManager, private val theories: Set<Theory>) {
     private val logger = LoggerFactory.getLogger(ExprConverter::class.simpleName)
 
-    /**
-     * Simple expressions are constant values, local variables, or
-     * composed arithmetic expressions of simple expressions. The latter
-     * case is possible since field accesses are decomposed by the
-     * conversion to Jimple; in the KeY system, for instance, more
-     * complex decomposition rules are necessary and simple expressions
-     * are only constants or variables.
-     */
-    fun isSimpleExpression(value: soot.Value): Boolean =
-        when (value) {
-            is JimpleLocal, is IntConstant, is JAddExpr, is JSubExpr, is JMulExpr -> true
-            else -> false
-        }
+    companion object {
+        /**
+         * Simple expressions are constant values, local variables, or
+         * composed arithmetic expressions of simple expressions. The latter
+         * case is possible since field accesses are decomposed by the
+         * conversion to Jimple; in the KeY system, for instance, more
+         * complex decomposition rules are necessary and simple expressions
+         * are only constants or variables.
+         */
+        fun isSimpleExpression(value: soot.Value): Boolean =
+            when (value) {
+                is JimpleLocal, is IntConstant, is JAddExpr, is JSubExpr, is JMulExpr -> true
+                else -> false
+            }
+    }
 
-    fun convert(value: soot.Value, symbolsManager: SymbolsManager): SymbolicExpression =
+    fun convert(value: soot.Value): SymbolicExpression =
         when (value) {
             is JimpleLocal -> symbolsManager.localVariableFor(value)
-            is IntConstant -> IntValue(value.value)
-            is JAddExpr -> AdditionExpr(convert(value.op1, symbolsManager), convert(value.op2, symbolsManager))
-            is JSubExpr -> SubtractionExpr(convert(value.op1, symbolsManager), convert(value.op2, symbolsManager))
-            is JMulExpr -> MultiplicationExpr(convert(value.op1, symbolsManager), convert(value.op2, symbolsManager))
             is JVirtualInvokeExpr -> {
                 FunctionApplication(
                     symbolsManager.getMethodResultSymbol(value.methodRef),
-                    listOf(listOf(convert(value.base, symbolsManager)),
-                        value.args.map { convert(it, symbolsManager) }).flatten()
+                    listOf(listOf(convert(value.base)),
+                        value.args.map { convert(it) }).flatten()
                 )
             }
             is JStaticInvokeExpr -> {
                 FunctionApplication(
                     symbolsManager.getMethodResultSymbol(value.methodRef),
-                    value.args.map { convert(it, symbolsManager) }.toList()
+                    value.args.map { convert(it) }.toList()
                 )
             }
+            is soot.Value -> theories.filter { it.isResponsibleFor(value) }
+                .also { if (it.size != 1) throw IllegalArgumentException("No theory found for operator ${value::class}") }[0]
+                .translate(value, value.useBoxes.map { it.value }.map { convert(it) })
             else -> TODO("Conversion of type ${value.javaClass} to SymbolicExpression not yet implemented.")
         }
 }
 
 open class ExpressionCollector<T>(private val coll: (SymbolicExpression) -> Set<T>) :
     SymbolicExpressionsVisitor<Set<T>> {
-    override fun visit(e: IntValue) = coll(e)
+    override fun visit(e: Value) = coll(e)
     override fun visit(e: LocalVariable) = coll(e)
     override fun visit(e: FunctionApplication) =
         union(coll(e), e.args.map { it.accept(this) }.flatten().toSet())
@@ -239,10 +181,6 @@ open class ExpressionCollector<T>(private val coll: (SymbolicExpression) -> Set<
             e.vThen.accept(this),
             e.vElse.accept(this)
         )
-
-    override fun visit(e: AdditionExpr) = union(coll(e), e.left.accept(this), e.right.accept(this))
-    override fun visit(e: SubtractionExpr) = union(coll(e), e.left.accept(this), e.right.accept(this))
-    override fun visit(e: MultiplicationExpr) = union(coll(e), e.left.accept(this), e.right.accept(this))
 }
 
 class LocalVariableExpressionCollector() : ExpressionCollector<LocalVariable>({ e ->
@@ -265,7 +203,7 @@ class FunctionSymbolExpressionCollector() : ExpressionCollector<FunctionSymbol>(
 
 open class ExpressionReplacer(private val repl: (SymbolicExpression) -> SymbolicExpression) :
     SymbolicExpressionsVisitor<SymbolicExpression> {
-    override fun visit(e: IntValue) = repl(e)
+    override fun visit(e: Value) = repl(e)
     override fun visit(e: LocalVariable) = repl(e)
     override fun visit(e: FunctionApplication) = repl(FunctionApplication(e.f, e.args.map { it.accept(this) }))
 
@@ -280,10 +218,6 @@ open class ExpressionReplacer(private val repl: (SymbolicExpression) -> Symbolic
                 e.vElse.accept(this)
             )
         )
-
-    override fun visit(e: AdditionExpr) = repl(AdditionExpr(e.left.accept(this), e.right.accept(this)))
-    override fun visit(e: SubtractionExpr) = repl(AdditionExpr(e.left.accept(this), e.right.accept(this)))
-    override fun visit(e: MultiplicationExpr) = repl(MultiplicationExpr(e.left.accept(this), e.right.accept(this)))
 
 }
 

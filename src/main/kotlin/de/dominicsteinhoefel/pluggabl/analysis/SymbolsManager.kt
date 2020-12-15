@@ -1,13 +1,13 @@
 package de.dominicsteinhoefel.pluggabl.analysis
 
 import de.dominicsteinhoefel.pluggabl.expr.*
-import de.dominicsteinhoefel.pluggabl.theories.FIELD_TYPE
+import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.FIELD_TYPE
 import de.dominicsteinhoefel.pluggabl.util.NewNamesCreator
 import soot.SootMethodRef
 import soot.jimple.internal.JInstanceFieldRef
 import soot.jimple.internal.JimpleLocal
 
-class SymbolsManager {
+class SymbolsManager(private val typeConverter: TypeConverter) {
     private val localVariables = LinkedHashSet<LocalVariable>()
     private val locVarNamesCreator = NewNamesCreator()
     private val jimpleLocalToLocalVariableMap = LinkedHashMap<JimpleLocal, LocalVariable>()
@@ -28,7 +28,7 @@ class SymbolsManager {
 
     fun localVariableFor(jLocal: JimpleLocal) =
         jimpleLocalToLocalVariableMap[jLocal]
-            ?: (newLocalVariable(jLocal.name, TypeConverter.convert(jLocal.type)))
+            ?: (newLocalVariable(jLocal.name, typeConverter.convert(jLocal.type)))
                 .also { jimpleLocalToLocalVariableMap[jLocal] = it }
 
     fun registerJimpleLocal(jLocal: JimpleLocal): Unit {
@@ -101,10 +101,10 @@ class SymbolsManager {
             funcSymbNamesCreator.newName(
                 "<$className: $methodSig>"
             ),
-            TypeConverter.convert(methodRef.returnType),
-            methodRef.parameterTypes.map { TypeConverter.convert(it) }.let {
+            typeConverter.convert(methodRef.returnType),
+            methodRef.parameterTypes.map { typeConverter.convert(it) }.let {
                 if (methodRef.isStatic) it
-                else listOf(listOf(TypeConverter.convert(methodRef.declaringClass.type)), it).flatten()
+                else listOf(listOf(typeConverter.convert(methodRef.declaringClass.type)), it).flatten()
             }
         ).also { classMethodSigToMethodResultSymbolsMap[Pair(className, methodSig)] = it }
             .also { functionSymbols.add(it) }

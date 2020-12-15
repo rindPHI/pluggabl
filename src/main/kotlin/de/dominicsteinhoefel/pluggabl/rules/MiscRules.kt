@@ -2,10 +2,7 @@ package de.dominicsteinhoefel.pluggabl.rules
 
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolsManager
 import de.dominicsteinhoefel.pluggabl.analysis.rules.SERule
-import de.dominicsteinhoefel.pluggabl.expr.ConstrConverter
-import de.dominicsteinhoefel.pluggabl.expr.ExprConverter
-import de.dominicsteinhoefel.pluggabl.expr.NegatedConstr
-import de.dominicsteinhoefel.pluggabl.expr.SymbolicExecutionState
+import de.dominicsteinhoefel.pluggabl.expr.*
 import org.slf4j.LoggerFactory
 import soot.jimple.Stmt
 import soot.jimple.internal.*
@@ -14,8 +11,15 @@ object IfRule : SERule {
     override fun accepts(stmt: Stmt, inpStates: List<SymbolicExecutionState>) =
         stmt is JIfStmt
 
-    override fun apply(stmt: Stmt, inpStates: List<SymbolicExecutionState>, symbolsManager: SymbolsManager) =
-        (ConstrConverter.convert((stmt as JIfStmt).condition, symbolsManager)).let { constraint ->
+    override fun apply(
+        stmt: Stmt,
+        inpStates: List<SymbolicExecutionState>,
+        symbolsManager: SymbolsManager,
+        typeConverter: TypeConverter,
+        exprConverter: ExprConverter,
+        constrConverter: ConstrConverter
+    ) =
+        (constrConverter.convert((stmt as JIfStmt).condition)).let { constraint ->
             (SymbolicExecutionState.merge(inpStates)).let {
                 listOf(
                     it.addConstraint(NegatedConstr.create(constraint)),
@@ -30,11 +34,18 @@ object IfRule : SERule {
 object ReturnValueRule : SERule {
     override fun accepts(stmt: Stmt, inpStates: List<SymbolicExecutionState>) = stmt is JReturnStmt
 
-    override fun apply(stmt: Stmt, inpStates: List<SymbolicExecutionState>, symbolsManager: SymbolsManager) =
+    override fun apply(
+        stmt: Stmt,
+        inpStates: List<SymbolicExecutionState>,
+        symbolsManager: SymbolsManager,
+        typeConverter: TypeConverter,
+        exprConverter: ExprConverter,
+        constrConverter: ConstrConverter
+    ) =
         listOf(
             SymbolicExecutionState.merge(inpStates).addAssignment(
                 symbolsManager.getResultVariable(),
-                ExprConverter.convert((stmt as JReturnStmt).op, symbolsManager)
+                exprConverter.convert((stmt as JReturnStmt).op)
             )
         )
 
@@ -44,7 +55,14 @@ object ReturnValueRule : SERule {
 object ReturnVoidRule : SERule {
     override fun accepts(stmt: Stmt, inpStates: List<SymbolicExecutionState>) = stmt is JReturnVoidStmt
 
-    override fun apply(stmt: Stmt, inpStates: List<SymbolicExecutionState>, symbolsManager: SymbolsManager) =
+    override fun apply(
+        stmt: Stmt,
+        inpStates: List<SymbolicExecutionState>,
+        symbolsManager: SymbolsManager,
+        typeConverter: TypeConverter,
+        exprConverter: ExprConverter,
+        constrConverter: ConstrConverter
+    ) =
         emptyList<SymbolicExecutionState>()
 
     override fun toString() = "ReturnVoidRule"
@@ -54,7 +72,14 @@ object DummyRule : SERule {
     override fun accepts(stmt: Stmt, inpStates: List<SymbolicExecutionState>) =
         stmt is JIdentityStmt || stmt is JGotoStmt
 
-    override fun apply(stmt: Stmt, inpStates: List<SymbolicExecutionState>, symbolsManager: SymbolsManager) =
+    override fun apply(
+        stmt: Stmt,
+        inpStates: List<SymbolicExecutionState>,
+        symbolsManager: SymbolsManager,
+        typeConverter: TypeConverter,
+        exprConverter: ExprConverter,
+        constrConverter: ConstrConverter
+    ) =
         listOf(SymbolicExecutionState.merge(inpStates))
 
     override fun toString() = "DummyRule"
@@ -67,7 +92,10 @@ object IgnoreAndWarnRule : SERule {
     override fun apply(
         stmt: Stmt,
         inpStates: List<SymbolicExecutionState>,
-        symbolsManager: SymbolsManager
+        symbolsManager: SymbolsManager,
+        typeConverter: TypeConverter,
+        exprConverter: ExprConverter,
+        constrConverter: ConstrConverter
     ): List<SymbolicExecutionState> {
         LoggerFactory.getLogger(this::class.simpleName)
             .warn("Ignoring JInvokeStmt $stmt for now, have to handle appropriately soon!")

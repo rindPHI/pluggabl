@@ -1,6 +1,7 @@
 package de.dominicsteinhoefel.pluggabl.analysis
 
 import de.dominicsteinhoefel.pluggabl.expr.*
+import de.dominicsteinhoefel.pluggabl.theories.IntTheory.INT_TYPE
 import de.dominicsteinhoefel.pluggabl.util.subList
 import soot.Body
 import soot.Local
@@ -13,8 +14,11 @@ class LoopAnalysis(
     private val body: Body,
     private val loop: Loop,
     private val loopIdx: Int,
+    private val createSubAnalysis:
+        (root: Stmt, stopAtNodes: List<Stmt>, ignoreTopLoop: Boolean) -> SymbolicExecutionAnalysis,
     loopHeadInputStates: List<SymbolicExecutionState>,
-    private val symbolsManager: SymbolsManager
+    private val symbolsManager: SymbolsManager,
+    private val exprConverter: ExprConverter
 ) {
     private val initState = SymbolicExecutionState.merge(loopHeadInputStates)
     private val stmtToInputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
@@ -33,8 +37,7 @@ class LoopAnalysis(
             }
         }.filterNot { it == null }.filterNot { loop.loopStatements.contains(it) }.map { it as Stmt }
 
-        val loopAnalysis = SymbolicExecutionAnalysis(
-            body,
+        val loopAnalysis = createSubAnalysis(
             loop.head,
             stmtsAfterExit,
             true
@@ -173,7 +176,7 @@ class LoopAnalysis(
             }
             it
         }
-        .map { ExprConverter.convert(it, symbolsManager) as LocalVariable }.toSet().toList()
+        .map { exprConverter.convert(it) as LocalVariable }.toSet().toList()
 
     private fun createAnonymizingLoopStore(
         writtenVars: List<LocalVariable>,
@@ -237,7 +240,7 @@ class LoopAnalysis(
         listOf(
             initState.constraints.map { it.accept(LocalVariableConstraintCollector()) }.flatten(),
             initState.store.accept(LocalVariableStoreCollector()),
-            body.parameterLocals.map { ExprConverter.convert(it, symbolsManager) as LocalVariable }
+            body.parameterLocals.map { exprConverter.convert(it) as LocalVariable }
         ).flatten().contains(it)
     }.toSet()
 

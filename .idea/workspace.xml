@@ -5,9 +5,26 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6acfca55-121b-469b-8da1-6c2ed7a17d5f" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/simplification/HeapSimplifier.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/theories/IntTheory.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/theories/Theory.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/LoopAnalysis.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/LoopAnalysis.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolicExecutionAnalysis.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolicExecutionAnalysis.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolsManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolsManager.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/SymbolicConstraints.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/SymbolicConstraints.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/SymbolicExpressions.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/SymbolicExpressions.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/Type.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/Type.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/rules/AssignmentRules.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/rules/AssignmentRules.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/rules/MiscRules.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/rules/MiscRules.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/rules/SERule.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/rules/SERule.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/simplification/SymbolicConstraintSimplifier.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/simplification/SymbolicConstraintSimplifier.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/simplification/SymbolicExpressionSimplifier.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/simplification/SymbolicExpressionSimplifier.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/theories/HeapTheory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/theories/HeapTheory.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/theories/LocationSetTheory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/theories/LocationSetTheory.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/HeapSymbolicExecutionAnalysisTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/HeapSymbolicExecutionAnalysisTests.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/LoopSymbolicExecutionAnalysisTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/LoopSymbolicExecutionAnalysisTests.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/SimpleSymbolicExecutionAnalysisTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/SimpleSymbolicExecutionAnalysisTests.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,13 +75,14 @@
       <recent name="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/theories" />
     </key>
     <key name="MoveKotlinTopLevelDeclarationsDialog.RECENTS_KEY">
+      <recent name="de.dominicsteinhoefel.pluggabl.simplification" />
       <recent name="de.dominicsteinhoefel.pluggabl.testcase" />
     </key>
     <key name="CopyKotlinDeclarationDialog.RECENTS_KEY">
       <recent name="de.dominicsteinhoefel.pluggabl" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.ParenthesisParserTest.testParenthesisParserAnalysis">
+  <component name="RunManager" selected="Gradle.Tests in 'de.dominicsteinhoefel.pluggabl'">
     <configuration name="HeapSymbolicExecutionAnalysisTests.testSimpleArrayAccess" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -172,8 +190,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Gradle.ParenthesisParserTest.testParenthesisParserAnalysis" />
         <item itemvalue="Gradle.Tests in 'de.dominicsteinhoefel.pluggabl'" />
+        <item itemvalue="Gradle.ParenthesisParserTest.testParenthesisParserAnalysis" />
         <item itemvalue="Gradle.HeapSymbolicExecutionAnalysisTests.testSimpleArrayAccess" />
         <item itemvalue="Gradle.HeapSymbolicExecutionAnalysisTests.testSimpleTwoBranchedMethodWithMergeFieldAccess" />
         <item itemvalue="Gradle.SimpleSymbolicExecutionAnalysisTests" />
@@ -208,8 +226,13 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="kotlin-line">
           <url>file://$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolicExecutionAnalysis.kt</url>
-          <line>260</line>
+          <line>287</line>
           <option name="timeStamp" value="24" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="kotlin-line">
+          <url>file://$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/SymbolicExpressions.kt</url>
+          <line>163</line>
+          <option name="timeStamp" value="51" />
         </line-breakpoint>
         <breakpoint enabled="true" type="java-exception">
           <properties class="java.lang.IndexOutOfBoundsException" package="java.lang" />

@@ -1,13 +1,12 @@
 package de.dominicsteinhoefel.pluggabl.analysis
 
 import de.dominicsteinhoefel.pluggabl.analysis.rules.SERule
-import de.dominicsteinhoefel.pluggabl.expr.LocalVariable
-import de.dominicsteinhoefel.pluggabl.expr.SymbolicExecutionState
-import de.dominicsteinhoefel.pluggabl.expr.TypeConverter
+import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.rules.*
-import de.dominicsteinhoefel.pluggabl.theories.HEAP_SYMBOLS
-import de.dominicsteinhoefel.pluggabl.theories.HEAP_VAR
-import de.dominicsteinhoefel.pluggabl.theories.LOCATION_SET_SYMBOLS
+import de.dominicsteinhoefel.pluggabl.theories.HeapTheory
+import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.HEAP_VAR
+import de.dominicsteinhoefel.pluggabl.theories.IntTheory
+import de.dominicsteinhoefel.pluggabl.theories.LocationSetTheory
 import de.dominicsteinhoefel.pluggabl.util.SootBridge
 import de.dominicsteinhoefel.pluggabl.util.subList
 import org.slf4j.Logger
@@ -25,31 +24,18 @@ import java.util.*
 import kotlin.collections.HashMap
 import kotlin.collections.LinkedHashMap
 
-class SymbolicExecutionAnalysis internal constructor(
+class SymbolicExecutionAnalysis private constructor(
     val body: Body,
     private val root: Stmt = body.units.first as Stmt,
     private val stopAtNodes: List<Stmt> = emptyList(),
-    private val ignoreTopLoop: Boolean = false
+    private val ignoreTopLoop: Boolean = false,
+    val typeConverter: TypeConverter = TypeConverter(THEORIES),
+    val symbolsManager: SymbolsManager = SymbolsManager(typeConverter),
+    val exprConverter: ExprConverter = ExprConverter(symbolsManager, THEORIES),
+    val constrConverter: ConstrConverter = ConstrConverter(exprConverter)
 ) {
-    private val rules = arrayOf(
-        AssignSimpleRule,
-        AssignFromFieldRule,
-        AssignToFieldRule,
-        AssignFromArrayRule,
-        AssignToArrayRule,
-        AssignFromPureVirtualInvokationRule,
-        AssignFromPureStaticInvokationRule,
-        AssignArrayLengthRule,
-        ReturnValueRule,
-        ReturnVoidRule,
-        IfRule,
-        DummyRule,
-        IgnoreAndWarnRule
-    )
-
     val cfg: ExceptionalUnitGraph = ExceptionalUnitGraph(body)
 
-    val symbolsManager = SymbolsManager()
 
     private val stmtToInputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
     private val stmtToOutputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
@@ -60,12 +46,30 @@ class SymbolicExecutionAnalysis internal constructor(
     companion object {
         val logger: Logger = LoggerFactory.getLogger(SymbolicExecutionAnalysis::class.simpleName)
 
+        private val RULES = arrayOf(
+            AssignSimpleRule,
+            AssignFromFieldRule,
+            AssignToFieldRule,
+            AssignFromArrayRule,
+            AssignToArrayRule,
+            AssignFromPureVirtualInvokationRule,
+            AssignFromPureStaticInvokationRule,
+            AssignArrayLengthRule,
+            ReturnValueRule,
+            ReturnVoidRule,
+            IfRule,
+            DummyRule,
+            IgnoreAndWarnRule
+        )
+
+        private val THEORIES = setOf(HeapTheory, IntTheory)
+
         fun create(clazz: String, methodSig: String): SymbolicExecutionAnalysis {
             G.reset()
             return SymbolicExecutionAnalysis(
                 SootBridge.loadJimpleBody(clazz, methodSig)
                     ?: throw IllegalStateException("Could not load method $methodSig of class $clazz")
-            )
+            ).also { it.registerSymbols() }
         }
 
         fun create(
@@ -76,6 +80,7 @@ class SymbolicExecutionAnalysis internal constructor(
         ): SymbolicExecutionAnalysis {
             G.reset()
             return SymbolicExecutionAnalysis(body, root, forceLeaves, ignoreTopLoop)
+                .also { it.registerSymbols() }
         }
 
         // Would be nice to do a purity analysis of the JRE library classes and store results...
@@ -96,6 +101,21 @@ class SymbolicExecutionAnalysis internal constructor(
         fun isPureMethod(methodSig: String) = getPureMethods().contains(methodSig)
     }
 
+    private fun createSubAnalysis(
+        root: Stmt,
+        stopAtNodes: List<Stmt>,
+        ignoreTopLoop: Boolean
+    ) = SymbolicExecutionAnalysis(
+        body,
+        root,
+        stopAtNodes,
+        ignoreTopLoop,
+        typeConverter,
+        symbolsManager,
+        exprConverter,
+        constrConverter
+    )
+
     fun getInputSESs(node: Stmt) = stmtToInputSESMap[node] ?: emptyList()
     fun getOutputSESs(node: Stmt) = stmtToOutputSESMap[node] ?: emptyList()
     fun getLoopLeafSESs() = loopLeafSESMap.toMap()
@@ -110,8 +130,6 @@ class SymbolicExecutionAnalysis internal constructor(
         symbolsManager.getFunctionSymbols().first { it.name == funcName }
 
     fun symbolicallyExecute() {
-        registerSymbols()
-
         val queue = LinkedList<Stmt>()
 
         fun <E> LinkedList<E>.addLastDistinct(elem: E) {
@@ -155,7 +173,14 @@ class SymbolicExecutionAnalysis internal constructor(
             }
 
             val rule = getApplicableRule(currStmt, inputStates)
-            val result = rule.apply(currStmt, inputStates, symbolsManager).map { it.simplify() }
+            val result = rule.apply(
+                currStmt,
+                inputStates,
+                symbolsManager,
+                typeConverter,
+                exprConverter,
+                constrConverter
+            ).map { it.simplify() }
 
             if (result.size != cfg.getSuccsOf(currStmt).size && !(currStmt is JReturnStmt)) {
                 throw IllegalStateException(
@@ -183,15 +208,15 @@ class SymbolicExecutionAnalysis internal constructor(
         symbolsManager.registerHeapVar(HEAP_VAR)
         body.method.returnType.let {
             if (it != G.v().soot_VoidType()) {
-                symbolsManager.registerResultVar(LocalVariable("result", TypeConverter.convert(it)))
+                symbolsManager.registerResultVar(LocalVariable("result", typeConverter.convert(it)))
             }
         }
 
         body.locals.forEach { symbolsManager.registerJimpleLocal(it as JimpleLocal) }
         body.parameterLocals.forEach { symbolsManager.registerJimpleLocal(it as JimpleLocal) }
 
-        symbolsManager.registerFunctionSymbols(HEAP_SYMBOLS)
-        symbolsManager.registerFunctionSymbols(LOCATION_SET_SYMBOLS)
+        symbolsManager.registerFunctionSymbols(HeapTheory.functions())
+        symbolsManager.registerFunctionSymbols(LocationSetTheory.functions())
     }
 
     private fun analyzeLoop(loop: Loop) {
@@ -202,8 +227,10 @@ class SymbolicExecutionAnalysis internal constructor(
             body,
             loop,
             loopIdx,
+            this::createSubAnalysis,
             stmtToInputSESMap[loop.head] ?: emptyList(),
-            symbolsManager
+            symbolsManager,
+            exprConverter
         )
 
         loopAnalysis.executeLoopAndAnonymize()
@@ -250,7 +277,7 @@ class SymbolicExecutionAnalysis internal constructor(
         currStmt: Stmt,
         inputStates: List<SymbolicExecutionState>
     ): SERule {
-        val applicableRules = rules.filter { it.accepts(currStmt, inputStates) }
+        val applicableRules = RULES.filter { it.accepts(currStmt, inputStates) }
         logger.trace(
             "Applicable rules for statement type ${currStmt::class.simpleName}, " +
                     "${inputStates.size} input states: " +

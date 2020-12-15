@@ -1,6 +1,7 @@
 package de.dominicsteinhoefel.pluggabl.simplification
 
 import de.dominicsteinhoefel.pluggabl.expr.*
+import de.dominicsteinhoefel.pluggabl.theories.IntTheory
 import java.util.*
 import kotlin.collections.LinkedHashSet
 
@@ -105,7 +106,7 @@ object SymbolicConstraintSimplifier {
         constraint.accept(ConstraintReplacer { c ->
             when (c) {
                 is EqualityConstr -> {
-                    if (c.left is IntValue && c.right is IntValue) {
+                    if (c.left is IntTheory.IntValue && c.right is IntTheory.IntValue) {
                         if (c.left.value == c.right.value) True else False
                     } else c
                 }
