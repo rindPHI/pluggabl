@@ -4,6 +4,7 @@ import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.compareLeaves
 import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.compareLoopLeaves
+import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.printSESs
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.mult
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.plus
@@ -76,8 +77,6 @@ class LoopSymbolicExecutionAnalysisTests {
         compareLeaves(expectedLeaves, analysis)
         compareLoopLeaves(expectedLoopLeaves, analysis)
     }
-
-    // TODO: Add test case for nested loop, maybe even w/ labeled break
 
     @Test
     fun testSimpleLoopWithContinueAndBreak() {
@@ -161,4 +160,24 @@ class LoopSymbolicExecutionAnalysisTests {
         compareLeaves(expectedLeaves, analysis)
         compareLoopLeaves(expectedLoopLeaves, analysis)
     }
+
+    @Test
+    fun testLoopWithNonTrivialGuard() {
+        val analysis = SymbolicExecutionAnalysis.create(
+            "de.dominicsteinhoefel.pluggabl.testcase.Loops",
+            "int loopWithNonTrivialGuard(java.lang.Integer[])"
+        )
+
+        // TODO: Why is
+        //   Node "staticinvoke <kotlin.jvm.internal.Intrinsics: void checkParameterIsNotNull(java.lang.Object,java.lang.String)>(input, "input")":
+        // executed without complaints?
+
+        analysis.symbolicallyExecute()
+
+        printSESs(analysis)
+
+        TODO("Implement Tests")
+    }
+
+    // TODO: Add test case for nested loop, maybe even w/ labeled break
 }

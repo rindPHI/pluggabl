@@ -49,4 +49,15 @@ class Loops {
 
         return i
     }
+
+    fun loopWithNonTrivialGuard(input: Array<Int>): Int {
+        var i = 0
+
+        // Loop header is not an if statement, i.e. a loop exit, but the evaluation of the size expression
+        while (i < input.size) {
+            i++
+        }
+        
+        return i
+    }
 }

@@ -6,11 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="6acfca55-121b-469b-8da1-6c2ed7a17d5f" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/LoopAnalysis.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/LoopAnalysis.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/SymbolicStore.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/SymbolicStore.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/theories/HeapTheory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/theories/HeapTheory.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/de/dominicsteinhoefel/pluggabl/pureMethods.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/de/dominicsteinhoefel/pluggabl/pureMethods.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/HeapSymbolicExecutionAnalysisTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/HeapSymbolicExecutionAnalysisTests.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/LoopSymbolicExecutionAnalysisTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/test/LoopSymbolicExecutionAnalysisTests.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/testcase/Loops.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/testcase/Loops.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -68,7 +65,7 @@
       <recent name="de.dominicsteinhoefel.pluggabl" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.ParenthesisParserTest.testParenthesisParserAnalysis">
+  <component name="RunManager" selected="Gradle.LoopSymbolicExecutionAnalysisTests.testLoopWithNonTrivialGuard">
     <configuration name="HeapSymbolicExecutionAnalysisTests.testSimpleArrayAccess" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -111,12 +108,12 @@
       <DebugAllEnabled>false</DebugAllEnabled>
       <method v="2" />
     </configuration>
-    <configuration name="ParenthesisParserTest.testParenthesisParserAnalysis" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="LoopSymbolicExecutionAnalysisTests.testLoopWithNonTrivialGuard" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="--tests &quot;de.dominicsteinhoefel.pluggabl.test.ParenthesisParserTest.testParenthesisParserAnalysis&quot;" />
+        <option name="scriptParameters" value="--tests &quot;de.dominicsteinhoefel.pluggabl.test.LoopSymbolicExecutionAnalysisTests.testLoopWithNonTrivialGuard&quot;" />
         <option name="taskDescriptions">
           <list />
         </option>
@@ -132,12 +129,12 @@
       <DebugAllEnabled>false</DebugAllEnabled>
       <method v="2" />
     </configuration>
-    <configuration name="SimpleSymbolicExecutionAnalysisTests" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ParenthesisParserTest.testParenthesisParserAnalysis" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="--tests &quot;de.dominicsteinhoefel.pluggabl.test.SimpleSymbolicExecutionAnalysisTests&quot;" />
+        <option name="scriptParameters" value="--tests &quot;de.dominicsteinhoefel.pluggabl.test.ParenthesisParserTest.testParenthesisParserAnalysis&quot;" />
         <option name="taskDescriptions">
           <list />
         </option>
@@ -176,11 +173,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testLoopWithNonTrivialGuard" />
         <item itemvalue="Gradle.ParenthesisParserTest.testParenthesisParserAnalysis" />
         <item itemvalue="Gradle.Tests in 'de.dominicsteinhoefel.pluggabl'" />
         <item itemvalue="Gradle.HeapSymbolicExecutionAnalysisTests.testSimpleArrayAccess" />
         <item itemvalue="Gradle.HeapSymbolicExecutionAnalysisTests.testSimpleTwoBranchedMethodWithMergeFieldAccess" />
-        <item itemvalue="Gradle.SimpleSymbolicExecutionAnalysisTests" />
       </list>
     </recent_temporary>
   </component>
