@@ -6,6 +6,7 @@ import de.dominicsteinhoefel.pluggabl.simplification.SymbolicExpressionSimplifie
 import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.printSESs
 import de.dominicsteinhoefel.pluggabl.theories.ARRAY_FIELD
 import de.dominicsteinhoefel.pluggabl.theories.HEAP_VAR
+import de.dominicsteinhoefel.pluggabl.theories.STORE
 import de.dominicsteinhoefel.pluggabl.theories.Select
 import org.junit.Assert
 import org.junit.Assert.assertEquals
@@ -89,68 +90,65 @@ class HeapSymbolicExecutionAnalysisTests {
             "java.lang.Integer", "int intValue()"
         )!!
 
-        val intValueOfSym = analysis.symbolsManager.getMethodResultSymbol(
+        val valueOfSym = analysis.symbolsManager.getMethodResultSymbol(
             "java.lang.Integer", "java.lang.Integer valueOf(int)"
         )!!
 
         val arrVar = analysis.getLocal("arr")
         val heapVar = analysis.getLocal("heap")
         val resultVar = analysis.getLocal("result")
+        val integerType = ReferenceType("java.lang.Integer")
 
-        val selectArr1 = FunctionApplication(
-            Select.create(INT_TYPE), heapVar, arrVar, FunctionApplication(ARRAY_FIELD, IntValue(1))
+        fun makeSelectTerm(v: Int) = FunctionApplication(
+            Select.create(integerType), heapVar, arrVar, FunctionApplication(ARRAY_FIELD, IntValue(v))
         )
 
-        val selectArr2 = FunctionApplication(
-            Select.create(INT_TYPE), heapVar, arrVar, FunctionApplication(ARRAY_FIELD, IntValue(2))
-        )
-
-        val expectedResultExpr = AdditionExpr(
+        val expectedResultValue = AdditionExpr(
             FunctionApplication(
                 intValueSym,
                 FunctionApplication(
-                    intValueOfSym,
+                    valueOfSym,
                     AdditionExpr(
-                        FunctionApplication(intValueSym, selectArr1),
-                        FunctionApplication(intValueSym, selectArr2)
+                        FunctionApplication(intValueSym, makeSelectTerm(1)),
+                        FunctionApplication(intValueSym, makeSelectTerm(2))
                     )
                 )
             ), IntValue(1)
         )
 
-        val actualResultExpr =
-            analysis.getOutputSESs(analysis.cfg.tails[0] as Stmt)[0].store.accept(SymbolicStoreCollector { c ->
-                if (c is ElementaryStore && c.lhs == resultVar)
-                    setOf(c.rhs)
-                else emptySet()
-            }).toList()[0]
+        val resultStores = analysis.getOutputSESs(
+            analysis.cfg.tails.also { assertEquals(1, it.size) }[0] as Stmt
+        ).also { assertEquals(1, it.size) }[0].store.toElementaryStores()
 
-        assertEquals(expectedResultExpr, actualResultExpr)
+        val actualResultValue =
+            resultStores.filter { it.lhs == resultVar }.also { assertEquals(1, it.size) }[0].rhs
 
-        TODO("Test outcome.")
+        assertEquals(expectedResultValue, actualResultValue)
 
-        /*
-        Result value holds:
-          <java.lang.Integer: int intValue()>(
-            <java.lang.Integer: java.lang.Integer valueOf(int)>(
-              <java.lang.Integer: int intValue()>(select(heap, arr, arr(1))) +
-              <java.lang.Integer: int intValue()>(select(heap, arr, arr(2)))))
-          +1
-         */
+        val actualHeapValue =
+            resultStores.filter { it.lhs == heapVar }.also { assertEquals(1, it.size) }[0].rhs
 
-        /*
-        Heap is:
-        heap ->
-          store(
-            store(
-              heap,
-              arr,
-              arr(1),
-              <java.lang.Integer: java.lang.Integer valueOf(int)>((<java.lang.Integer: int intValue()>(select(heap, arr, arr(1))))+(1))),
-            arr,
-            arr(0),
-            <java.lang.Integer: java.lang.Integer valueOf(int)>(<java.lang.Integer: int intValue()>(select(heap, arr, arr(1)))+
-              (<java.lang.Integer: int intValue()>(select(heap, arr, arr(2))))))]++
-         */
+        val expectedHeapValue = FunctionApplication(
+            STORE,
+            FunctionApplication(
+                STORE, heapVar, arrVar, FunctionApplication(ARRAY_FIELD, IntValue(1)),
+                FunctionApplication(
+                    valueOfSym,
+                    AdditionExpr(
+                        FunctionApplication(intValueSym, makeSelectTerm(1)),
+                        IntValue(1)
+                    )
+                )
+            ), arrVar, FunctionApplication(ARRAY_FIELD, IntValue(0)),
+            FunctionApplication(
+                valueOfSym,
+                AdditionExpr(
+                    FunctionApplication(intValueSym, makeSelectTerm(1)),
+                    FunctionApplication(intValueSym, makeSelectTerm(2))
+                )
+            )
+        )
+
+        assertEquals(expectedHeapValue, actualHeapValue)
     }
 }
