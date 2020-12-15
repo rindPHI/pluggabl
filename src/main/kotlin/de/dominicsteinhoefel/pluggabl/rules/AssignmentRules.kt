@@ -4,10 +4,7 @@ import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolsManager
 import de.dominicsteinhoefel.pluggabl.analysis.rules.SERule
 import de.dominicsteinhoefel.pluggabl.expr.*
-import de.dominicsteinhoefel.pluggabl.theories.ARRAY_FIELD
-import de.dominicsteinhoefel.pluggabl.theories.HEAP_VAR
-import de.dominicsteinhoefel.pluggabl.theories.STORE
-import de.dominicsteinhoefel.pluggabl.theories.Select
+import de.dominicsteinhoefel.pluggabl.theories.*
 import soot.jimple.Stmt
 import soot.jimple.internal.*
 
@@ -176,4 +173,23 @@ object AssignFromPureStaticInvokationRule : SERule {
         }
 
     override fun toString() = "AssignSimpleRule"
+}
+
+object AssignArrayLengthRule : SERule {
+    override fun accepts(stmt: Stmt, inpStates: List<SymbolicExecutionState>) =
+        stmt is JAssignStmt && stmt.leftOp is JimpleLocal && stmt.rightOp is JLengthExpr
+
+    override fun apply(stmt: Stmt, inpStates: List<SymbolicExecutionState>, symbolsManager: SymbolsManager) =
+        (stmt as JAssignStmt).let { assgmStmt ->
+            (stmt.rightOp as JLengthExpr).let { lengthExpr ->
+                listOf(
+                    SymbolicExecutionState.merge(inpStates).addAssignment(
+                        ExprConverter.convert(assgmStmt.leftOp, symbolsManager) as LocalVariable,
+                        FunctionApplication(ARRAY_LENGTH, ExprConverter.convert(lengthExpr.op, symbolsManager))
+                    )
+                )
+            }
+        }
+
+    override fun toString() = "AssignArrayLengthRule"
 }

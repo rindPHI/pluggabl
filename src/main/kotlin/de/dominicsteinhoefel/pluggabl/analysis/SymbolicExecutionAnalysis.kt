@@ -39,6 +39,7 @@ class SymbolicExecutionAnalysis internal constructor(
         AssignToArrayRule,
         AssignFromPureVirtualInvokationRule,
         AssignFromPureStaticInvokationRule,
+        AssignArrayLengthRule,
         ReturnValueRule,
         ReturnVoidRule,
         IfRule,
