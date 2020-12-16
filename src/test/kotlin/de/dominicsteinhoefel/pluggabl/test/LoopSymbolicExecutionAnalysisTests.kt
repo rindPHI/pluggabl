@@ -162,6 +162,20 @@ class LoopSymbolicExecutionAnalysisTests {
     }
 
     @Test
+    fun testReallySimpleLoop() {
+        val analysis = SymbolicExecutionAnalysis.create(
+            "de.dominicsteinhoefel.pluggabl.testcase.Loops",
+            "int reallySimpleLoop(int)"
+        )
+
+        analysis.symbolicallyExecute()
+
+        printSESs(analysis)
+
+        TODO("Implement Tests")
+    }
+
+    @Test
     fun testLoopWithNonTrivialGuard() {
         val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.pluggabl.testcase.Loops",

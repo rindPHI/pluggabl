@@ -1,6 +1,16 @@
 package de.dominicsteinhoefel.pluggabl.testcase
 
 class Loops {
+    fun reallySimpleLoop(input: Int): Int {
+        var i = 0
+
+        while (i < input) {
+            i++
+        }
+
+        return i
+    }
+
     fun simpleLoop(input: Int): Int {
         var result = input
         if (input < 0) {

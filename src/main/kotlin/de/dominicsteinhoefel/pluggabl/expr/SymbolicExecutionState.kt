@@ -39,7 +39,7 @@ class SymbolicExecutionState() {
             ParallelStore.create(other.store, StoreApplStore.create(other.store, store))
         )
 
-    fun simplify(): SymbolicExecutionState = SymbolicExecutionState.simplify(this)
+    fun simplify(): SymbolicExecutionState = simplify(this)
 
     override fun toString(): String {
         val sConstraints = "{${constraints.joinToString()}}"
