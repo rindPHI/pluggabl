@@ -42,7 +42,7 @@ object SymbolicStoreSimplifier {
     private fun toParallelNormalForm(store: SymbolicStore): SymbolicStore =
         when (store) {
             is EmptyStore -> EmptyStore
-            is ElementaryStore -> ElementaryStore(store.lhs, SymbolicExpressionSimplifier.simplify(store.rhs))
+            is ElementaryStore -> ElementaryStore(store.lhs, store.rhs)
             is ParallelStore -> ParallelStore.create(toParallelNormalForm(store.lhs), toParallelNormalForm(store.rhs))
             is StoreApplStore -> {
                 when (store.target) {
@@ -53,14 +53,19 @@ object SymbolicStoreSimplifier {
                         ParallelStore.create(lhs, rhs)
                     }
                     is ElementaryStore -> {
-                        val replVisitor = SymbolReplaceExprVisitor(storeToSubst(simplify(store.applied)))
+                        val replVisitor = SymbolReplaceExprVisitor(storeToSubst(toParallelNormalForm(store.applied)))
                         val newRhs = store.target.rhs.accept(replVisitor)
                         ElementaryStore(store.target.lhs, newRhs)
                     }
                     is StoreApplStore -> {
-                        val lhs = toParallelNormalForm(store.applied)
-                        val rhs = toParallelNormalForm(StoreApplStore.create(store.applied, store.target.applied))
-                        ParallelStore.create(lhs, rhs)
+                        toParallelNormalForm(
+                            StoreApplStore.create(
+                                ParallelStore.create(
+                                    store.applied,
+                                    StoreApplStore.create(store.applied, store.target.applied)
+                                ), store.target.target
+                            )
+                        )
                     }
                 }
             }

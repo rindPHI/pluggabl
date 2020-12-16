@@ -24,11 +24,6 @@ class TestSESSimplification {
         val updITo0 = ElementaryStore(i, IntTheory.IntValue(0))
         val updIToFTerm = ElementaryStore(i, fTerm)
 
-        val constraint = StoreApplConstraint.create(
-            updITo0,
-            StoreApplConstraint.create(updIToFTerm, NegatedConstr.create(GreaterEqualConstr(i, input)))
-        )
-
         val inputStore = ParallelStore.create(
             updITo0, StoreApplStore.create(
                 updITo0, ParallelStore.create(
