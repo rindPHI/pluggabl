@@ -1,4 +1,4 @@
-package de.dominicsteinhoefel.pluggabl.test
+package de.dominicsteinhoefel.pluggabl.analysis.test
 
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.expr.SymbolicExecutionState

@@ -1,8 +1,8 @@
-package de.dominicsteinhoefel.pluggabl.test
+package de.dominicsteinhoefel.pluggabl.analysis.test
 
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.expr.*
-import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.compareLeaves
+import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.compareLeaves
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.IntValue
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.plus
 import org.junit.Test

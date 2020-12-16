@@ -1,4 +1,4 @@
-package de.dominicsteinhoefel.pluggabl.test
+package de.dominicsteinhoefel.pluggabl.simplification.test
 
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.simplification.SymbolicStoreSimplifier

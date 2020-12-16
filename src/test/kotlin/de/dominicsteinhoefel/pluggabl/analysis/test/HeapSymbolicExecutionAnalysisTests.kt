@@ -1,9 +1,9 @@
-package de.dominicsteinhoefel.pluggabl.test
+package de.dominicsteinhoefel.pluggabl.analysis.test
 
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.simplification.SymbolicExpressionSimplifier
-import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.printSESs
+import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.printSESs
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.ARRAY_FIELD
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.HEAP_VAR

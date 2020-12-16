@@ -1,10 +1,8 @@
-package de.dominicsteinhoefel.pluggabl.test
+package de.dominicsteinhoefel.pluggabl.analysis.test
 
-import de.dominicsteinhoefel.pluggabl.test.SymbolicExecutionTestHelper.printLeafSESs
+import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.printLeafSESs
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
-import org.junit.Assert
 import org.junit.Test
-import soot.jimple.Stmt
 
 class ParenthesisParserTest {
 
