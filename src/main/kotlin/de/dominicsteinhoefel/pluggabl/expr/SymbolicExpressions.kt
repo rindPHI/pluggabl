@@ -158,10 +158,9 @@ class ExprConverter(private val symbolsManager: SymbolsManager, private val theo
                     value.args.map { convert(it) }.toList()
                 )
             }
-            is soot.Value -> theories.filter { it.isResponsibleFor(value) }
-                .also { if (it.size != 1) throw IllegalArgumentException("No theory found for operator ${value::class}") }[0]
+            else -> theories.filter { it.isResponsibleFor(value) }
+                .also { if (it.size != 1) throw IllegalArgumentException("No theory/translation found for operator ${value::class}") }[0]
                 .translate(value, value.useBoxes.map { it.value }.map { convert(it) })
-            else -> TODO("Conversion of type ${value.javaClass} to SymbolicExpression not yet implemented.")
         }
 }
 
