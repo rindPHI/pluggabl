@@ -44,6 +44,9 @@ class TypeConverter(private val theories: Set<Theory>) {
         }.also { typesRegistry[type] = it }
     }
 
+    fun typeByName(name: String): Type? =
+        typesRegistry.values.firstOrNull{ it.type == name }
+
     private fun superType(type: soot.RefType) =
         if (type.sootClass.hasSuperclass())
             convert(type.sootClass.superclass.type)

@@ -115,7 +115,7 @@ class LoopAnalysis(
 
                 outputSESs.add(loopAnalysis.getOutputSESs(stmt).get(idx).apply(anonState).apply(initState).simplify())
             }
-            
+
             stmtToOutputSESMap[stmt] = outputSESs
         }
     }

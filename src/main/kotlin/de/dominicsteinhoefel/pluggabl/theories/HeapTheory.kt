@@ -30,7 +30,7 @@ object HeapTheory : Theory {
         throw UnsupportedOperationException("Heap theory does not correspond to bytecode expressions.")
     }
 
-    class Select private constructor(type: Type) : FunctionSymbol("select", type, HEAP_TYPE, OBJECT_TYPE, FIELD_TYPE) {
+    class Select private constructor(type: Type) : FunctionSymbol("${type}::select", type, HEAP_TYPE, OBJECT_TYPE, FIELD_TYPE) {
         companion object {
             private val cache = LinkedHashMap<Type, Select>()
             fun create(type: Type) =

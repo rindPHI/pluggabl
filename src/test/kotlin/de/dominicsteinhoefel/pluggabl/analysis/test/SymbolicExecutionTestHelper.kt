@@ -14,12 +14,20 @@ object SymbolicExecutionTestHelper {
 
     fun compareLeaves(expected: List<SymbolicExecutionState>, a: SymbolicExecutionAnalysis) {
         val results = a.getLeavesWithOutputSESs().values.flatten()
-        assertThat(results, `is`(expected))
+
+        assertEquals(expected.size, results.size)
+        for (i in expected.indices) {
+            assertEquals(expected[i], results[i])
+        }
     }
 
     fun compareLoopLeaves(expected: List<SymbolicExecutionState>, a: SymbolicExecutionAnalysis) {
         val results = a.getLoopLeafSESs().values.toList()
-        assertThat(results, `is`(expected))
+
+        assertEquals(expected.size, results.size)
+        for (i in expected.indices) {
+            assertEquals(expected[i], results[i])
+        }
     }
 
     fun printSESs(a: SymbolicExecutionAnalysis) {

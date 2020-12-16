@@ -51,6 +51,9 @@ class ParallelStore private constructor(val lhs: SymbolicStore, val rhs: Symboli
                 rhs is EmptyStore -> lhs
                 else -> ParallelStore(lhs, rhs)
             }
+
+        fun create(vararg args: SymbolicStore): SymbolicStore =
+            args.foldRight(EmptyStore as SymbolicStore, {acc, elem -> create(acc, elem)})
     }
 }
 
