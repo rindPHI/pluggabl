@@ -115,12 +115,8 @@ class LoopAnalysis(
 
                 outputSESs.add(loopAnalysis.getOutputSESs(stmt).get(idx).apply(anonState).apply(initState).simplify())
             }
-
-            // For loop exits: Use parametrized function term for anonymization
-            // instead of loop iteration counter variable, and propagate results
-            // to successors.
+            
             stmtToOutputSESMap[stmt] = outputSESs
-            //loopAnalysis.getOutputSESs(stmt).map { it.apply(anonymizingFinalState).apply(initState).simplify() }
         }
     }
 
