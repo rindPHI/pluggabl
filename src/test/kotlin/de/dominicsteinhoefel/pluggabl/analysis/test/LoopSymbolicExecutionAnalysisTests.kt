@@ -260,8 +260,6 @@ class LoopSymbolicExecutionAnalysisTests {
 
         analysis.symbolicallyExecute()
 
-        printSESs(analysis)
-
         // loop leaf SES:
         // ({!((i_ANON_LOOP_0(itCnt_LOOP_0, 0))>=(length(input)))}, [$stack3 -> length(input)]++[i -> plusInt(i_ANON_LOOP_0(itCnt_LOOP_0, 0), 1)])
 

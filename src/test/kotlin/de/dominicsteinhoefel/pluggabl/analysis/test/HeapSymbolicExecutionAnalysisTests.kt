@@ -88,7 +88,6 @@ class HeapSymbolicExecutionAnalysisTests {
         )
 
         analysis.symbolicallyExecute()
-        printSESs(analysis)
 
         val intValueSym = analysis.symbolsManager.getMethodResultSymbol(
             "java.lang.Integer", "int intValue()"
