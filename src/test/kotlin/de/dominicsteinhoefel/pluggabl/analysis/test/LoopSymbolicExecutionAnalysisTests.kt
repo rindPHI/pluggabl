@@ -1,9 +1,9 @@
 package de.dominicsteinhoefel.pluggabl.analysis.test
 
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
+import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.compareLeaveInputs
 import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.compareLeaves
 import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.compareLoopLeaves
-import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.printSESs
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory
@@ -27,6 +27,7 @@ class LoopSymbolicExecutionAnalysisTests {
         val sInput = analysis.getLocal("input")
         val sI = analysis.getLocal("i")
         val sResult = analysis.getLocal("result")
+        val resultVar = analysis.symbolsManager.getResultVariable()
 
         val conditional = ConditionalExpression.create(
             GreaterEqualConstr(sInput, IntTheory.IntValue(0)),
@@ -52,7 +53,10 @@ class LoopSymbolicExecutionAnalysisTests {
                 SymbolicConstraintSet.from(GreaterEqualConstr(sILoopResult, conditional)),
                 ParallelStore.create(
                     ElementaryStore(sResult, conditional),
-                    ElementaryStore(sI, sILoopResult)
+                    ParallelStore.create(
+                        ElementaryStore(sI, sILoopResult),
+                        ElementaryStore(resultVar, sILoopResult)
+                    )
                 )
             )
         )
@@ -160,7 +164,7 @@ class LoopSymbolicExecutionAnalysisTests {
             )
         )
 
-        compareLeaves(expectedLeaves, analysis)
+        compareLeaveInputs(expectedLeaves, analysis)
         compareLoopLeaves(expectedLoopLeaves, analysis)
     }
 

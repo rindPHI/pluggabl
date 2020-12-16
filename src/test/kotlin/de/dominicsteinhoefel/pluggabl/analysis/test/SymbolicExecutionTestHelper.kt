@@ -7,8 +7,13 @@ import org.hamcrest.CoreMatchers.*
 import soot.jimple.Stmt
 
 object SymbolicExecutionTestHelper {
-    fun compareLeaves(expected: List<SymbolicExecutionState>, a: SymbolicExecutionAnalysis) {
+    fun compareLeaveInputs(expected: List<SymbolicExecutionState>, a: SymbolicExecutionAnalysis) {
         val results = a.cfg.tails.map { it as Stmt }.map { a.getInputSESs(it) }.flatten()
+        assertThat(results, `is`(expected))
+    }
+
+    fun compareLeaves(expected: List<SymbolicExecutionState>, a: SymbolicExecutionAnalysis) {
+        val results = a.getLeavesWithOutputSESs().values.flatten()
         assertThat(results, `is`(expected))
     }
 

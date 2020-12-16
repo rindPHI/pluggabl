@@ -1,8 +1,8 @@
 package de.dominicsteinhoefel.pluggabl.analysis.test
 
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
-import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.compareLeaves
+import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.IntValue
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.plus
 import org.junit.Test
@@ -18,6 +18,7 @@ class SimpleSymbolicExecutionAnalysisTests {
         analysis.symbolicallyExecute()
 
         val sInput = analysis.getLocal("input")
+        val sResult = analysis.getLocal("result")
         val sTest = analysis.getLocal("test")
         val sStack = analysis.getLocal("\$stack3")
 
@@ -31,14 +32,23 @@ class SimpleSymbolicExecutionAnalysisTests {
                     ElementaryStore(
                         sTest,
                         inputPlusOne
-                    ), ElementaryStore(sStack, plus(inputPlusOne, IntValue(3)))
+                    ),
+                    ParallelStore.create(
+                        ElementaryStore(sStack, plus(inputPlusOne, IntValue(3))),
+                        ElementaryStore(sResult, plus(inputPlusOne, IntValue(3)))
+                    )
                 )
             ),
             SymbolicExecutionState(
                 SymbolicConstraintSet.from(inputPlusOneIsFortyTwo),
-                ElementaryStore(
-                    sTest,
-                    plus(plus(inputPlusOne, IntValue(2)), IntValue(4))
+                ParallelStore.create(
+                    ElementaryStore(
+                        sTest,
+                        plus(plus(inputPlusOne, IntValue(2)), IntValue(4))
+                    ), ElementaryStore(
+                        sResult,
+                        plus(plus(inputPlusOne, IntValue(2)), IntValue(4))
+                    )
                 )
             )
         )
@@ -57,20 +67,33 @@ class SimpleSymbolicExecutionAnalysisTests {
 
         val sInput = analysis.getLocal("input")
         val sTest = analysis.getLocal("test")
+        val sResult = analysis.getLocal("result")
 
         val inputPlusOne = plus(sInput, IntValue(1))
 
         val expected = listOf(
             SymbolicExecutionState(
                 SymbolicConstraintSet(),
-                ElementaryStore(
-                    sTest,
-                    plus(
-                        ConditionalExpression.create(
-                            EqualityConstr.create(inputPlusOne, IntValue(42)),
-                            plus(inputPlusOne, IntValue(2)),
-                            plus(inputPlusOne, IntValue(3))
-                        ), IntValue(4)
+                ParallelStore.create(
+                    ElementaryStore(
+                        sTest,
+                        plus(
+                            ConditionalExpression.create(
+                                EqualityConstr.create(inputPlusOne, IntValue(42)),
+                                plus(inputPlusOne, IntValue(2)),
+                                plus(inputPlusOne, IntValue(3))
+                            ), IntValue(4)
+                        )
+                    ),
+                    ElementaryStore(
+                        sResult,
+                        plus(
+                            ConditionalExpression.create(
+                                EqualityConstr.create(inputPlusOne, IntValue(42)),
+                                plus(inputPlusOne, IntValue(2)),
+                                plus(inputPlusOne, IntValue(3))
+                            ), IntValue(4)
+                        )
                     )
                 )
             )
