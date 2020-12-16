@@ -8,12 +8,10 @@ import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.HEAP_VAR
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory
 import de.dominicsteinhoefel.pluggabl.theories.LocationSetTheory
 import de.dominicsteinhoefel.pluggabl.util.SootBridge
-import de.dominicsteinhoefel.pluggabl.util.subList
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import soot.Body
 import soot.G
-import soot.jimple.GotoStmt
 import soot.jimple.Stmt
 import soot.jimple.internal.JReturnStmt
 import soot.jimple.internal.JimpleLocal
@@ -23,6 +21,7 @@ import soot.toolkits.graph.ExceptionalUnitGraph
 import java.util.*
 import kotlin.collections.HashMap
 import kotlin.collections.LinkedHashMap
+import kotlin.collections.LinkedHashSet
 
 class SymbolicExecutionAnalysis private constructor(
     val body: Body,
@@ -131,6 +130,7 @@ class SymbolicExecutionAnalysis private constructor(
 
     fun symbolicallyExecute() {
         val queue = LinkedList<Stmt>()
+        val extendedStopAtNodes = LinkedHashSet<Stmt>(stopAtNodes)
 
         fun <E> LinkedList<E>.addLastDistinct(elem: E) {
             if (!contains(elem)) addLast(elem)
@@ -142,7 +142,7 @@ class SymbolicExecutionAnalysis private constructor(
         while (!queue.isEmpty()) {
             val currStmt = queue.pop()
 
-            if (stopAtNodes.contains(currStmt)) {
+            if (extendedStopAtNodes.contains(currStmt)) {
                 continue
             }
 
@@ -159,7 +159,8 @@ class SymbolicExecutionAnalysis private constructor(
                 continue
             }
 
-            val inputStates = (stmtToInputSESMap[currStmt] ?: emptyList())
+            val inputStates =
+                stmtToInputSESMap[currStmt] ?: emptyList()
 
             if (cfg.getPredsOf(currStmt).size > inputStates.size && !stmtIsHeadOfAnalyzedLoop) {
                 // Evaluation of predecessors not yet finished
@@ -172,6 +173,11 @@ class SymbolicExecutionAnalysis private constructor(
                 continue
             }
 
+            // Break endless cycles in loop analysis: Stop at loop exits that have already been analyzed
+            if (loops.map { it.loopExits }.flatten().contains(currStmt) && inputStates.isNotEmpty()) {
+                extendedStopAtNodes.add(currStmt)
+            }
+
             val rule = getApplicableRule(currStmt, inputStates)
             val result = rule.apply(
                 currStmt,
@@ -182,7 +188,7 @@ class SymbolicExecutionAnalysis private constructor(
                 constrConverter
             ).map { it.simplify() }
 
-            if (result.size != cfg.getSuccsOf(currStmt).size && !(currStmt is JReturnStmt)) {
+            if (result.size != cfg.getSuccsOf(currStmt).size && currStmt !is JReturnStmt) {
                 throw IllegalStateException(
                     "Expected number ${result.size} of successors in SE graph " +
                             "does not match number of successors in CFG (${cfg.getSuccsOf(currStmt).size})"
@@ -191,16 +197,8 @@ class SymbolicExecutionAnalysis private constructor(
 
             stmtToOutputSESMap[currStmt] = result
 
-            // Only propagate result state if currStmt is no back edge to a loop header
-            if (!(currStmt is GotoStmt && loops.any { it.head == currStmt.target })) {
-                propagateResultStateToSuccs(currStmt, result)
-                cfg.getSuccsOf(currStmt).map { it as Stmt }.forEach(queue::addLastDistinct)
-            }
-
-            // But propagate if we're currently doing a loop analysis
-            if (ignoreTopLoop && (currStmt is GotoStmt && loops.any { it.head == currStmt.target && it.head == root })) {
-                propagateResultStateToSuccs(currStmt, result)
-            }
+            propagateResultStateToSuccs(currStmt, result)
+            cfg.getSuccsOf(currStmt).map { it as Stmt }.forEach(queue::addLastDistinct)
         }
     }
 
@@ -238,22 +236,18 @@ class SymbolicExecutionAnalysis private constructor(
         loopAnalysis.getLoopLeafState().let { loopLeafSESMap[loop] = it }
 
         loop.loopStatements.forEach { loopStmt ->
-            stmtToInputSESMap[loopStmt] = loopAnalysis.getInputSESs(loopStmt)
+            if (loopStmt != loop.head) stmtToInputSESMap[loopStmt] = loopAnalysis.getInputSESs(loopStmt)
             stmtToOutputSESMap[loopStmt] = loopAnalysis.getOutputSESs(loopStmt)
         }
 
-        loop.loopStatements.filter(loop.loopExits::contains).forEach { loopExitStmt ->
-            propagateResultStateToSuccs(
-                loopExitStmt,
-                (
-                        if (loopExitStmt == loop.head)
-                            stmtToOutputSESMap[loop.head]?.subList(1) // Remove output for entering the loop
-                        else
-                            stmtToOutputSESMap[loopExitStmt]
-                        )
-                    ?: emptyList(),
-                loop.loopStatements
-            )
+        loop.loopExits.forEach { loopExitStmt ->
+            for ((idx, succ) in cfg.getSuccsOf(loopExitStmt).map { it as Stmt }.iterator().withIndex()) {
+                if (loop.loopStatements.contains(succ)) continue
+                stmtToInputSESMap[succ] = listOf(
+                    stmtToInputSESMap[succ].orEmpty(),
+                    stmtToOutputSESMap[loopExitStmt]?.get(idx)
+                        .let { if (it == null) emptyList() else listOf(it) }).flatten()
+            }
         }
 
         logger.trace("Done analyzing loop ${loopIdx + 1}")
@@ -261,11 +255,10 @@ class SymbolicExecutionAnalysis private constructor(
 
     private fun propagateResultStateToSuccs(
         currStmt: Stmt,
-        result: List<SymbolicExecutionState>,
-        ignore: List<Stmt> = emptyList()
+        result: List<SymbolicExecutionState>
     ) {
         cfg.getSuccsOf(currStmt).map { it as Stmt }
-            .filterNot(ignore::contains).zip(result).forEach { (cfgNode, ses) ->
+            .zip(result).forEach { (cfgNode, ses) ->
                 stmtToInputSESMap[cfgNode] = listOf(
                     stmtToInputSESMap[cfgNode] ?: emptyList(),
                     listOf(ses)

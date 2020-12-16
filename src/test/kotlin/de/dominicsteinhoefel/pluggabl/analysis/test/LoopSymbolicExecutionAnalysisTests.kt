@@ -1,14 +1,16 @@
 package de.dominicsteinhoefel.pluggabl.analysis.test
 
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
-import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.compareLeaves
 import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.compareLoopLeaves
 import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.printSESs
+import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.mult
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.plus
+import org.junit.Assert.assertEquals
 import org.junit.Test
+import soot.jimple.Stmt
 
 class LoopSymbolicExecutionAnalysisTests {
 
@@ -56,7 +58,7 @@ class LoopSymbolicExecutionAnalysisTests {
 
         val sIAnonLoop =
             FunctionApplication(
-                analysis.getFunctionSymbol( "i_ANON_LOOP_0"),
+                analysis.getFunctionSymbol("i_ANON_LOOP_0"),
                 listOf(
                     analysis.getLocal("itCnt_LOOP_0"),
                     IntTheory.IntValue(0),
@@ -172,7 +174,56 @@ class LoopSymbolicExecutionAnalysisTests {
 
         printSESs(analysis)
 
-        TODO("Implement Tests")
+        // loop leaf SES:
+        // ({!((i_ANON_LOOP_0(itCnt_LOOP_0, 0, input))>=(input))}, [i -> plusInt(i_ANON_LOOP_0(itCnt_LOOP_0, 0, input), 1)])
+
+        val input = analysis.getLocal("input")
+        val i = analysis.getLocal("i")
+        val result = analysis.getLocal("result")
+
+        val iAnonLoopTerm = FunctionApplication(
+            analysis.getFunctionSymbol("i_ANON_LOOP_0"),
+            analysis.getLocal("itCnt_LOOP_0"),
+            IntTheory.IntValue(0),
+            input
+        )
+
+        val expectedLoopLeaves = listOf(
+            SymbolicExecutionState(
+                SymbolicConstraintSet.from(
+                    NegatedConstr.create(
+                        GreaterEqualConstr(
+                            iAnonLoopTerm,
+                            input
+                        )
+                    )
+                ),
+                ElementaryStore(i, IntTheory.plus(iAnonLoopTerm, IntTheory.IntValue(1)))
+            )
+        )
+
+        compareLoopLeaves(expectedLoopLeaves, analysis)
+
+        // leaf SES:
+        // ({(i_AFTER_LOOP_0(iterations_LOOP_0(0, input), 0, input))>=(input)}, [i -> i_AFTER_LOOP_0(iterations_LOOP_0(0, input), 0, input)]++[result -> i_AFTER_LOOP_0(iterations_LOOP_0(0, input), 0, input)])
+
+        val iAfterLoopTerm = FunctionApplication(
+            analysis.getFunctionSymbol("i_AFTER_LOOP_0"),
+            FunctionApplication(analysis.getFunctionSymbol("iterations_LOOP_0"), IntTheory.IntValue(0), input),
+            IntTheory.IntValue(0),
+            input
+        )
+
+        val expectedLeafSES =
+            SymbolicExecutionState(
+                SymbolicConstraintSet.from(GreaterEqualConstr(iAfterLoopTerm, input)),
+                ParallelStore.create(ElementaryStore(i, iAfterLoopTerm), ElementaryStore(result, iAfterLoopTerm))
+            )
+
+        val leafSES = analysis.getOutputSESs(analysis.cfg.tails.also { assertEquals(1, it.size) }[0] as Stmt)
+            .also { assertEquals(1, it.size) }[0]
+
+        assertEquals(expectedLeafSES, leafSES)
     }
 
     @Test
