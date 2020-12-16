@@ -1,6 +1,5 @@
 package de.dominicsteinhoefel.pluggabl.expr
 
-import de.dominicsteinhoefel.pluggabl.simplification.SymbolicConstraintSimplifier
 import de.dominicsteinhoefel.pluggabl.simplification.SymbolicStoreSimplifier
 import java.util.*
 
@@ -39,7 +38,10 @@ class SymbolicExecutionState() {
             ParallelStore.create(other.store, StoreApplStore.create(other.store, store))
         )
 
-    fun simplify(): SymbolicExecutionState = simplify(this)
+    fun simplify() = SymbolicExecutionState(
+        constraints.simplify(),
+        SymbolicStoreSimplifier.simplify(store)
+    )
 
     override fun toString(): String {
         val sConstraints = "{${constraints.joinToString()}}"
@@ -81,11 +83,5 @@ class SymbolicExecutionState() {
 
             return SymbolicExecutionState(constraints, store)
         }
-
-        fun simplify(ses: SymbolicExecutionState) =
-            SymbolicExecutionState(
-                ses.constraints.simplify(),
-                SymbolicStoreSimplifier.simplify(ses.store)
-            )
     }
 }

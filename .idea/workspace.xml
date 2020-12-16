@@ -6,8 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="6acfca55-121b-469b-8da1-6c2ed7a17d5f" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/LoopAnalysis.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/LoopAnalysis.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolicExecutionAnalysis.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolicExecutionAnalysis.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/SymbolicExecutionState.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/SymbolicExecutionState.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/simplification/SymbolicStoreSimplifier.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/simplification/SymbolicStoreSimplifier.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/analysis/test/LoopSymbolicExecutionAnalysisTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/analysis/test/LoopSymbolicExecutionAnalysisTests.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -68,7 +68,7 @@
       <recent name="de.dominicsteinhoefel.pluggabl" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.LoopSymbolicExecutionAnalysisTests.testReallySimpleLoop">
+  <component name="RunManager" selected="Gradle.LoopSymbolicExecutionAnalysisTests.testLoopWithNonTrivialGuard">
     <configuration name="LoopSymbolicExecutionAnalysisTests.testLoopWithNonTrivialGuard" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -176,8 +176,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testReallySimpleLoop" />
         <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testLoopWithNonTrivialGuard" />
+        <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testReallySimpleLoop" />
         <item itemvalue="Gradle.Tests in 'de.dominicsteinhoefel.pluggabl'" />
         <item itemvalue="Gradle.TestSESSimplification.testSESSimplification" />
         <item itemvalue="Gradle.TestSESSimplification.testStoreSimplification" />
@@ -227,8 +227,8 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="kotlin-line">
           <url>file://$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/analysis/test/LoopSymbolicExecutionAnalysisTests.kt</url>
-          <line>271</line>
-          <option name="timeStamp" value="78" />
+          <line>318</line>
+          <option name="timeStamp" value="79" />
         </line-breakpoint>
         <breakpoint enabled="true" type="java-exception">
           <properties class="java.lang.IndexOutOfBoundsException" package="java.lang" />

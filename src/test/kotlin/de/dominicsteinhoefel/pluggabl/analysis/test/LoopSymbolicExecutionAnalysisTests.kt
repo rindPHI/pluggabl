@@ -5,6 +5,7 @@ import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.
 import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.compareLoopLeaves
 import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.printSESs
 import de.dominicsteinhoefel.pluggabl.expr.*
+import de.dominicsteinhoefel.pluggabl.theories.HeapTheory
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.mult
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.plus
@@ -172,8 +173,6 @@ class LoopSymbolicExecutionAnalysisTests {
 
         analysis.symbolicallyExecute()
 
-        printSESs(analysis)
-
         // loop leaf SES:
         // ({!((i_ANON_LOOP_0(itCnt_LOOP_0, 0, input))>=(input))}, [i -> plusInt(i_ANON_LOOP_0(itCnt_LOOP_0, 0, input), 1)])
 
@@ -266,10 +265,58 @@ class LoopSymbolicExecutionAnalysisTests {
         // loop leaf SES:
         // ({!((i_ANON_LOOP_0(itCnt_LOOP_0, 0))>=(length(input)))}, [$stack3 -> length(input)]++[i -> plusInt(i_ANON_LOOP_0(itCnt_LOOP_0, 0), 1)])
 
+        val input = analysis.getLocal("input")
+        val i = analysis.getLocal("i")
+        val result = analysis.getLocal("result")
+        val stack3 = analysis.getLocal("\$stack3")
+        val lengthInput = FunctionApplication(HeapTheory.ARRAY_LENGTH, input)
+
+        val iAnonLoopTerm = FunctionApplication(
+            analysis.getFunctionSymbol("i_ANON_LOOP_0"),
+            analysis.getLocal("itCnt_LOOP_0"),
+            IntTheory.IntValue(0)
+        )
+
+        val expectedLoopLeaves = listOf(
+            SymbolicExecutionState(
+                SymbolicConstraintSet.from(
+                    NegatedConstr.create(
+                        GreaterEqualConstr(
+                            iAnonLoopTerm,
+                            lengthInput
+                        )
+                    )
+                ),
+                ParallelStore.create(
+                    ElementaryStore(stack3, lengthInput),
+                    ElementaryStore(i, plus(iAnonLoopTerm, IntTheory.IntValue(1)))
+                )
+            )
+        )
+
+        compareLoopLeaves(expectedLoopLeaves, analysis)
+
         // result SES:
         // ({(i_AFTER_LOOP_0(iterations_LOOP_0(0, input), 0))>=(length(input))}, [i -> i_AFTER_LOOP_0(iterations_LOOP_0(0, input), 0)]++[$stack3 -> length(input)]++[result -> i_AFTER_LOOP_0(iterations_LOOP_0(0, input), 0)])
 
-        TODO("Implement Tests")
+        val iAfterLoopTerm = FunctionApplication(
+            analysis.getFunctionSymbol("i_AFTER_LOOP_0"),
+            FunctionApplication(analysis.getFunctionSymbol("iterations_LOOP_0"), IntTheory.IntValue(0), input),
+            IntTheory.IntValue(0)
+        )
+
+        val expectedLeafSES =
+            SymbolicExecutionState(
+                SymbolicConstraintSet.from(GreaterEqualConstr(iAfterLoopTerm, lengthInput)),
+                ParallelStore.create(
+                    ElementaryStore(i, iAfterLoopTerm),
+                    ParallelStore.create(ElementaryStore(stack3, lengthInput), ElementaryStore(result, iAfterLoopTerm))
+                )
+            )
+
+        val leafSES = analysis.getLeavesWithOutputSESs().values.toList().also { assertEquals(1, it.size) }[0]
+
+        assertEquals(listOf(expectedLeafSES), leafSES)
     }
 
     // TODO: Add test case for nested loop, maybe even w/ labeled break

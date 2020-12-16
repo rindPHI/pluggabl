@@ -43,7 +43,16 @@ object SymbolicStoreSimplifier {
         when (store) {
             is EmptyStore -> EmptyStore
             is ElementaryStore -> ElementaryStore(store.lhs, store.rhs)
-            is ParallelStore -> ParallelStore.create(toParallelNormalForm(store.lhs), toParallelNormalForm(store.rhs))
+            is ParallelStore ->
+                when (store.lhs) {
+                    is ParallelStore -> toParallelNormalForm(
+                        ParallelStore.create(
+                            store.lhs.lhs,
+                            ParallelStore.create(store.lhs.rhs, store.rhs)
+                        )
+                    )
+                    else -> ParallelStore.create(toParallelNormalForm(store.lhs), toParallelNormalForm(store.rhs))
+                }
             is StoreApplStore -> {
                 when (store.target) {
                     is EmptyStore -> EmptyStore
