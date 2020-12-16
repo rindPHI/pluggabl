@@ -118,6 +118,7 @@ class SymbolicExecutionAnalysis private constructor(
     fun getInputSESs(node: Stmt) = stmtToInputSESMap[node] ?: emptyList()
     fun getOutputSESs(node: Stmt) = stmtToOutputSESMap[node] ?: emptyList()
     fun getLoopLeafSESs() = loopLeafSESMap.toMap()
+    fun getLeavesWithOutputSESs() = cfg.tails.map { it as Stmt }.associateWith { getOutputSESs(it) }
 
     fun getLocal(varName: String): LocalVariable =
         body.locals.firstOrNull { it.name == varName }

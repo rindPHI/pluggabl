@@ -9,6 +9,9 @@ import soot.jimple.GotoStmt
 import soot.jimple.IfStmt
 import soot.jimple.Stmt
 import soot.jimple.toolkits.annotation.logic.Loop
+import java.util.*
+import kotlin.collections.HashMap
+import kotlin.collections.LinkedHashSet
 
 class LoopAnalysis(
     private val body: Body,
@@ -75,39 +78,21 @@ class LoopAnalysis(
         storeOutputStatesForLoopExits(writtenVars, initState, loopHeadInputState, loopExitsInputState, loopAnalysis)
     }
 
-    private fun createAnonymizingState(
-        writtenVars: List<LocalVariable>,
+    private fun storeInputAndOutputStatesForLoopStatements(
+        loopAnalysis: SymbolicExecutionAnalysis,
         initState: SymbolicExecutionState,
-        loopExitsInputState: SymbolicExecutionState
-    ) = SymbolicExecutionState(
-        emptySet(),
-        createAnonymizingLoopStore(
-            writtenVars,
-            symbolsManager.newLocalVariable("itCnt_LOOP_$loopIdx", INT_TYPE),
-            initState,
-            loopExitsInputState,
-            "_ANON_LOOP_$loopIdx"
-        )
-    )
+        anonymizingState: SymbolicExecutionState
+    ) {
+        for (stmt in loop.loopStatements) {
+            stmtToInputSESMap[stmt] =
+                loopAnalysis.getInputSESs(stmt).map { it.apply(anonymizingState).apply(initState).simplify() }
+        }
 
-    private fun createAnonymizingFinalState(
-        writtenVars: List<LocalVariable>,
-        initState: SymbolicExecutionState,
-        loopHeadInputState: SymbolicExecutionState,
-        loopExitsInputState: SymbolicExecutionState
-    ): SymbolicExecutionState {
-        val anonymizingFinalState =
-            SymbolicExecutionState(
-                emptySet(),
-                createAnonymizingLoopStore(
-                    writtenVars,
-                    iterationNumberFunctionApp(initState, loopHeadInputState),
-                    initState,
-                    loopExitsInputState,
-                    "_AFTER_LOOP_$loopIdx"
-                )
-            )
-        return anonymizingFinalState
+        for (stmt in loop.loopStatements.filterNot(loop.loopExits::contains)) {
+            // For non-exit loop statements, use the artificial loop counter variable for anonymization.
+            stmtToOutputSESMap[stmt] =
+                loopAnalysis.getOutputSESs(stmt).map { it.apply(anonymizingState).apply(initState).simplify() }
+        }
     }
 
     private fun storeOutputStatesForLoopExits(
@@ -117,38 +102,63 @@ class LoopAnalysis(
         loopExitsInputState: SymbolicExecutionState,
         loopAnalysis: SymbolicExecutionAnalysis
     ) {
+        val anonymizingState = createAnonymizingState(writtenVars, initState, loopExitsInputState)
         val anonymizingFinalState =
             createAnonymizingFinalState(writtenVars, initState, loopHeadInputState, loopExitsInputState)
 
-        // Set SESs for loop head and propagate to its non-loop successors
-        stmtToOutputSESMap[loop.head] =
-            loopAnalysis.getOutputSESs(loop.head).map { it.apply(anonymizingFinalState).apply(initState).simplify() }
+        for (stmt in loop.loopStatements.filter(loop.loopExits::contains)) {
+            val outputSESs = LinkedList<SymbolicExecutionState>()
+            for ((idx, succ) in loopAnalysis.cfg.getSuccsOf(stmt).withIndex()) {
+                val anonState =
+                    if (loop.loopStatements.contains(succ)) anonymizingState
+                    else anonymizingFinalState
 
-        for (stmt in loop.loopStatements.filterNot(loop.head::equals).filter(loop.loopExits::contains)) {
+                outputSESs.add(loopAnalysis.getOutputSESs(stmt).get(idx).apply(anonState).apply(initState).simplify())
+            }
+
             // For loop exits: Use parametrized function term for anonymization
             // instead of loop iteration counter variable, and propagate results
             // to successors.
-            stmtToOutputSESMap[stmt] =
-                loopAnalysis.getOutputSESs(stmt).map { it.apply(anonymizingFinalState).apply(initState).simplify() }
+            stmtToOutputSESMap[stmt] = outputSESs
+            //loopAnalysis.getOutputSESs(stmt).map { it.apply(anonymizingFinalState).apply(initState).simplify() }
         }
     }
 
-    private fun storeInputAndOutputStatesForLoopStatements(
-        loopAnalysis: SymbolicExecutionAnalysis,
+    private lateinit var anonymizingState: SymbolicExecutionState
+    private fun createAnonymizingState(
+        writtenVars: List<LocalVariable>,
         initState: SymbolicExecutionState,
-        anonymizingState: SymbolicExecutionState
-    ) {
-        for (stmt in loop.loopStatements.filterNot(loop.head::equals)) {
-            stmtToInputSESMap[stmt] =
-                loopAnalysis.getInputSESs(stmt).map { it.apply(anonymizingState).apply(initState).simplify() }
-        }
+        loopExitsInputState: SymbolicExecutionState
+    ) = if (this::anonymizingState.isInitialized) anonymizingState else
+        SymbolicExecutionState(
+            emptySet(),
+            createAnonymizingLoopStore(
+                writtenVars,
+                symbolsManager.newLocalVariable("itCnt_LOOP_$loopIdx", INT_TYPE),
+                initState,
+                loopExitsInputState,
+                "_ANON_LOOP_$loopIdx"
+            )
+        ).also { anonymizingState = it }
 
-        for (stmt in loop.loopStatements.filterNot(loop.head::equals).filterNot(loop.loopExits::contains)) {
-            // For non-exit loop statements, use the artificial loop counter variable for anonymization.
-            stmtToOutputSESMap[stmt] =
-                loopAnalysis.getOutputSESs(stmt).map { it.apply(anonymizingState).apply(initState).simplify() }
-        }
-    }
+    private lateinit var anonymizingFinalState: SymbolicExecutionState
+    private fun createAnonymizingFinalState(
+        writtenVars: List<LocalVariable>,
+        initState: SymbolicExecutionState,
+        loopHeadInputState: SymbolicExecutionState,
+        loopExitsInputState: SymbolicExecutionState
+    ) = if (this::anonymizingFinalState.isInitialized) anonymizingFinalState else
+        SymbolicExecutionState(
+            emptySet(),
+            createAnonymizingLoopStore(
+                writtenVars,
+                iterationNumberFunctionApp(initState, loopHeadInputState),
+                initState,
+                loopExitsInputState,
+                "_AFTER_LOOP_$loopIdx"
+            )
+        ).also { anonymizingFinalState = it }
+
 
     private fun iterationNumberFunctionApp(
         initState: SymbolicExecutionState,

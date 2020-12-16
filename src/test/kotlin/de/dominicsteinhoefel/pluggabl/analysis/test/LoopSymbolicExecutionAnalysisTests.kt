@@ -10,7 +10,7 @@ import de.dominicsteinhoefel.pluggabl.theories.IntTheory.mult
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.plus
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import soot.jimple.Stmt
+import soot.jimple.internal.JIfStmt
 
 class LoopSymbolicExecutionAnalysisTests {
 
@@ -220,10 +220,32 @@ class LoopSymbolicExecutionAnalysisTests {
                 ParallelStore.create(ElementaryStore(i, iAfterLoopTerm), ElementaryStore(result, iAfterLoopTerm))
             )
 
-        val leafSES = analysis.getOutputSESs(analysis.cfg.tails.also { assertEquals(1, it.size) }[0] as Stmt)
-            .also { assertEquals(1, it.size) }[0]
+        val leafSES = analysis.getLeavesWithOutputSESs().values.toList().also { assertEquals(1, it.size) }[0]
 
-        assertEquals(expectedLeafSES, leafSES)
+        assertEquals(listOf(expectedLeafSES), leafSES)
+
+        // Test output states for if stmt
+        val ifStmt = analysis.body.units.filterIsInstance<JIfStmt>().toList().also { assertEquals(1, it.size) }[0]
+
+        val expectedIfStmtOutputs = listOf(
+            SymbolicExecutionState(
+                SymbolicConstraintSet.from(
+                    NegatedConstr.create(
+                        GreaterEqualConstr(
+                            iAnonLoopTerm,
+                            input
+                        )
+                    )
+                ),
+                ElementaryStore(i, iAnonLoopTerm)
+            ),
+            SymbolicExecutionState(
+                SymbolicConstraintSet.from(GreaterEqualConstr(iAfterLoopTerm, input)),
+                ElementaryStore(i, iAfterLoopTerm)
+            )
+        )
+
+        assertEquals(expectedIfStmtOutputs, analysis.getOutputSESs(ifStmt))
     }
 
     @Test
@@ -240,6 +262,12 @@ class LoopSymbolicExecutionAnalysisTests {
         analysis.symbolicallyExecute()
 
         printSESs(analysis)
+
+        // loop leaf SES:
+        // ({!((i_ANON_LOOP_0(itCnt_LOOP_0, 0))>=(length(input)))}, [$stack3 -> length(input)]++[i -> plusInt(i_ANON_LOOP_0(itCnt_LOOP_0, 0), 1)])
+
+        // result SES:
+        // ({(i_AFTER_LOOP_0(iterations_LOOP_0(0, input), 0))>=(length(input))}, [i -> i_AFTER_LOOP_0(iterations_LOOP_0(0, input), 0)]++[$stack3 -> length(input)]++[result -> i_AFTER_LOOP_0(iterations_LOOP_0(0, input), 0)])
 
         TODO("Implement Tests")
     }

@@ -5,7 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6acfca55-121b-469b-8da1-6c2ed7a17d5f" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/LoopAnalysis.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/LoopAnalysis.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolicExecutionAnalysis.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolicExecutionAnalysis.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/analysis/test/LoopSymbolicExecutionAnalysisTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/analysis/test/LoopSymbolicExecutionAnalysisTests.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -66,12 +69,12 @@
     </key>
   </component>
   <component name="RunManager" selected="Gradle.LoopSymbolicExecutionAnalysisTests.testReallySimpleLoop">
-    <configuration name="LoopSymbolicExecutionAnalysisTests" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="LoopSymbolicExecutionAnalysisTests.testLoopWithNonTrivialGuard" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="--tests &quot;de.dominicsteinhoefel.pluggabl.test.LoopSymbolicExecutionAnalysisTests&quot;" />
+        <option name="scriptParameters" value="--tests &quot;de.dominicsteinhoefel.pluggabl.analysis.test.LoopSymbolicExecutionAnalysisTests.testLoopWithNonTrivialGuard&quot;" />
         <option name="taskDescriptions">
           <list />
         </option>
@@ -174,10 +177,10 @@
     <recent_temporary>
       <list>
         <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testReallySimpleLoop" />
+        <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testLoopWithNonTrivialGuard" />
         <item itemvalue="Gradle.Tests in 'de.dominicsteinhoefel.pluggabl'" />
         <item itemvalue="Gradle.TestSESSimplification.testSESSimplification" />
         <item itemvalue="Gradle.TestSESSimplification.testStoreSimplification" />
-        <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testReallySimpleLoop" />
       </list>
     </recent_temporary>
   </component>
@@ -209,7 +212,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="kotlin-line">
           <url>file://$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolicExecutionAnalysis.kt</url>
-          <line>280</line>
+          <line>281</line>
           <option name="timeStamp" value="24" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="kotlin-line">
@@ -219,8 +222,13 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="kotlin-line">
           <url>file://$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/LoopAnalysis.kt</url>
-          <line>209</line>
+          <line>219</line>
           <option name="timeStamp" value="52" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="kotlin-line">
+          <url>file://$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/analysis/test/LoopSymbolicExecutionAnalysisTests.kt</url>
+          <line>271</line>
+          <option name="timeStamp" value="78" />
         </line-breakpoint>
         <breakpoint enabled="true" type="java-exception">
           <properties class="java.lang.IndexOutOfBoundsException" package="java.lang" />
