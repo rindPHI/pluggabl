@@ -241,7 +241,7 @@ class SymbolicExecutionAnalysis private constructor(
         }
 
         loop.loopExits.forEach { loopExitStmt ->
-            for ((idx, succ) in cfg.getSuccsOf(loopExitStmt).map { it as Stmt }.iterator().withIndex()) {
+            for ((idx, succ) in cfg.getSuccsOf(loopExitStmt).map { it as Stmt }.withIndex()) {
                 if (loop.loopStatements.contains(succ)) continue
                 stmtToInputSESMap[succ] = listOf(
                     stmtToInputSESMap[succ].orEmpty(),
