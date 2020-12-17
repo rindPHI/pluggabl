@@ -8,7 +8,6 @@ import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.HEAP_VAR
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory
 import de.dominicsteinhoefel.pluggabl.theories.LocationSetTheory
 import de.dominicsteinhoefel.pluggabl.util.SootBridge
-import de.dominicsteinhoefel.pluggabl.util.getLoopExitsOrdered
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import soot.Body
