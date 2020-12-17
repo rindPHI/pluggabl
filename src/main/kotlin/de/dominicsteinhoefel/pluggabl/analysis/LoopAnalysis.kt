@@ -2,19 +2,24 @@ package de.dominicsteinhoefel.pluggabl.analysis
 
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.INT_TYPE
+import de.dominicsteinhoefel.pluggabl.util.getLoopExitsOrdered
 import de.dominicsteinhoefel.pluggabl.util.subList
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import soot.Body
 import soot.Local
 import soot.jimple.GotoStmt
 import soot.jimple.IfStmt
 import soot.jimple.Stmt
 import soot.jimple.toolkits.annotation.logic.Loop
+import soot.toolkits.graph.UnitGraph
 import java.util.*
 import kotlin.collections.HashMap
 import kotlin.collections.LinkedHashSet
 
 class LoopAnalysis(
     private val body: Body,
+    private val cfg: UnitGraph,
     private val loop: Loop,
     private val loopIdx: Int,
     private val createSubAnalysis:
@@ -23,18 +28,24 @@ class LoopAnalysis(
     private val symbolsManager: SymbolsManager,
     private val exprConverter: ExprConverter
 ) {
+    companion object {
+        val logger: Logger = LoggerFactory.getLogger(LoopAnalysis::class.simpleName)
+    }
+
+    private val loopExits = loop.getLoopExitsOrdered(cfg)
+
     private val initState = SymbolicExecutionState.merge(loopHeadInputStates)
     private val stmtToInputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
     private val stmtToOutputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
+
     private lateinit var loopLeafState: SymbolicExecutionState
-    val functionSymbols = LinkedHashSet<FunctionSymbol>()
 
     fun getInputSESs(node: Stmt) = stmtToInputSESMap[node] ?: emptyList()
     fun getOutputSESs(node: Stmt) = stmtToOutputSESMap[node] ?: emptyList()
     fun getLoopLeafState() = loopLeafState
 
     fun executeLoopAndAnonymize() {
-        val stmtsAfterExit = loop.loopExits.map {
+        val stmtsAfterExit = loopExits.map {
             if (it is GotoStmt) it.target else {
                 if (it is IfStmt) it.target else null
             }
@@ -51,9 +62,11 @@ class LoopAnalysis(
         // merge all states of all loop exits
         val loopExitsInputState =
             SymbolicExecutionState.merge(
-                loop.loopExits.map { loopAnalysis.getInputSESs(it) }.flatten()
-                    .filterNot(SymbolicExecutionState::isEmpty)
-            ).simplify()
+                loopExits.associateWith { loopAnalysis.getInputSESs(it) }.also { pair ->
+                    logger.debug("Loop Exits Inputs:")
+                    logger.debug(pair.entries.joinToString("\n") { "${it.key}: ${it.value.joinToString(", ")}" })
+                }.map { it.value }.flatten().filterNot(SymbolicExecutionState::isEmpty)
+            ).simplify().also { println("Merged & simplified: $it") }
 
         val loopHeadInputState =
             SymbolicExecutionState.merge(
@@ -75,7 +88,14 @@ class LoopAnalysis(
         // Save loop leaf state, to be able to later check correctness of substituted invariants
         loopLeafState = loopHeadInputState.apply(anonymizingState.apply(initState)).simplify()
         storeInputAndOutputStatesForLoopStatements(loopAnalysis, initState, anonymizingState)
-        storeOutputStatesForLoopExits(writtenVars, initState, loopHeadInputState, loopExitsInputState, loopAnalysis)
+        storeOutputStatesForLoopExits(
+            writtenVars,
+            initState,
+            loopHeadInputState,
+            loopExitsInputState,
+            loopAnalysis,
+            anonymizingState
+        )
     }
 
     private fun storeInputAndOutputStatesForLoopStatements(
@@ -88,7 +108,7 @@ class LoopAnalysis(
                 loopAnalysis.getInputSESs(stmt).map { it.apply(anonymizingState).apply(initState).simplify() }
         }
 
-        for (stmt in loop.loopStatements.filterNot(loop.loopExits::contains)) {
+        for (stmt in loop.loopStatements.filterNot(loopExits::contains)) {
             // For non-exit loop statements, use the artificial loop counter variable for anonymization.
             stmtToOutputSESMap[stmt] =
                 loopAnalysis.getOutputSESs(stmt).map { it.apply(anonymizingState).apply(initState).simplify() }
@@ -100,13 +120,13 @@ class LoopAnalysis(
         initState: SymbolicExecutionState,
         loopHeadInputState: SymbolicExecutionState,
         loopExitsInputState: SymbolicExecutionState,
-        loopAnalysis: SymbolicExecutionAnalysis
+        loopAnalysis: SymbolicExecutionAnalysis,
+        anonymizingState: SymbolicExecutionState
     ) {
-        val anonymizingState = createAnonymizingState(writtenVars, initState, loopExitsInputState)
         val anonymizingFinalState =
             createAnonymizingFinalState(writtenVars, initState, loopHeadInputState, loopExitsInputState)
 
-        for (stmt in loop.loopStatements.filter(loop.loopExits::contains)) {
+        for (stmt in loop.loopStatements.filter(loopExits::contains)) {
             val outputSESs = LinkedList<SymbolicExecutionState>()
             for ((idx, succ) in loopAnalysis.cfg.getSuccsOf(stmt).withIndex()) {
                 val anonState =
@@ -170,7 +190,7 @@ class LoopAnalysis(
             "iterations_LOOP_$loopIdx",
             INT_TYPE,
             terminationRelevantVariables.map { it.type }
-        ).also { functionSymbols.add(it) }
+        )
 
         return FunctionApplication(f, terminationRelevantVariables.toList())
     }
@@ -191,19 +211,23 @@ class LoopAnalysis(
         resultState: SymbolicExecutionState,
         nameSuffix: String
     ) = writtenVars.associateWith { writtenVar ->
+        logger.debug("Creating anonymizing store for $writtenVar")
+        logger.debug("Init state:   $initState")
+        logger.debug("Result state: $resultState")
+
         val relVars = variablesRelevantFor(writtenVar, initState, resultState)
+        logger.debug("Rel. vars: ${relVars.joinToString(",")}")
+
         FunctionApplication(
             symbolsManager.newFunctionSymbol(
                 writtenVar.name + nameSuffix,
                 writtenVar.type,
                 listOf(listOf(iterationCounter.type()), relVars.map { it.type }).flatten()
-            ).also { functionSymbols.add(it) },
+            ),
             listOf(listOf(iterationCounter), relVars).flatten()
-        )
+        ).also { logger.debug("Result func sym: $it") }
     }.map { ElementaryStore(it.key, it.value) }
-        .fold(
-            EmptyStore as SymbolicStore,
-            { acc, elem -> ParallelStore.create(acc, elem) })
+        .let { ParallelStore.create(it) }
 
     private fun variablesRelevantFor(
         lv: LocalVariable,

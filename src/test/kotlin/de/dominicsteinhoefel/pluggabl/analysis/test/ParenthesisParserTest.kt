@@ -2,11 +2,11 @@ package de.dominicsteinhoefel.pluggabl.analysis.test
 
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.compareLeaves
+import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.printSESs
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.IntValue
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.plus
-import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ParenthesisParserTest {
@@ -125,12 +125,12 @@ class ParenthesisParserTest {
             )
         )
 
+        printSESs(analysis)
+
         compareLeaves(
             listOf(firstErrorResultSES, secondErrorResultSES, correctResultSES, thirdErrorResultSES),
             analysis
         )
-
-        //printLeafSESs(analysis)
     }
 
 }

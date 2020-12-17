@@ -8,6 +8,7 @@ import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.HEAP_VAR
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory
 import de.dominicsteinhoefel.pluggabl.theories.LocationSetTheory
 import de.dominicsteinhoefel.pluggabl.util.SootBridge
+import de.dominicsteinhoefel.pluggabl.util.getLoopExitsOrdered
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import soot.Body
@@ -34,7 +35,6 @@ class SymbolicExecutionAnalysis private constructor(
     val constrConverter: ConstrConverter = ConstrConverter(exprConverter)
 ) {
     val cfg: ExceptionalUnitGraph = ExceptionalUnitGraph(body)
-
 
     private val stmtToInputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
     private val stmtToOutputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
@@ -154,7 +154,7 @@ class SymbolicExecutionAnalysis private constructor(
             if (loop != null && !stmtIsHeadOfAnalyzedLoop) {
                 analyzeLoop(loop)
 
-                queue.addAll(loop.loopExits.map { cfg.getSuccsOf(it) }.flatten().map { it as Stmt }
+                queue.addAll(loop.getLoopExitsOrdered(cfg).map { cfg.getSuccsOf(it) }.flatten().map { it as Stmt }
                     .filterNot(loop.loopStatements::contains))
 
                 continue
@@ -224,6 +224,7 @@ class SymbolicExecutionAnalysis private constructor(
 
         val loopAnalysis = LoopAnalysis(
             body,
+            cfg,
             loop,
             loopIdx,
             this::createSubAnalysis,
@@ -241,7 +242,7 @@ class SymbolicExecutionAnalysis private constructor(
             stmtToOutputSESMap[loopStmt] = loopAnalysis.getOutputSESs(loopStmt)
         }
 
-        loop.loopExits.forEach { loopExitStmt ->
+        loop.getLoopExitsOrdered(cfg).forEach { loopExitStmt ->
             for ((idx, succ) in cfg.getSuccsOf(loopExitStmt).map { it as Stmt }.withIndex()) {
                 if (loop.loopStatements.contains(succ)) continue
                 stmtToInputSESMap[succ] = listOf(
@@ -272,7 +273,7 @@ class SymbolicExecutionAnalysis private constructor(
         inputStates: List<SymbolicExecutionState>
     ): SERule {
         val applicableRules = RULES.filter { it.accepts(currStmt, inputStates) }
-        logger.trace(
+        logger.debug(
             "Applicable rules for statement type ${currStmt::class.simpleName}, " +
                     "${inputStates.size} input states: " +
                     applicableRules.joinToString(", ")
