@@ -16,13 +16,11 @@ import soot.G
 import soot.jimple.Stmt
 import soot.jimple.internal.JReturnStmt
 import soot.jimple.internal.JimpleLocal
-import soot.jimple.toolkits.annotation.logic.Loop
 import soot.jimple.toolkits.annotation.logic.LoopFinder
 import soot.toolkits.graph.ExceptionalUnitGraph
 import java.util.*
 import kotlin.collections.HashMap
 import kotlin.collections.LinkedHashMap
-import kotlin.collections.LinkedHashSet
 
 class SymbolicExecutionAnalysis private constructor(
     val body: Body,
@@ -40,7 +38,7 @@ class SymbolicExecutionAnalysis private constructor(
     private val stmtToOutputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
     private val loopLeafSESMap = LinkedHashMap<Loop, SymbolicExecutionState>()
 
-    private val loops = LoopFinder().getLoops(body)
+    private val loops = LoopFinder().getLoops(body).map { Loop.fromSootLoop(it, cfg) }
 
     companion object {
         val logger: Logger = LoggerFactory.getLogger(SymbolicExecutionAnalysis::class.simpleName)
@@ -153,7 +151,7 @@ class SymbolicExecutionAnalysis private constructor(
             if (loop != null && !stmtIsHeadOfAnalyzedLoop) {
                 analyzeLoop(loop)
 
-                queue.addAll(loop.getLoopExitsOrdered(cfg).map { cfg.getSuccsOf(it) }.flatten().map { it as Stmt }
+                queue.addAll(loop.loopExits.map { cfg.getSuccsOf(it) }.flatten().map { it as Stmt }
                     .filterNot(loop.loopStatements::contains))
 
                 continue
@@ -192,7 +190,7 @@ class SymbolicExecutionAnalysis private constructor(
             stmtToOutputSESMap[currStmt] = result
 
             // TODO: What with continues / multiple re-entries?
-            if (loops.none { currStmt == it.backJumpStmt }) {
+            if (loops.none { it.backJumpStatements.contains(currStmt) }) {
                 propagateResultStateToSuccs(currStmt, result)
                 cfg.getSuccsOf(currStmt).map { it as Stmt }.forEach(queue::addLastDistinct)
             }
@@ -215,7 +213,7 @@ class SymbolicExecutionAnalysis private constructor(
     }
 
     private fun analyzeLoop(loop: Loop) {
-        if (loop.loopsForever()) {
+        if (loop.loopExits.isEmpty()) {
             throw IllegalStateException("Endless loops (w/o exists) are currently not supported.")
         }
 
@@ -242,7 +240,7 @@ class SymbolicExecutionAnalysis private constructor(
             stmtToOutputSESMap[loopStmt] = loopAnalysis.getOutputSESs(loopStmt)
         }
 
-        loop.getLoopExitsOrdered(cfg).forEach { loopExitStmt ->
+        loop.loopExits.forEach { loopExitStmt ->
             for ((idx, succ) in cfg.getSuccsOf(loopExitStmt).map { it as Stmt }.withIndex()) {
                 if (loop.loopStatements.contains(succ)) continue
                 stmtToInputSESMap[succ] = listOf(

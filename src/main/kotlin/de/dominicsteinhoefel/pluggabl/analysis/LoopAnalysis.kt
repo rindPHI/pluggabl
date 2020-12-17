@@ -2,8 +2,6 @@ package de.dominicsteinhoefel.pluggabl.analysis
 
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.INT_TYPE
-import de.dominicsteinhoefel.pluggabl.util.getLoopExitsOrdered
-import de.dominicsteinhoefel.pluggabl.util.subList
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import soot.Body
@@ -11,7 +9,6 @@ import soot.Local
 import soot.jimple.GotoStmt
 import soot.jimple.IfStmt
 import soot.jimple.Stmt
-import soot.jimple.toolkits.annotation.logic.Loop
 import soot.toolkits.graph.UnitGraph
 import java.util.*
 import kotlin.collections.HashMap
@@ -32,7 +29,7 @@ class LoopAnalysis(
         val logger: Logger = LoggerFactory.getLogger(LoopAnalysis::class.simpleName)
     }
 
-    private val loopExits = loop.getLoopExitsOrdered(cfg)
+    private val loopExits = loop.loopExits
 
     private val initState = SymbolicExecutionState.merge(loopHeadInputStates)
     private val stmtToInputSESMap = HashMap<Stmt, List<SymbolicExecutionState>>()
@@ -63,7 +60,7 @@ class LoopAnalysis(
         // TODO: What with continues / multiple re-entries?
         val loopBackjumpState =
             SymbolicExecutionState.merge(
-                loopAnalysis.getInputSESs(loop.backJumpStmt)
+                loop.backJumpStatements.map { loopAnalysis.getInputSESs(it) }.flatten()
             ).simplify().also { println("Merged & simplified loop result state: $it") }
 
         anonymizeWrittenLoopVars(initState, loopBackjumpState, loopAnalysis)

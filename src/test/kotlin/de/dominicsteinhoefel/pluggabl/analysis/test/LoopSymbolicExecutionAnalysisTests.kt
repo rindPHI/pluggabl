@@ -276,7 +276,8 @@ class LoopSymbolicExecutionAnalysisTests {
         val iAnonLoopTerm = FunctionApplication(
             analysis.getFunctionSymbol("i_ANON_LOOP_0"),
             analysis.getLocal("itCnt_LOOP_0"),
-            IntTheory.IntValue(0)
+            IntTheory.IntValue(0),
+            input
         )
 
         val expectedLoopLeaves = listOf(
@@ -304,7 +305,8 @@ class LoopSymbolicExecutionAnalysisTests {
         val iAfterLoopTerm = FunctionApplication(
             analysis.getFunctionSymbol("i_AFTER_LOOP_0"),
             FunctionApplication(analysis.getFunctionSymbol("iterations_LOOP_0"), IntTheory.IntValue(0), input),
-            IntTheory.IntValue(0)
+            IntTheory.IntValue(0),
+            input
         )
 
         val expectedLeafSES =

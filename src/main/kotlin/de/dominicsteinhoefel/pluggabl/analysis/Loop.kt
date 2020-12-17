@@ -4,11 +4,11 @@ import soot.jimple.Stmt
 import soot.toolkits.graph.UnitGraph
 
 class Loop(
-    val header: Stmt,
+    val head: Stmt,
     val loopStatements: List<Stmt>,
     private val g: UnitGraph
 ) {
-    val backJumpStatements = loopStatements.filter { g.getSuccsOf(it) == header }
+    val backJumpStatements = loopStatements.filter { g.getSuccsOf(it).contains(head) }
     val loopExits = loopStatements.filter { !g.getSuccsOf(it).all(loopStatements::contains) }.toSet()
 
     companion object {
