@@ -8,11 +8,19 @@ import de.dominicsteinhoefel.pluggabl.theories.IntTheory.plus
 import org.junit.Test
 
 class SimpleSymbolicExecutionAnalysisTests {
+    private val SOOT_CLASS_PATH = listOf(
+        "./build/classes/kotlin/test",
+        "./src/test/lib/java-8-openjdk-amd64-rt.jar",
+        "./src/test/lib/java-8-openjdk-amd64-jce.jar",
+        "./src/test/lib/kotlin-stdlib-1.4.21.jar"
+    )
+
     @Test
     fun testSimpleTwoBranchedMethod() {
         val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.pluggabl.testcase.SimpleMethods",
-            "int simpleTwoBranchedMethod(int)"
+            "int simpleTwoBranchedMethod(int)",
+            SOOT_CLASS_PATH
         )
 
         analysis.symbolicallyExecute()
@@ -60,7 +68,8 @@ class SimpleSymbolicExecutionAnalysisTests {
     fun testSimpleTwoBranchedMethodWithMerge() {
         val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.pluggabl.testcase.SimpleMethods",
-            "int simpleTwoBranchedMethodWithMerge(int)"
+            "int simpleTwoBranchedMethodWithMerge(int)",
+            SOOT_CLASS_PATH
         )
 
         analysis.symbolicallyExecute()

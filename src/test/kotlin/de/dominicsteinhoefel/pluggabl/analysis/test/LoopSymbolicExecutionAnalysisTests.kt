@@ -4,6 +4,7 @@ import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.compareLeaveInputs
 import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.compareLeaves
 import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.compareLoopLeaves
+import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.printSESs
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory
@@ -14,12 +15,20 @@ import org.junit.Test
 import soot.jimple.internal.JIfStmt
 
 class LoopSymbolicExecutionAnalysisTests {
+    private val SOOT_CLASS_PATH = listOf(
+        "./build/classes/kotlin/test",
+        "./src/test/lib/java-8-openjdk-amd64-rt.jar",
+        "./src/test/lib/java-8-openjdk-amd64-jce.jar",
+        "./src/test/lib/kotlin-stdlib-1.4.21.jar",
+        "./src/test/lib/annotations-20.1.0.jar"
+    )
 
     @Test
     fun testSimpleLoop() {
         val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.pluggabl.testcase.Loops",
-            "int simpleLoop(int)"
+            "int simpleLoop(int)",
+            SOOT_CLASS_PATH
         )
 
         analysis.symbolicallyExecute()
@@ -89,7 +98,8 @@ class LoopSymbolicExecutionAnalysisTests {
     fun testSimpleLoopWithContinueAndBreak() {
         val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.pluggabl.testcase.Loops",
-            "int simpleLoopWithContinueAndBreak(int)"
+            "int simpleLoopWithContinueAndBreak(int)",
+            SOOT_CLASS_PATH
         )
 
         analysis.symbolicallyExecute()
@@ -172,7 +182,8 @@ class LoopSymbolicExecutionAnalysisTests {
     fun testReallySimpleLoop() {
         val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.pluggabl.testcase.Loops",
-            "int reallySimpleLoop(int)"
+            "int reallySimpleLoop(int)",
+            SOOT_CLASS_PATH
         )
 
         analysis.symbolicallyExecute()
@@ -255,7 +266,8 @@ class LoopSymbolicExecutionAnalysisTests {
     fun testLoopWithNonTrivialGuard() {
         val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.pluggabl.testcase.Loops",
-            "int loopWithNonTrivialGuard(java.lang.Integer[])"
+            "int loopWithNonTrivialGuard(java.lang.Integer[])",
+            SOOT_CLASS_PATH
         )
 
         // TODO: Why is
@@ -321,6 +333,19 @@ class LoopSymbolicExecutionAnalysisTests {
         val leafSES = analysis.getLeavesWithOutputSESs().values.toList().also { assertEquals(1, it.size) }[0]
 
         assertEquals(listOf(expectedLeafSES), leafSES)
+    }
+
+    //@Test
+    fun testArrayLoop() {
+        val analysis = SymbolicExecutionAnalysis.create(
+            "de.dominicsteinhoefel.pluggabl.testcase.Loops",
+            "java.lang.Integer[] arrayLoop(java.lang.Integer[])",
+            SOOT_CLASS_PATH
+        )
+
+        analysis.symbolicallyExecute()
+
+        printSESs(analysis)
     }
 
     // TODO: Add test case for nested loop, maybe even w/ labeled break

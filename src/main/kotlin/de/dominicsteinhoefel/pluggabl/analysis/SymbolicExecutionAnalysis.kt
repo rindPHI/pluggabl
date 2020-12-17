@@ -60,10 +60,10 @@ class SymbolicExecutionAnalysis private constructor(
 
         private val THEORIES = setOf(HeapTheory, IntTheory)
 
-        fun create(clazz: String, methodSig: String): SymbolicExecutionAnalysis {
+        fun create(clazz: String, methodSig: String, sootClassPathElems: List<String>): SymbolicExecutionAnalysis {
             G.reset()
             return SymbolicExecutionAnalysis(
-                SootBridge.loadJimpleBody(clazz, methodSig)
+                SootBridge.loadJimpleBody(clazz, methodSig, sootClassPathElems)
                     ?: throw IllegalStateException("Could not load method $methodSig of class $clazz")
             ).also { it.registerSymbols() }
         }

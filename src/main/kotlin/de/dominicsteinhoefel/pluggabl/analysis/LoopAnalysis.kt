@@ -60,7 +60,7 @@ class LoopAnalysis(
         val loopBackjumpState =
             SymbolicExecutionState.merge(
                 loop.backJumpStatements.map { loopAnalysis.getInputSESs(it) }.flatten()
-            ).simplify().also { println("Merged & simplified loop result state: $it") }
+            ).simplify().also { logger.debug("Merged & simplified loop result state:\n$it") }
 
         anonymizeWrittenLoopVars(initState, loopBackjumpState, loopAnalysis)
     }

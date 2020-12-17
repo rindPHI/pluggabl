@@ -70,4 +70,15 @@ class Loops {
         
         return i
     }
+
+    fun arrayLoop(input: Array<Int>): Array<Int> {
+        var i = 0
+
+        while (i < input.size) {
+            input[i] *= i
+            i++
+        }
+
+        return input
+    }
 }

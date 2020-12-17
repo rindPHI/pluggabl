@@ -15,14 +15,23 @@ import de.dominicsteinhoefel.pluggabl.theories.IntTheory.plus
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import soot.Scene
 import soot.jimple.Stmt
 
 class HeapSymbolicExecutionAnalysisTests {
+    private val SOOT_CLASS_PATH = listOf(
+        "./build/classes/kotlin/test",
+        "./src/test/lib/java-8-openjdk-amd64-rt.jar",
+        "./src/test/lib/java-8-openjdk-amd64-jce.jar",
+        "./src/test/lib/kotlin-stdlib-1.4.21.jar"
+    )
+
     @Test
     fun testSimpleTwoBranchedMethodWithMergeFieldAccess() {
         val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.pluggabl.testcase.HeapAccess",
-            "void simpleTwoBranchedMethodWithMergeFieldAccess()"
+            "void simpleTwoBranchedMethodWithMergeFieldAccess()",
+            SOOT_CLASS_PATH
         )
 
         analysis.symbolicallyExecute()
@@ -84,7 +93,8 @@ class HeapSymbolicExecutionAnalysisTests {
     fun testSimpleArrayAccess() {
         val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.pluggabl.testcase.HeapAccess",
-            "int simpleArrayAccess(java.lang.Integer[])"
+            "int simpleArrayAccess(java.lang.Integer[])",
+            SOOT_CLASS_PATH
         )
 
         analysis.symbolicallyExecute()
