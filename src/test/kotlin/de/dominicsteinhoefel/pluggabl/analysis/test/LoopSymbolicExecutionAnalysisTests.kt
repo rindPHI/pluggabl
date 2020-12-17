@@ -335,7 +335,7 @@ class LoopSymbolicExecutionAnalysisTests {
         assertEquals(listOf(expectedLeafSES), leafSES)
     }
 
-    //@Test
+    @Test
     fun testArrayLoop() {
         val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.pluggabl.testcase.Loops",

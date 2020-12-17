@@ -1,5 +1,7 @@
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.4.21'
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
+    id 'java'
 }
 
 group 'de.dominicsteinhoefel.pluggabl'
@@ -16,6 +18,16 @@ dependencies {
     implementation group: "org.apache.logging.log4j", name: "log4j-slf4j-impl", version: "2.13.3"
     implementation group: "org.apache.logging.log4j", name: "log4j-api", version: "2.13.3"
     implementation group: "org.apache.logging.log4j", name: "log4j-core", version: "2.13.3"
+    implementation group: "info.picocli", name: "picocli", version: "4.5.2"
 
     testImplementation "junit:junit:4.12"
+}
+
+shadowJar {
+    archiveBaseName.set('pluggabl-exe')
+    archiveClassifier.set('')
+    archiveVersion.set('')
+    manifest {
+        attributes 'Main-Class': "de.dominicsteinhoefel.pluggabl.Main"
+    }
 }
