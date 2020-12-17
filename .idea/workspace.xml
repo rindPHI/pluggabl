@@ -5,12 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6acfca55-121b-469b-8da1-6c2ed7a17d5f" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/Loop.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/LoopAnalysis.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/LoopAnalysis.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolicExecutionAnalysis.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolicExecutionAnalysis.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/SymbolicStore.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/SymbolicStore.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/util/ExtensionFunctions.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/util/ExtensionFunctions.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/analysis/test/ParenthesisParserTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/analysis/test/ParenthesisParserTest.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -72,7 +70,7 @@
       <recent name="de.dominicsteinhoefel.pluggabl" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.ParenthesisParserTest.testParenthesisParserAnalysis">
+  <component name="RunManager" selected="Gradle.Tests in 'de.dominicsteinhoefel.pluggabl'">
     <configuration name="LoopSymbolicExecutionAnalysisTests.testLoopWithNonTrivialGuard" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -180,8 +178,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Gradle.ParenthesisParserTest.testParenthesisParserAnalysis" />
         <item itemvalue="Gradle.Tests in 'de.dominicsteinhoefel.pluggabl'" />
+        <item itemvalue="Gradle.ParenthesisParserTest.testParenthesisParserAnalysis" />
         <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testLoopWithNonTrivialGuard" />
         <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testReallySimpleLoop" />
         <item itemvalue="Gradle.TestSESSimplification.testSESSimplification" />
@@ -216,7 +214,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="kotlin-line">
           <url>file://$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolicExecutionAnalysis.kt</url>
-          <line>282</line>
+          <line>283</line>
           <option name="timeStamp" value="24" />
         </line-breakpoint>
         <breakpoint enabled="true" type="java-exception">
@@ -227,14 +225,6 @@
           <properties class="java.lang.AssertionError" package="java.lang" />
           <option name="timeStamp" value="50" />
         </breakpoint>
-        <line-breakpoint enabled="true" type="kotlin-function">
-          <url>file://$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/analysis/test/ParenthesisParserTest.kt</url>
-          <line>11</line>
-          <properties class="de.dominicsteinhoefel.pluggabl.analysis.test.ParenthesisParserTest" method="&lt;init&gt;">
-            <option name="EMULATED" value="true" />
-          </properties>
-          <option name="timeStamp" value="51" />
-        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>

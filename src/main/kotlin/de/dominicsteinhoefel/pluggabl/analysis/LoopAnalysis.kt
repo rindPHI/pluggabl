@@ -59,40 +59,31 @@ class LoopAnalysis(
 
         loopAnalysis.symbolicallyExecute()
 
-        // merge all states of all loop exits
-        val loopExitsInputState =
+        // Get state upon loop re-entry
+        // TODO: What with continues / multiple re-entries?
+        val loopBackjumpState =
             SymbolicExecutionState.merge(
-                loopExits.associateWith { loopAnalysis.getInputSESs(it) }.also { pair ->
-                    logger.debug("Loop Exits Inputs:")
-                    logger.debug(pair.entries.joinToString("\n") { "${it.key}: ${it.value.joinToString(", ")}" })
-                }.map { it.value }.flatten().filterNot(SymbolicExecutionState::isEmpty)
-            ).simplify().also { println("Merged & simplified: $it") }
+                loopAnalysis.getInputSESs(loop.backJumpStmt)
+            ).simplify().also { println("Merged & simplified loop result state: $it") }
 
-        val loopHeadInputState =
-            SymbolicExecutionState.merge(
-                loopAnalysis.getInputSESs(loop.head).subList(1)
-            ).simplify()
-
-        anonymizeWrittenLoopVars(initState, loopExitsInputState, loopHeadInputState, loopAnalysis)
+        anonymizeWrittenLoopVars(initState, loopBackjumpState, loopAnalysis)
     }
 
     private fun anonymizeWrittenLoopVars(
         initState: SymbolicExecutionState,
-        loopExitsInputState: SymbolicExecutionState,
-        loopHeadInputState: SymbolicExecutionState,
+        loopBackjumpState: SymbolicExecutionState,
         loopAnalysis: SymbolicExecutionAnalysis
     ) {
         val writtenVars = writtenVars()
-        val anonymizingState = createAnonymizingState(writtenVars, initState, loopExitsInputState)
+        val anonymizingState = createAnonymizingState(writtenVars, initState, loopBackjumpState)
 
         // Save loop leaf state, to be able to later check correctness of substituted invariants
-        loopLeafState = loopHeadInputState.apply(anonymizingState.apply(initState)).simplify()
+        loopLeafState = loopBackjumpState.apply(anonymizingState.apply(initState)).simplify()
         storeInputAndOutputStatesForLoopStatements(loopAnalysis, initState, anonymizingState)
         storeOutputStatesForLoopExits(
             writtenVars,
             initState,
-            loopHeadInputState,
-            loopExitsInputState,
+            loopBackjumpState,
             loopAnalysis,
             anonymizingState
         )
@@ -118,13 +109,12 @@ class LoopAnalysis(
     private fun storeOutputStatesForLoopExits(
         writtenVars: List<LocalVariable>,
         initState: SymbolicExecutionState,
-        loopHeadInputState: SymbolicExecutionState,
-        loopExitsInputState: SymbolicExecutionState,
+        loopBackjumpState: SymbolicExecutionState,
         loopAnalysis: SymbolicExecutionAnalysis,
         anonymizingState: SymbolicExecutionState
     ) {
         val anonymizingFinalState =
-            createAnonymizingFinalState(writtenVars, initState, loopHeadInputState, loopExitsInputState)
+            createAnonymizingFinalState(writtenVars, initState, loopBackjumpState)
 
         for (stmt in loop.loopStatements.filter(loopExits::contains)) {
             val outputSESs = LinkedList<SymbolicExecutionState>()
@@ -144,7 +134,7 @@ class LoopAnalysis(
     private fun createAnonymizingState(
         writtenVars: List<LocalVariable>,
         initState: SymbolicExecutionState,
-        loopExitsInputState: SymbolicExecutionState
+        loopBackjumpState: SymbolicExecutionState
     ) = if (this::anonymizingState.isInitialized) anonymizingState else
         SymbolicExecutionState(
             emptySet(),
@@ -152,7 +142,7 @@ class LoopAnalysis(
                 writtenVars,
                 symbolsManager.newLocalVariable("itCnt_LOOP_$loopIdx", INT_TYPE),
                 initState,
-                loopExitsInputState,
+                loopBackjumpState,
                 "_ANON_LOOP_$loopIdx"
             )
         ).also { anonymizingState = it }
@@ -161,16 +151,15 @@ class LoopAnalysis(
     private fun createAnonymizingFinalState(
         writtenVars: List<LocalVariable>,
         initState: SymbolicExecutionState,
-        loopHeadInputState: SymbolicExecutionState,
-        loopExitsInputState: SymbolicExecutionState
+        loopBackjumpState: SymbolicExecutionState
     ) = if (this::anonymizingFinalState.isInitialized) anonymizingFinalState else
         SymbolicExecutionState(
             emptySet(),
             createAnonymizingLoopStore(
                 writtenVars,
-                iterationNumberFunctionApp(initState, loopHeadInputState),
+                iterationNumberFunctionApp(initState, loopBackjumpState),
                 initState,
-                loopExitsInputState,
+                loopBackjumpState,
                 "_AFTER_LOOP_$loopIdx"
             )
         ).also { anonymizingFinalState = it }
@@ -178,12 +167,12 @@ class LoopAnalysis(
 
     private fun iterationNumberFunctionApp(
         initState: SymbolicExecutionState,
-        loopHeadInputState: SymbolicExecutionState
+        loopBackjumpState: SymbolicExecutionState
     ): FunctionApplication {
         val terminationRelevantVariables =
             retainVarsOfInitState(
                 initState,
-                loopHeadInputState.constraints.map { it.accept(LocalVariableConstraintCollector()) }.flatten().toSet()
+                loopBackjumpState.constraints.map { it.accept(LocalVariableConstraintCollector()) }.flatten().toSet()
             )
 
         val f = symbolsManager.newFunctionSymbol(

@@ -33,16 +33,11 @@ class ParenthesisParserTest {
         val rPar = IntValue(')'.toInt())
 
         val itCnt = FunctionApplication(analysis.getFunctionSymbol("iterations_LOOP_0"), zero, input, zero)
-        val iAfterLoop = FunctionApplication(analysis.getFunctionSymbol("i_AFTER_LOOP_0"), itCnt, zero)
-
-        // TODO XXX: Sometimes below symbol expects an additional ", input, zero" as parameters.
-        // Happens nondeterministically between different runs!!! CHECK!!!
+        val iAfterLoop = FunctionApplication(analysis.getFunctionSymbol("i_AFTER_LOOP_0"), itCnt, zero, input, zero)
         val opParCntAfterLoop =
-            FunctionApplication(analysis.getFunctionSymbol("opParCnt_AFTER_LOOP_0"), itCnt, zero)
-
-        // TODO XXX: Why do below two symbols have only the iteration counter as arguments? Is that right?
-        val cAfterLoop = FunctionApplication(analysis.getFunctionSymbol("c_AFTER_LOOP_0"), itCnt)
-        val stack6AfterLoop = FunctionApplication(analysis.getFunctionSymbol("\$stack6_AFTER_LOOP_0"), itCnt)
+            FunctionApplication(analysis.getFunctionSymbol("opParCnt_AFTER_LOOP_0"), itCnt, zero, input, zero)
+        val cAfterLoop = FunctionApplication(analysis.getFunctionSymbol("c_AFTER_LOOP_0"), itCnt, input, zero, zero)
+        val stack6AfterLoop = FunctionApplication(analysis.getFunctionSymbol("\$stack6_AFTER_LOOP_0"), itCnt, input, zero, zero)
 
         val lengthOfInput = FunctionApplication(HeapTheory.ARRAY_LENGTH, input)
 

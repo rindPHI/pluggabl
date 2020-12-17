@@ -131,7 +131,6 @@ class SymbolicExecutionAnalysis private constructor(
 
     fun symbolicallyExecute() {
         val queue = LinkedList<Stmt>()
-        val extendedStopAtNodes = LinkedHashSet<Stmt>(stopAtNodes)
 
         fun <E> LinkedList<E>.addLastDistinct(elem: E) {
             if (!contains(elem)) addLast(elem)
@@ -143,7 +142,7 @@ class SymbolicExecutionAnalysis private constructor(
         while (!queue.isEmpty()) {
             val currStmt = queue.pop()
 
-            if (extendedStopAtNodes.contains(currStmt)) {
+            if (stopAtNodes.contains(currStmt)) {
                 continue
             }
 
@@ -160,8 +159,7 @@ class SymbolicExecutionAnalysis private constructor(
                 continue
             }
 
-            val inputStates =
-                stmtToInputSESMap[currStmt] ?: emptyList()
+            val inputStates = stmtToInputSESMap[currStmt] ?: emptyList()
 
             if (cfg.getPredsOf(currStmt).size > inputStates.size && !stmtIsHeadOfAnalyzedLoop) {
                 // Evaluation of predecessors not yet finished
@@ -172,11 +170,6 @@ class SymbolicExecutionAnalysis private constructor(
 
                 queue.addLast(currStmt)
                 continue
-            }
-
-            // Break endless cycles in loop analysis: Stop at loop exits that have already been analyzed
-            if (loops.map { it.loopExits }.flatten().contains(currStmt) && inputStates.isNotEmpty()) {
-                extendedStopAtNodes.add(currStmt)
             }
 
             val rule = getApplicableRule(currStmt, inputStates)
@@ -198,8 +191,11 @@ class SymbolicExecutionAnalysis private constructor(
 
             stmtToOutputSESMap[currStmt] = result
 
-            propagateResultStateToSuccs(currStmt, result)
-            cfg.getSuccsOf(currStmt).map { it as Stmt }.forEach(queue::addLastDistinct)
+            // TODO: What with continues / multiple re-entries?
+            if (loops.none { currStmt == it.backJumpStmt }) {
+                propagateResultStateToSuccs(currStmt, result)
+                cfg.getSuccsOf(currStmt).map { it as Stmt }.forEach(queue::addLastDistinct)
+            }
         }
     }
 
@@ -219,6 +215,10 @@ class SymbolicExecutionAnalysis private constructor(
     }
 
     private fun analyzeLoop(loop: Loop) {
+        if (loop.loopsForever()) {
+            throw IllegalStateException("Endless loops (w/o exists) are currently not supported.")
+        }
+
         val loopIdx = loops.indexOf(loop)
         logger.trace("Analyzing loop ${loopIdx + 1}")
 
@@ -261,10 +261,11 @@ class SymbolicExecutionAnalysis private constructor(
     ) {
         cfg.getSuccsOf(currStmt).map { it as Stmt }
             .zip(result).forEach { (cfgNode, ses) ->
-                stmtToInputSESMap[cfgNode] = listOf(
-                    stmtToInputSESMap[cfgNode] ?: emptyList(),
-                    listOf(ses)
-                ).flatten()
+                stmtToInputSESMap[cfgNode] =
+                    listOf(
+                        stmtToInputSESMap[cfgNode] ?: emptyList(),
+                        listOf(ses)
+                    ).flatten()
             }
     }
 
