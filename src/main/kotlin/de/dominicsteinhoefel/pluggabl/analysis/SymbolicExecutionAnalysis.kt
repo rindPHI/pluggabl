@@ -188,7 +188,6 @@ class SymbolicExecutionAnalysis private constructor(
 
             stmtToOutputSESMap[currStmt] = result
 
-            // TODO: What with continues / multiple re-entries?
             if (loops.none { it.backJumpStatements.contains(currStmt) }) {
                 propagateResultStateToSuccs(currStmt, result)
                 cfg.getSuccsOf(currStmt).map { it as Stmt }.forEach(queue::addLastDistinct)

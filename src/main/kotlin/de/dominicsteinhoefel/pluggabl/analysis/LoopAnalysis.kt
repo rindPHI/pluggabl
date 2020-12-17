@@ -57,7 +57,6 @@ class LoopAnalysis(
         loopAnalysis.symbolicallyExecute()
 
         // Get state upon loop re-entry
-        // TODO: What with continues / multiple re-entries?
         val loopBackjumpState =
             SymbolicExecutionState.merge(
                 loop.backJumpStatements.map { loopAnalysis.getInputSESs(it) }.flatten()
