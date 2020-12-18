@@ -8,7 +8,7 @@ import soot.jimple.Stmt
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 
-@Command(name = "java -jar pluggabl-exe.jar", mixinStandardHelpOptions = true)
+@Command(name = "java -jar pluggabl-exe.jar", mixinStandardHelpOptions = true, version = ["pluggabl 0.1"])
 class Main: Callable<Unit> {
     @Option(
         names = ["-c", "--class"],
