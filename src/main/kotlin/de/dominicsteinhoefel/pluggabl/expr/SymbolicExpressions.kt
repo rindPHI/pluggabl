@@ -1,6 +1,7 @@
 package de.dominicsteinhoefel.pluggabl.expr
 
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolsManager
+import de.dominicsteinhoefel.pluggabl.theories.HeapTheory
 import de.dominicsteinhoefel.pluggabl.theories.Theory
 import de.dominicsteinhoefel.pluggabl.util.union
 import org.slf4j.LoggerFactory
@@ -11,6 +12,8 @@ import java.util.*
 interface SymbolicExpressionsVisitor<T> {
     fun visit(e: Value): T
     fun visit(e: LocalVariable): T
+    fun visit(e: FieldRef): T
+    fun visit(e: ArrayRef): T
     fun visit(e: FunctionApplication): T
     fun visit(e: ConditionalExpression): T
     fun visit(e: StoreApplExpression): T
@@ -54,9 +57,38 @@ open class FunctionSymbol(
     ) : this(name, type, paramTypes.toList(), unique)
 
     override fun toString() = "$type $name(${paramTypes.joinToString(", ")})"
-    override fun hashCode() = Objects.hash(FunctionSymbol::class, name, type, paramTypes)
+    override fun hashCode() = Objects.hash(FunctionSymbol::class, name, type, paramTypes, unique)
     override fun equals(other: Any?) =
-        (other as? FunctionSymbol).let { it?.name == name && it.type == type && it.paramTypes == paramTypes }
+        (other as? FunctionSymbol).let { it?.name == name && it.type == type && it.paramTypes == paramTypes && it.unique == unique }
+}
+
+class Field(val containerType: ReferenceType, val fieldType: Type, val fieldName: String) :
+    FunctionSymbol("<$containerType: $fieldType $fieldName>", HeapTheory.FIELD_TYPE, emptyList(), true)
+
+class FieldRef(
+    val field: Field,
+    val obj: SymbolicExpression
+) : SymbolicExpression() {
+    override fun type() = field.type
+    override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
+
+    override fun toString() = "$obj.${field.fieldName}"
+    override fun hashCode() = Objects.hash(FieldRef::class, field, obj)
+    override fun equals(other: Any?) =
+        (other as? FieldRef).let { it?.field == field && it.obj == obj }
+}
+
+class ArrayRef(
+    val base: SymbolicExpression,
+    val index: SymbolicExpression
+): SymbolicExpression() {
+    override fun type() = (base.type() as ArrayType).baseType
+    override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
+
+    override fun toString() = "$base.$index"
+    override fun hashCode() = Objects.hash(ArrayRef::class, base, index)
+    override fun equals(other: Any?) =
+        (other as? ArrayRef).let { it?.base == base && it.index == index }
 }
 
 class FunctionApplication(
@@ -170,9 +202,10 @@ open class ExpressionCollector<T>(private val coll: (SymbolicExpression) -> Set<
     override fun visit(e: LocalVariable) = coll(e)
     override fun visit(e: FunctionApplication) =
         union(coll(e), e.args.map { it.accept(this) }.flatten().toSet())
+    override fun visit(e: FieldRef) = union(coll(e), e.obj.accept(this))
+    override fun visit(e: ArrayRef) = union(coll(e), e.base.accept(this), e.index.accept(this))
 
-    override fun visit(e: StoreApplExpression) =
-        union(coll(e), e.target.accept(this))
+    override fun visit(e: StoreApplExpression) = union(coll(e), e.target.accept(this))
 
     override fun visit(e: ConditionalExpression) =
         union(
@@ -205,6 +238,8 @@ open class ExpressionReplacer(private val repl: (SymbolicExpression) -> Symbolic
     override fun visit(e: Value) = repl(e)
     override fun visit(e: LocalVariable) = repl(e)
     override fun visit(e: FunctionApplication) = repl(FunctionApplication(e.f, e.args.map { it.accept(this) }))
+    override fun visit(e: FieldRef) = repl(FieldRef(e.field, e.obj.accept(this)))
+    override fun visit(e: ArrayRef) = repl(ArrayRef(e.base.accept(this), e.index.accept(this)))
 
     override fun visit(e: StoreApplExpression) =
         repl(StoreApplExpression.create(e.applied, e.target.accept(this)))

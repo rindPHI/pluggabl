@@ -53,7 +53,7 @@ class ParallelStore private constructor(val lhs: SymbolicStore, val rhs: Symboli
             }
 
         fun create(args: List<SymbolicStore>): SymbolicStore =
-            args.foldRight(EmptyStore as SymbolicStore, {acc, elem -> create(acc, elem)})
+            args.foldRight(EmptyStore as SymbolicStore, { acc, elem -> create(acc, elem) })
 
         fun create(vararg args: SymbolicStore): SymbolicStore =
             create(args.toList())
@@ -102,3 +102,15 @@ class FunctionSymbolStoreCollector() : SymbolicStoreCollector<FunctionSymbol>(
         }
     }
 )
+
+open class SymbolicStoreReplacer(private val repl: (SymbolicStore) -> SymbolicStore) :
+    SymbolicStoreVisitor<SymbolicStore> {
+    override fun visit(store: EmptyStore) = repl(store)
+    override fun visit(store: ElementaryStore) = repl(store)
+
+    override fun visit(store: ParallelStore) =
+        repl(ParallelStore.create(store.lhs.accept(this), store.rhs.accept(this)))
+
+    override fun visit(store: StoreApplStore) =
+        repl(StoreApplStore.create(store.applied.accept(this), store.target.accept(this)))
+}

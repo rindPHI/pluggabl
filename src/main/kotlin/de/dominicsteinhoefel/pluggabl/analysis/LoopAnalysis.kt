@@ -181,13 +181,9 @@ class LoopAnalysis(
     }
 
     private fun writtenVars() = loop.loopStatements.asSequence().map { it.defBoxes }.flatten().map { it.value }
-        .map {
-            if (it !is Local) {
-                throw NotImplementedError("Anonymization of written heap locations currently not implemented")
-            }
-            it
-        }
-        .map { exprConverter.convert(it) as LocalVariable }.toSet().toList()
+        .filterIsInstance<Local>().map { exprConverter.convert(it) as LocalVariable }.toSet().toList()
+
+    //private fun writtenHeapLocs // TODO
 
     private fun createAnonymizingLoopStore(
         writtenVars: List<LocalVariable>,
