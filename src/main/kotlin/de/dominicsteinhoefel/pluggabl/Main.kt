@@ -5,10 +5,11 @@ import picocli.CommandLine
 import picocli.CommandLine.Option
 import picocli.CommandLine.Command
 import soot.jimple.Stmt
+import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 
 @Command(name = "java -jar pluggabl-exe.jar")
-class Main {
+class Main: Callable<Unit> {
     @Option(
         names = ["-c", "--class"],
         required = true,
@@ -35,17 +36,17 @@ class Main {
     )
     lateinit var sootClassPathItems: List<String>
 
+    override fun call() {
+        val analysis = SymbolicExecutionAnalysis.create(clazz, methodSig, sootClassPathItems)
+        analysis.symbolicallyExecute()
+
+        printSESs(analysis)
+    }
+
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            val main = Main()
-            val parseResult = CommandLine(main).execute(*args)
-            if (parseResult != 0) exitProcess(parseResult)
-
-            val analysis = SymbolicExecutionAnalysis.create(main.clazz, main.methodSig, main.sootClassPathItems)
-            analysis.symbolicallyExecute()
-
-            printSESs(analysis)
+            exitProcess(CommandLine(Main()).execute(*args))
         }
 
         fun printSESs(a: SymbolicExecutionAnalysis) {
