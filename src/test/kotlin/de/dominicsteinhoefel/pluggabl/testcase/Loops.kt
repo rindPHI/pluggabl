@@ -71,7 +71,7 @@ class Loops {
         return i
     }
 
-    fun arrayLoop(input: Array<Int>): Array<Int> {
+    fun arrayLoop(input: Array<Int>): Int {
         var i = 0
 
         while (i < input.size) {
@@ -79,6 +79,6 @@ class Loops {
             i++
         }
 
-        return input
+        return input[input.size - 1]
     }
 }

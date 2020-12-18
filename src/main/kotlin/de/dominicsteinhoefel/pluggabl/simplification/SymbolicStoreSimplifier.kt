@@ -1,10 +1,19 @@
 package de.dominicsteinhoefel.pluggabl.simplification
 
 import de.dominicsteinhoefel.pluggabl.expr.*
+import de.dominicsteinhoefel.pluggabl.theories.HeapTheory
 
 object SymbolicStoreSimplifier {
+    private val SIMPLIFICATIONS: List<(SymbolicStore) -> SymbolicStore> =
+        listOf(
+            this::simplifyExpressions,
+            this::toParallelNormalForm,
+            this::dropEffectlessElementaries,
+            this::heapUpdateToLastPosition
+        )
+
     fun simplify(store: SymbolicStore): SymbolicStore =
-        dropEffectlessElementaries(toParallelNormalForm(simplifyExpressions(store)), LinkedHashSet())
+        SIMPLIFICATIONS.fold(store, { acc, elem -> elem(acc) })
 
     fun simplifyExpressions(store: SymbolicStore): SymbolicStore =
         when (store) {
@@ -16,6 +25,24 @@ object SymbolicStoreSimplifier {
                 simplifyExpressions(store.target)
             )
         }
+
+    private fun heapUpdateToLastPosition(
+        store: SymbolicStore
+    ): SymbolicStore {
+        val elems = store.elementaries()
+        val heapElem = elems.firstOrNull { it.lhs == HeapTheory.HEAP_VAR }
+
+        return if (heapElem == null) store
+        else ParallelStore.create(
+            listOf(
+                elems.filterNot { it.lhs == HeapTheory.HEAP_VAR },
+                listOf(heapElem)
+            ).flatten()
+        )
+    }
+
+    private fun dropEffectlessElementaries(store: SymbolicStore) =
+        dropEffectlessElementaries(store, LinkedHashSet())
 
     private fun dropEffectlessElementaries(
         store: SymbolicStore,

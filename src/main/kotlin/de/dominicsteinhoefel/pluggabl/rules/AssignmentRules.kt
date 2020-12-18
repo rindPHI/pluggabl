@@ -4,7 +4,8 @@ import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolsManager
 import de.dominicsteinhoefel.pluggabl.analysis.rules.SERule
 import de.dominicsteinhoefel.pluggabl.expr.*
-import de.dominicsteinhoefel.pluggabl.theories.*
+import de.dominicsteinhoefel.pluggabl.expr.converters.ConstrConverter
+import de.dominicsteinhoefel.pluggabl.expr.converters.ExprConverter
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.ARRAY_FIELD
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.ARRAY_LENGTH
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.HEAP_VAR
@@ -54,12 +55,10 @@ object AssignFromFieldRule : SERule {
                     listOf(
                         SymbolicExecutionState.merge(inpStates).addAssignment(
                             locVar,
-                            FunctionApplication(
-                                HeapTheory.Select.create(typeConverter.convert(fieldRef.type)),
-                                HEAP_VAR,
-                                exprConverter.convert(fieldRef.base) as LocalVariable,
-                                symbolsManager.getFieldSymbol(fieldRef)
-                            )
+                            FieldRef(
+                                exprConverter.convert(fieldRef.base),
+                                symbolsManager.getFieldSymbol(fieldRef).f as Field
+                            ).toSelectExpr()
                         )
                     )
                 }
@@ -121,15 +120,10 @@ object AssignFromArrayRule : SERule {
                     listOf(
                         SymbolicExecutionState.merge(inpStates).addAssignment(
                             locVar,
-                            FunctionApplication(
-                                HeapTheory.Select.create(typeConverter.convert(arrayRef.type)),
-                                HEAP_VAR,
-                                exprConverter.convert(arrayRef.base) as LocalVariable,
-                                FunctionApplication(
-                                    ARRAY_FIELD,
-                                    exprConverter.convert(arrayRef.index)
-                                )
-                            )
+                            ArrayRef(
+                                exprConverter.convert(arrayRef.base),
+                                exprConverter.convert(arrayRef.index)
+                            ).toSelectExpr()
                         )
                     )
                 }

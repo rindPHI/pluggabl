@@ -37,4 +37,12 @@ object HeapTheory : Theory {
                 cache[type] ?: Select(type).also { cache[type] = it }
         }
     }
+
+    class SelectAll private constructor(type: Type) : FunctionSymbol("${type}::selectAll", ArrayType(type), HEAP_TYPE, OBJECT_TYPE) {
+        companion object {
+            private val cache = LinkedHashMap<Type, SelectAll>()
+            fun create(type: Type) =
+                cache[type] ?: SelectAll(type).also { cache[type] = it }
+        }
+    }
 }

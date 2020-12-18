@@ -2,6 +2,8 @@ package de.dominicsteinhoefel.pluggabl.analysis
 
 import de.dominicsteinhoefel.pluggabl.analysis.rules.SERule
 import de.dominicsteinhoefel.pluggabl.expr.*
+import de.dominicsteinhoefel.pluggabl.expr.converters.ConstrConverter
+import de.dominicsteinhoefel.pluggabl.expr.converters.ExprConverter
 import de.dominicsteinhoefel.pluggabl.rules.*
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.HEAP_VAR
@@ -220,7 +222,6 @@ class SymbolicExecutionAnalysis private constructor(
 
         val loopAnalysis = LoopAnalysis(
             body,
-            cfg,
             loop,
             loopIdx,
             this::createSubAnalysis,

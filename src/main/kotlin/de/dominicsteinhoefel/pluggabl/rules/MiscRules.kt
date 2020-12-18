@@ -3,6 +3,8 @@ package de.dominicsteinhoefel.pluggabl.rules
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolsManager
 import de.dominicsteinhoefel.pluggabl.analysis.rules.SERule
 import de.dominicsteinhoefel.pluggabl.expr.*
+import de.dominicsteinhoefel.pluggabl.expr.converters.ConstrConverter
+import de.dominicsteinhoefel.pluggabl.expr.converters.ExprConverter
 import org.slf4j.LoggerFactory
 import soot.jimple.Stmt
 import soot.jimple.internal.*

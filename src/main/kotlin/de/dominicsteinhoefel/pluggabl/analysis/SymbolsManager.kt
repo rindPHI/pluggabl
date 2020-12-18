@@ -1,7 +1,6 @@
 package de.dominicsteinhoefel.pluggabl.analysis
 
 import de.dominicsteinhoefel.pluggabl.expr.*
-import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.FIELD_TYPE
 import de.dominicsteinhoefel.pluggabl.util.NewNamesCreator
 import soot.SootMethodRef
 import soot.jimple.internal.JInstanceFieldRef
@@ -83,11 +82,10 @@ class SymbolsManager(private val typeConverter: TypeConverter) {
         val fieldName = fieldRef.fieldRef.name()
 
         return getFieldSymbol(className, fieldName) ?: FunctionApplication(
-            FunctionSymbol(
-                funcSymbNamesCreator.newName(
-                    "<$className: ${fieldRef.type} $fieldName>"
-                ),
-                FIELD_TYPE
+            Field(
+                typeConverter.convert(fieldRef.base.type) as ReferenceType,
+                typeConverter.convert(fieldRef.type),
+                fieldName
             )
         ).also { classNameFieldNameToFieldSymbolsMap[Pair(className, fieldName)] = it }
             .also { functionSymbols.add(it.f) }

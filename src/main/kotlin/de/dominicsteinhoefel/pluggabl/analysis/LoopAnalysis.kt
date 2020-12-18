@@ -1,22 +1,22 @@
 package de.dominicsteinhoefel.pluggabl.analysis
 
 import de.dominicsteinhoefel.pluggabl.expr.*
+import de.dominicsteinhoefel.pluggabl.expr.converters.ExprConverter
+import de.dominicsteinhoefel.pluggabl.theories.HeapTheory
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.INT_TYPE
+import de.dominicsteinhoefel.pluggabl.util.union
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import soot.Body
-import soot.Local
 import soot.jimple.GotoStmt
 import soot.jimple.IfStmt
 import soot.jimple.Stmt
-import soot.toolkits.graph.UnitGraph
 import java.util.*
 import kotlin.collections.HashMap
 import kotlin.collections.LinkedHashSet
 
 class LoopAnalysis(
     private val body: Body,
-    private val cfg: UnitGraph,
     private val loop: Loop,
     private val loopIdx: Int,
     private val createSubAnalysis:
@@ -70,18 +70,24 @@ class LoopAnalysis(
         loopBackjumpState: SymbolicExecutionState,
         loopAnalysis: SymbolicExecutionAnalysis
     ) {
-        val writtenVars = writtenVars()
+        val writtenVars = writtenVars(loopBackjumpState)
+        // TODO: Maybe add a more fine-grained heap anonymization for actually changed locations.
+        //       Could, though, cause reachability problems for dynamically allocated stuff, like
+        //       when using iterators.
+        // val writtenHeapLocs = writtenHeapLocs(loopBackjumpState)
+
         val anonymizingState = createAnonymizingState(writtenVars, initState, loopBackjumpState)
+        val anonymizingFinalState =
+            createAnonymizingFinalState(writtenVars, initState, loopBackjumpState)
 
         // Save loop leaf state, to be able to later check correctness of substituted invariants
         loopLeafState = loopBackjumpState.apply(anonymizingState.apply(initState)).simplify()
         storeInputAndOutputStatesForLoopStatements(loopAnalysis, initState, anonymizingState)
         storeOutputStatesForLoopExits(
-            writtenVars,
             initState,
-            loopBackjumpState,
             loopAnalysis,
-            anonymizingState
+            anonymizingState,
+            anonymizingFinalState
         )
     }
 
@@ -103,15 +109,11 @@ class LoopAnalysis(
     }
 
     private fun storeOutputStatesForLoopExits(
-        writtenVars: List<LocalVariable>,
         initState: SymbolicExecutionState,
-        loopBackjumpState: SymbolicExecutionState,
         loopAnalysis: SymbolicExecutionAnalysis,
-        anonymizingState: SymbolicExecutionState
+        anonymizingState: SymbolicExecutionState,
+        anonymizingFinalState: SymbolicExecutionState
     ) {
-        val anonymizingFinalState =
-            createAnonymizingFinalState(writtenVars, initState, loopBackjumpState)
-
         for (stmt in loop.loopStatements.filter(loopExits::contains)) {
             val outputSESs = LinkedList<SymbolicExecutionState>()
             for ((idx, succ) in loopAnalysis.cfg.getSuccsOf(stmt).withIndex()) {
@@ -166,7 +168,7 @@ class LoopAnalysis(
         loopBackjumpState: SymbolicExecutionState
     ): FunctionApplication {
         val terminationRelevantVariables =
-            retainVarsOfInitState(
+            retainLocsOfInitState(
                 initState,
                 loopBackjumpState.constraints.map { it.accept(LocalVariableConstraintCollector()) }.flatten().toSet()
             )
@@ -174,16 +176,45 @@ class LoopAnalysis(
         val f = symbolsManager.newFunctionSymbol(
             "iterations_LOOP_$loopIdx",
             INT_TYPE,
-            terminationRelevantVariables.map { it.type }
+            terminationRelevantVariables.map { it.type() }
         )
 
         return FunctionApplication(f, terminationRelevantVariables.toList())
     }
 
-    private fun writtenVars() = loop.loopStatements.asSequence().map { it.defBoxes }.flatten().map { it.value }
-        .filterIsInstance<Local>().map { exprConverter.convert(it) as LocalVariable }.toSet().toList()
+    private fun writtenVars(loopBackjumpState: SymbolicExecutionState) =
+        loopBackjumpState.store.elementaries().map { it.lhs }
 
-    //private fun writtenHeapLocs // TODO
+    /**
+     * Computes a map from all heap locations written in the passed SES to the symbolic expression
+     * stored at that location.
+     */
+    private fun writtenHeapLocs(loopBackjumpState: SymbolicExecutionState): Map<HeapExpression, SymbolicExpression> =
+        loopBackjumpState.store.elementaries().firstOrNull { it.lhs == HeapTheory.HEAP_VAR }?.rhs?.accept(
+            ExpressionCollector { e ->
+                when (e) {
+                    is FunctionApplication ->
+                        if (e.f == HeapTheory.STORE)
+                            ((e.args[2] as FunctionApplication).f).let { field ->
+                                if (field == HeapTheory.ARRAY_FIELD)
+                                    setOf(
+                                        ArrayRef(
+                                            e.args[1],
+                                            (e.args[2] as FunctionApplication).args[0]
+                                        ) as HeapExpression to e.args[3]
+                                    )
+                                else
+                                    setOf(
+                                        FieldRef(
+                                            e.args[1],
+                                            field as Field
+                                        ) as HeapExpression to e.args[3]
+                                    )
+                            }
+                        else emptySet()
+                    else -> emptySet()
+                }
+            })?.toMap() ?: emptyMap()
 
     private fun createAnonymizingLoopStore(
         writtenVars: List<LocalVariable>,
@@ -196,39 +227,38 @@ class LoopAnalysis(
         logger.debug("Init state:   $initState")
         logger.debug("Result state: $resultState")
 
-        val relVars = variablesRelevantFor(writtenVar, initState, resultState)
-        logger.debug("Rel. vars: ${relVars.joinToString(",")}")
+        val relLocs = locationsRelevantFor(writtenVar, initState, resultState)
+        logger.debug("Rel. locs: ${relLocs.joinToString(", ")}")
 
         FunctionApplication(
             symbolsManager.newFunctionSymbol(
                 writtenVar.name + nameSuffix,
                 writtenVar.type,
-                listOf(listOf(iterationCounter.type()), relVars.map { it.type }).flatten()
+                listOf(listOf(iterationCounter.type()), relLocs.map { it.type() }).flatten()
             ),
-            listOf(listOf(iterationCounter), relVars).flatten()
+            listOf(listOf(iterationCounter), relLocs.map { it.toSelectAllExpr() }).flatten()
         ).also { logger.debug("Result func sym: $it") }
     }.map { ElementaryStore(it.key, it.value) }
         .let { ParallelStore.create(it) }
 
-    private fun variablesRelevantFor(
+    private fun locationsRelevantFor(
         lv: LocalVariable,
         initState: SymbolicExecutionState,
         finalState: SymbolicExecutionState
-    ): Set<LocalVariable> {
-        val rhsExpression =
-            SymbolicStore.elementaries(finalState.store).filter { it.lhs == lv }.let {
-                if (it.size != 1)
-                    throw IllegalStateException("Expected exactly one assignment of variable $lv in store, found ${it.size}")
-                it
-            }[0].rhs
+    ): Set<Location> {
+        val rhsExpression = SymbolicStore.elementaries(finalState.store).first { it.lhs == lv }.rhs
 
-        val result = LinkedHashSet<LocalVariable>()
-
-        result.addAll(rhsExpression.accept(LocalVariableExpressionCollector()))
+        val result = LinkedHashSet<Location>()
+            .also { it.addAll(rhsExpression.accept(LocalVariableExpressionCollector()).filterNot{ lv -> lv == HeapTheory.HEAP_VAR }) }
+            .also { it.addAll(rhsExpression.accept(HeapExpressionInExpressionCollector())) }
 
         while (true) {
-            val newLocals = finalState.constraints.associateWith { it.accept(LocalVariableConstraintCollector()) }
-                .filter { it.value.any(result::contains) }.map { it.value }.flatten().toSet()
+            val newLocals = finalState.constraints.map {
+                union(
+                    it.accept(LocalVariableConstraintCollector()),
+                    it.accept(HeapExpressionConstraintCollector())
+                )
+            }.filter { it.any(result::contains) }.flatten().toSet()
 
             if (result.containsAll(newLocals)) {
                 break
@@ -238,21 +268,23 @@ class LoopAnalysis(
         }
 
         // Remove all that are not assigned before and are not method parameters
-        return retainVarsOfInitState(initState, result)
+        return retainLocsOfInitState(initState, result)
     }
 
     /**
      * @return all elements of result that are either contained in initState or method parameters.
      */
-    private fun retainVarsOfInitState(
+    private fun retainLocsOfInitState(
         initState: SymbolicExecutionState,
-        result: Set<LocalVariable>
-    ) = result.filter {
-        listOf(
+        result: Set<Location>
+    ) = result.filter { resultLoc ->
+        resultLoc !is LocalVariable || listOf(
             initState.constraints.map { it.accept(LocalVariableConstraintCollector()) }.flatten(),
+            initState.constraints.map { it.accept(HeapExpressionConstraintCollector()) }.flatten(),
             initState.store.accept(LocalVariableStoreCollector()),
+            initState.store.accept(HeapExpressionStoreCollector()),
             body.parameterLocals.map { exprConverter.convert(it) as LocalVariable }
-        ).flatten().contains(it)
+        ).flatten().contains(resultLoc)
     }.toSet()
 
 }

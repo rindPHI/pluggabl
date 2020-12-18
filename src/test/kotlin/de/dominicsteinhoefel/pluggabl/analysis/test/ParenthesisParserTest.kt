@@ -27,6 +27,7 @@ class ParenthesisParserTest {
 
         analysis.symbolicallyExecute()
 
+        val heap = HeapTheory.HEAP_VAR
         val input = analysis.getLocal("input")
         val i = analysis.getLocal("i")
         val c = analysis.getLocal("c")
@@ -39,19 +40,44 @@ class ParenthesisParserTest {
         val lPar = IntValue('('.toInt())
         val rPar = IntValue(')'.toInt())
 
+        val javaLangChar = analysis.typeConverter.typeByName("java.lang.Character")!!
+
+        val selectAllInput = FunctionApplication(
+            HeapTheory.SelectAll.create(javaLangChar),
+            heap,
+            input
+        )
+
         val itCnt = FunctionApplication(analysis.getFunctionSymbol("iterations_LOOP_0"), zero, input, zero)
-        val iAfterLoop = FunctionApplication(analysis.getFunctionSymbol("i_AFTER_LOOP_0"), itCnt, zero, input, zero)
+        val iAfterLoop =
+            FunctionApplication(analysis.getFunctionSymbol("i_AFTER_LOOP_0"), itCnt, zero, input, selectAllInput, zero)
         val opParCntAfterLoop =
-            FunctionApplication(analysis.getFunctionSymbol("opParCnt_AFTER_LOOP_0"), itCnt, zero, input, zero)
-        val cAfterLoop = FunctionApplication(analysis.getFunctionSymbol("c_AFTER_LOOP_0"), itCnt, input, zero, zero)
-        val stack6AfterLoop = FunctionApplication(analysis.getFunctionSymbol("\$stack6_AFTER_LOOP_0"), itCnt, input, zero, zero)
+            FunctionApplication(
+                analysis.getFunctionSymbol("opParCnt_AFTER_LOOP_0"),
+                itCnt,
+                zero,
+                input,
+                zero,
+                selectAllInput
+            )
+        val cAfterLoop =
+            FunctionApplication(analysis.getFunctionSymbol("c_AFTER_LOOP_0"), itCnt, input, zero, selectAllInput, zero)
+        val stack6AfterLoop =
+            FunctionApplication(
+                analysis.getFunctionSymbol("\$stack6_AFTER_LOOP_0"),
+                itCnt,
+                input,
+                zero,
+                selectAllInput,
+                zero
+            )
 
         val lengthOfInput = FunctionApplication(HeapTheory.ARRAY_LENGTH, input)
 
         val charValue = analysis.symbolsManager.getMethodResultSymbol("java.lang.Character", "char charValue()")!!
 
         val selectIthInput = FunctionApplication(
-            HeapTheory.Select.create(analysis.typeConverter.typeByName("java.lang.Character")!!),
+            HeapTheory.Select.create(javaLangChar),
             HeapTheory.HEAP_VAR,
             input,
             FunctionApplication(HeapTheory.ARRAY_FIELD, iAfterLoop)
@@ -103,9 +129,9 @@ class ParenthesisParserTest {
                 EqualityConstr.create(opParCntAfterLoop, zero)
             ),
             ParallelStore.create(
-                ElementaryStore(opParCnt, opParCntAfterLoop),
                 ElementaryStore(stack6, stack6AfterLoop),
                 ElementaryStore(c, cAfterLoop),
+                ElementaryStore(opParCnt, opParCntAfterLoop),
                 ElementaryStore(i, iAfterLoop),
                 ElementaryStore(stack5, lengthOfInput),
                 ElementaryStore(result, IntValue(0))
@@ -118,16 +144,16 @@ class ParenthesisParserTest {
                 NegatedConstr.create(EqualityConstr.create(opParCntAfterLoop, zero))
             ),
             ParallelStore.create(
-                ElementaryStore(opParCnt, opParCntAfterLoop),
                 ElementaryStore(stack6, stack6AfterLoop),
                 ElementaryStore(c, cAfterLoop),
+                ElementaryStore(opParCnt, opParCntAfterLoop),
                 ElementaryStore(i, iAfterLoop),
                 ElementaryStore(stack5, lengthOfInput),
                 ElementaryStore(result, IntValue(1))
             )
         )
 
-        printSESs(analysis)
+        //printSESs(analysis)
 
         compareLeaves(
             listOf(firstErrorResultSES, secondErrorResultSES, correctResultSES, thirdErrorResultSES),

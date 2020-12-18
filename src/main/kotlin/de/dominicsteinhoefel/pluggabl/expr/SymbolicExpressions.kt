@@ -1,42 +1,34 @@
 package de.dominicsteinhoefel.pluggabl.expr
 
-import de.dominicsteinhoefel.pluggabl.analysis.SymbolsManager
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory
-import de.dominicsteinhoefel.pluggabl.theories.Theory
-import de.dominicsteinhoefel.pluggabl.util.union
-import org.slf4j.LoggerFactory
-import soot.jimple.IntConstant
-import soot.jimple.internal.*
 import java.util.*
 
-interface SymbolicExpressionsVisitor<T> {
-    fun visit(e: Value): T
-    fun visit(e: LocalVariable): T
-    fun visit(e: FieldRef): T
-    fun visit(e: ArrayRef): T
-    fun visit(e: FunctionApplication): T
-    fun visit(e: ConditionalExpression): T
-    fun visit(e: StoreApplExpression): T
+interface SymbolicExpression {
+    fun type(): Type
+    fun <T> accept(visitor: SymbolicExpressionsVisitor<T>): T
 }
 
-sealed class SymbolicExpression {
-    abstract fun type(): Type
-    abstract fun <T> accept(visitor: SymbolicExpressionsVisitor<T>): T
-}
-
-abstract class Value : SymbolicExpression()
+abstract class Value : SymbolicExpression
 
 interface BinarySymbolicExpression {
     fun left(): SymbolicExpression
     fun right(): SymbolicExpression
 }
 
+interface Location : SymbolicExpression {
+    fun toSelectExpr(): SymbolicExpression
+    fun toSelectAllExpr(): SymbolicExpression = toSelectExpr()
+}
+
+interface HeapExpression : Location
+
 class LocalVariable(
     val name: String,
     val type: Type
-) : SymbolicExpression() {
+) : SymbolicExpression, Location {
     override fun type() = type
     override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
+    override fun toSelectExpr() = this
 
     override fun toString() = name
     override fun hashCode() = Objects.hash(LocalVariable::class, name, type)
@@ -66,11 +58,13 @@ class Field(val containerType: ReferenceType, val fieldType: Type, val fieldName
     FunctionSymbol("<$containerType: $fieldType $fieldName>", HeapTheory.FIELD_TYPE, emptyList(), true)
 
 class FieldRef(
-    val field: Field,
-    val obj: SymbolicExpression
-) : SymbolicExpression() {
-    override fun type() = field.type
+    val obj: SymbolicExpression,
+    val field: Field
+) : SymbolicExpression, HeapExpression {
+    override fun type() = field.fieldType
     override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
+    override fun toSelectExpr() =
+        FunctionApplication(HeapTheory.Select.create(type()), HeapTheory.HEAP_VAR, obj, FunctionApplication(field))
 
     override fun toString() = "$obj.${field.fieldName}"
     override fun hashCode() = Objects.hash(FieldRef::class, field, obj)
@@ -81,11 +75,26 @@ class FieldRef(
 class ArrayRef(
     val base: SymbolicExpression,
     val index: SymbolicExpression
-): SymbolicExpression() {
+) : SymbolicExpression, HeapExpression {
     override fun type() = (base.type() as ArrayType).baseType
     override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
 
-    override fun toString() = "$base.$index"
+    override fun toSelectExpr() =
+        FunctionApplication(
+            HeapTheory.Select.create(type()),
+            HeapTheory.HEAP_VAR,
+            base,
+            FunctionApplication(HeapTheory.ARRAY_FIELD, index)
+        )
+
+    override fun toSelectAllExpr() =
+        FunctionApplication(
+            HeapTheory.SelectAll.create(type()),
+            HeapTheory.HEAP_VAR,
+            base
+        )
+
+    override fun toString() = "$base[$index]"
     override fun hashCode() = Objects.hash(ArrayRef::class, base, index)
     override fun equals(other: Any?) =
         (other as? ArrayRef).let { it?.base == base && it.index == index }
@@ -94,7 +103,7 @@ class ArrayRef(
 class FunctionApplication(
     val f: FunctionSymbol,
     val args: List<SymbolicExpression>
-) : SymbolicExpression() {
+) : SymbolicExpression {
     constructor(
         f: FunctionSymbol,
         vararg args: SymbolicExpression
@@ -109,7 +118,7 @@ class FunctionApplication(
 }
 
 class StoreApplExpression private constructor(val applied: SymbolicStore, val target: SymbolicExpression) :
-    SymbolicExpression() {
+    SymbolicExpression {
     override fun type() = target.type()
     override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
 
@@ -129,7 +138,7 @@ class ConditionalExpression private constructor(
     val condition: SymbolicConstraint,
     val vThen: SymbolicExpression,
     val vElse: SymbolicExpression
-) : SymbolicExpression() {
+) : SymbolicExpression {
     override fun type() = vThen.type() // TODO: Have to take common supertype
     override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
 
@@ -155,116 +164,3 @@ class ConditionalExpression private constructor(
     }
 }
 
-class ExprConverter(private val symbolsManager: SymbolsManager, private val theories: Set<Theory>) {
-    private val logger = LoggerFactory.getLogger(ExprConverter::class.simpleName)
-
-    companion object {
-        /**
-         * Simple expressions are constant values, local variables, or
-         * composed arithmetic expressions of simple expressions. The latter
-         * case is possible since field accesses are decomposed by the
-         * conversion to Jimple; in the KeY system, for instance, more
-         * complex decomposition rules are necessary and simple expressions
-         * are only constants or variables.
-         */
-        fun isSimpleExpression(value: soot.Value): Boolean =
-            when (value) {
-                is JimpleLocal, is IntConstant, is JAddExpr, is JSubExpr, is JMulExpr -> true
-                else -> false
-            }
-    }
-
-    fun convert(value: soot.Value): SymbolicExpression =
-        when (value) {
-            is JimpleLocal -> symbolsManager.localVariableFor(value)
-            is JVirtualInvokeExpr -> {
-                FunctionApplication(
-                    symbolsManager.getMethodResultSymbol(value.methodRef),
-                    listOf(listOf(convert(value.base)),
-                        value.args.map { convert(it) }).flatten()
-                )
-            }
-            is JStaticInvokeExpr -> {
-                FunctionApplication(
-                    symbolsManager.getMethodResultSymbol(value.methodRef),
-                    value.args.map { convert(it) }.toList()
-                )
-            }
-            else -> theories.filter { it.isResponsibleFor(value) }
-                .also { if (it.size != 1) throw IllegalArgumentException("No theory/translation found for operator ${value::class}") }[0]
-                .translate(value, value.useBoxes.map { it.value }.map { convert(it) })
-        }
-}
-
-open class ExpressionCollector<T>(private val coll: (SymbolicExpression) -> Set<T>) :
-    SymbolicExpressionsVisitor<Set<T>> {
-    override fun visit(e: Value) = coll(e)
-    override fun visit(e: LocalVariable) = coll(e)
-    override fun visit(e: FunctionApplication) =
-        union(coll(e), e.args.map { it.accept(this) }.flatten().toSet())
-    override fun visit(e: FieldRef) = union(coll(e), e.obj.accept(this))
-    override fun visit(e: ArrayRef) = union(coll(e), e.base.accept(this), e.index.accept(this))
-
-    override fun visit(e: StoreApplExpression) = union(coll(e), e.target.accept(this))
-
-    override fun visit(e: ConditionalExpression) =
-        union(
-            coll(e),
-            e.vThen.accept(this),
-            e.vElse.accept(this)
-        )
-}
-
-class LocalVariableExpressionCollector() : ExpressionCollector<LocalVariable>({ e ->
-    when (e) {
-        is LocalVariable -> setOf(e)
-        is StoreApplExpression -> e.applied.accept(LocalVariableStoreCollector())
-        is ConditionalExpression -> e.condition.accept(LocalVariableConstraintCollector())
-        else -> emptySet()
-    }
-})
-
-class FunctionSymbolExpressionCollector() : ExpressionCollector<FunctionSymbol>({ e ->
-    when (e) {
-        is FunctionApplication -> setOf(e.f)
-        is StoreApplExpression -> e.applied.accept(FunctionSymbolStoreCollector())
-        is ConditionalExpression -> e.condition.accept(FunctionSymbolConstraintCollector())
-        else -> emptySet()
-    }
-})
-
-open class ExpressionReplacer(private val repl: (SymbolicExpression) -> SymbolicExpression) :
-    SymbolicExpressionsVisitor<SymbolicExpression> {
-    override fun visit(e: Value) = repl(e)
-    override fun visit(e: LocalVariable) = repl(e)
-    override fun visit(e: FunctionApplication) = repl(FunctionApplication(e.f, e.args.map { it.accept(this) }))
-    override fun visit(e: FieldRef) = repl(FieldRef(e.field, e.obj.accept(this)))
-    override fun visit(e: ArrayRef) = repl(ArrayRef(e.base.accept(this), e.index.accept(this)))
-
-    override fun visit(e: StoreApplExpression) =
-        repl(StoreApplExpression.create(e.applied, e.target.accept(this)))
-
-    override fun visit(e: ConditionalExpression) =
-        repl(
-            ConditionalExpression.create(
-                e.condition,
-                e.vThen.accept(this),
-                e.vElse.accept(this)
-            )
-        )
-
-}
-
-class SymbolReplaceExprVisitor(val replMap: Map<LocalVariable, SymbolicExpression>) : ExpressionReplacer({ e ->
-    when (e) {
-        is LocalVariable -> replMap[e] ?: e
-        is ConditionalExpression -> ConditionalExpression.create(
-            e.condition.accept(SymbolReplaceConstrVisitor(replMap)),
-            e.vThen,
-            e.vElse
-        )
-        is StoreApplExpression ->
-            throw UnsupportedOperationException("Symbol replacement below the scope of store application unsupported, normalize first")
-        else -> e
-    }
-})

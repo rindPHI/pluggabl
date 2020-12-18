@@ -339,13 +339,34 @@ class LoopSymbolicExecutionAnalysisTests {
     fun testArrayLoop() {
         val analysis = SymbolicExecutionAnalysis.create(
             "de.dominicsteinhoefel.pluggabl.testcase.Loops",
-            "java.lang.Integer[] arrayLoop(java.lang.Integer[])",
+            "int arrayLoop(java.lang.Integer[])",
             SOOT_CLASS_PATH
         )
 
         analysis.symbolicallyExecute()
 
-        printSESs(analysis)
+        //printSESs(analysis)
+
+        // Result state:
+
+        // (
+        //   {(i_AFTER_LOOP_0(iterations_LOOP_0(0, input), 0, input))>=(length(input))},
+        //   [$stack8 -> $stack8_AFTER_LOOP_0(iterations_LOOP_0(0, input), input, 0, java.lang.Integer::selectAll(heap, input))]++
+        //   [$stack9 -> $stack9_AFTER_LOOP_0(iterations_LOOP_0(0, input), input, 0, java.lang.Integer::selectAll(heap, input))]++
+        //   [$stack10 -> $stack10_AFTER_LOOP_0(iterations_LOOP_0(0, input), input, 0, java.lang.Integer::selectAll(heap, input))]++
+        //   [$stack11 -> $stack11_AFTER_LOOP_0(iterations_LOOP_0(0, input), input, 0, java.lang.Integer::selectAll(heap, input))]++
+        //   [i -> i_AFTER_LOOP_0(iterations_LOOP_0(0, input), 0, input)]++
+        //   [$stack3 -> length(input)]++
+        //   [$stack4 -> length(input)]++
+        //   [$stack5 -> subInt(length(input), 1)]++
+        //   [$stack6 -> java.lang.Integer::select(heap_AFTER_LOOP_0(iterations_LOOP_0(0, input), input, 0, java.lang.Integer::selectAll(heap, input)), input, arr(subInt(length(input), 1)))]++
+        //   [$stack7 -> <java.lang.Integer: int intValue()>(java.lang.Integer::select(heap_AFTER_LOOP_0(iterations_LOOP_0(0, input), input, 0, java.lang.Integer::selectAll(heap, input)), input, arr(subInt(length(input), 1))))]++
+        //   [result -> <java.lang.Integer: int intValue()>(java.lang.Integer::select(heap_AFTER_LOOP_0(iterations_LOOP_0(0, input), input, 0, java.lang.Integer::selectAll(heap, input)), input, arr(subInt(length(input), 1))))]++
+        //   [heap -> heap_AFTER_LOOP_0(iterations_LOOP_0(0, input), input, 0, java.lang.Integer::selectAll(heap, input))]
+        // )
+
+
+        TODO("Implement test cases")
     }
 
     // TODO: Add test case for nested loop, maybe even w/ labeled break
