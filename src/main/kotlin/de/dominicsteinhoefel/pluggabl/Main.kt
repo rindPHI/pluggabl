@@ -8,7 +8,7 @@ import soot.jimple.Stmt
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 
-@Command(name = "java -jar pluggabl-exe.jar")
+@Command(name = "java -jar pluggabl-exe.jar", mixinStandardHelpOptions = true)
 class Main: Callable<Unit> {
     @Option(
         names = ["-c", "--class"],
@@ -34,7 +34,7 @@ class Main: Callable<Unit> {
             "Use multiple -cp ... parameters for multiple entries.",
             "Note: Soot depends on Java's rt.jar and jce.jar, which are only available up to Java 8."]
     )
-    lateinit var sootClassPathItems: List<String>
+    var sootClassPathItems: List<String> = emptyList()
 
     override fun call() {
         val analysis = SymbolicExecutionAnalysis.create(clazz, methodSig, sootClassPathItems)
