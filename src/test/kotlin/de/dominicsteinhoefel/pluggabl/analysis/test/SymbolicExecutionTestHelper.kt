@@ -1,12 +1,20 @@
 package de.dominicsteinhoefel.pluggabl.analysis.test
 
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
+import de.dominicsteinhoefel.pluggabl.expr.LocalVariable
 import de.dominicsteinhoefel.pluggabl.expr.SymbolicExecutionState
+import de.dominicsteinhoefel.pluggabl.expr.SymbolicExpression
+import org.hamcrest.CoreMatchers.`is`
 import org.junit.Assert.*
-import org.hamcrest.CoreMatchers.*
 import soot.jimple.Stmt
 
 object SymbolicExecutionTestHelper {
+    fun compareResultForVariable(expected: SymbolicExpression, state: SymbolicExecutionState, variable: LocalVariable) {
+        state.store.elementaries().firstOrNull { it.lhs == variable }?.rhs
+            .also { assertNotNull(it) }
+            ?.also { assertEquals(expected, it) }
+    }
+
     fun compareLeaveInputs(expected: List<SymbolicExecutionState>, a: SymbolicExecutionAnalysis) {
         val results = a.cfg.tails.map { it as Stmt }.map { a.getInputSESs(it) }.flatten()
         assertThat(results, `is`(expected))

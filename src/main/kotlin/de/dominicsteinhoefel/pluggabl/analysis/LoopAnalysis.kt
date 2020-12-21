@@ -224,8 +224,8 @@ class LoopAnalysis(
         nameSuffix: String
     ) = writtenVars.associateWith { writtenVar ->
         logger.debug("Creating anonymizing store for $writtenVar")
-        logger.debug("Init state:   $initState")
-        logger.debug("Result state: $resultState")
+        logger.trace("Init state:   $initState")
+        logger.trace("Result state: $resultState")
 
         val relLocs = locationsRelevantFor(writtenVar, initState, resultState)
         logger.debug("Rel. locs: ${relLocs.joinToString(", ")}")

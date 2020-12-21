@@ -4,7 +4,7 @@ import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.compareLeaveInputs
 import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.compareLeaves
 import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.compareLoopLeaves
-import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.printSESs
+import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.compareResultForVariable
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory
@@ -345,29 +345,85 @@ class LoopSymbolicExecutionAnalysisTests {
 
         analysis.symbolicallyExecute()
 
-        //printSESs(analysis)
+        val result = analysis.getLocal("result")
+        val input = analysis.getLocal("input")
+        val heap = HeapTheory.HEAP_VAR
 
-        // Result state:
+        val zero = IntTheory.IntValue(0)
+        val one = IntTheory.IntValue(1)
 
-        // (
-        //   {(i_AFTER_LOOP_0(iterations_LOOP_0(0, input), 0, input))>=(length(input))},
-        //   [$stack8 -> $stack8_AFTER_LOOP_0(iterations_LOOP_0(0, input), input, 0, java.lang.Integer::selectAll(heap, input))]++
-        //   [$stack9 -> $stack9_AFTER_LOOP_0(iterations_LOOP_0(0, input), input, 0, java.lang.Integer::selectAll(heap, input))]++
-        //   [$stack10 -> $stack10_AFTER_LOOP_0(iterations_LOOP_0(0, input), input, 0, java.lang.Integer::selectAll(heap, input))]++
-        //   [$stack11 -> $stack11_AFTER_LOOP_0(iterations_LOOP_0(0, input), input, 0, java.lang.Integer::selectAll(heap, input))]++
-        //   [i -> i_AFTER_LOOP_0(iterations_LOOP_0(0, input), 0, input)]++
-        //   [$stack3 -> length(input)]++
-        //   [$stack4 -> length(input)]++
-        //   [$stack5 -> subInt(length(input), 1)]++
-        //   [$stack6 -> java.lang.Integer::select(heap_AFTER_LOOP_0(iterations_LOOP_0(0, input), input, 0, java.lang.Integer::selectAll(heap, input)), input, arr(subInt(length(input), 1)))]++
-        //   [$stack7 -> <java.lang.Integer: int intValue()>(java.lang.Integer::select(heap_AFTER_LOOP_0(iterations_LOOP_0(0, input), input, 0, java.lang.Integer::selectAll(heap, input)), input, arr(subInt(length(input), 1))))]++
-        //   [result -> <java.lang.Integer: int intValue()>(java.lang.Integer::select(heap_AFTER_LOOP_0(iterations_LOOP_0(0, input), input, 0, java.lang.Integer::selectAll(heap, input)), input, arr(subInt(length(input), 1))))]++
-        //   [heap -> heap_AFTER_LOOP_0(iterations_LOOP_0(0, input), input, 0, java.lang.Integer::selectAll(heap, input))]
-        // )
+        val heapAfterLoopSymbol = analysis.symbolsManager.getFunctionSymbols().first { it.name == "heap_AFTER_LOOP_0" }
+        val iterationsLoopSymbol = analysis.symbolsManager.getFunctionSymbols().first { it.name == "iterations_LOOP_0" }
 
+        val intValue = analysis.symbolsManager.getMethodResultSymbol("java.lang.Integer", "int intValue()")!!
+        val integerSelectAll = HeapTheory.SelectAll.create(analysis.typeConverter.typeByName("java.lang.Integer")!!)
+        val integerSelect = HeapTheory.Select.create(analysis.typeConverter.typeByName("java.lang.Integer")!!)
 
-        TODO("Implement test cases")
+        val resultSES = analysis.getLeavesWithOutputSESs().values
+            .also { assertEquals(1, it.size) }.toList()[0]
+            .also { assertEquals(1, it.size) }[0]
+
+        val heapAfterLoop = FunctionApplication(
+            heapAfterLoopSymbol,
+            FunctionApplication(iterationsLoopSymbol, zero, input),
+            input,
+            zero,
+            FunctionApplication(integerSelectAll, heap, input)
+        )
+
+        compareResultForVariable(heapAfterLoop, resultSES, heap)
+
+        val expectedResultExpr = FunctionApplication(
+            intValue,
+            FunctionApplication(
+                integerSelect,
+                heapAfterLoop,
+                input,
+                FunctionApplication(
+                    HeapTheory.ARRAY_FIELD,
+                    IntTheory.minus(FunctionApplication(HeapTheory.ARRAY_LENGTH, input), one)
+                )
+            )
+        )
+
+        compareResultForVariable(expectedResultExpr, resultSES, result)
+
+        val itCntLOOP0 = analysis.getLocal("itCnt_LOOP_0")
+        val valueOf =
+            analysis.symbolsManager.getMethodResultSymbol("java.lang.Integer", "java.lang.Integer valueOf(int)")!!
+
+        val heapAnonLoopSymbol = analysis.symbolsManager.getFunctionSymbols().first { it.name == "heap_ANON_LOOP_0" }
+        val iAnonLoopSymbol = analysis.symbolsManager.getFunctionSymbols().first { it.name == "i_ANON_LOOP_0" }
+        val heapAnonLoopTerm = FunctionApplication(
+            heapAnonLoopSymbol,
+            itCntLOOP0,
+            input,
+            zero,
+            FunctionApplication(integerSelectAll, heap, input)
+        )
+        val iAnonTerm = FunctionApplication(iAnonLoopSymbol, itCntLOOP0, zero, input)
+        val ithInputElem = FunctionApplication(HeapTheory.ARRAY_FIELD, iAnonTerm)
+
+        val loopHeapExpr = FunctionApplication(
+            HeapTheory.STORE,
+            heapAnonLoopTerm,
+            input,
+            ithInputElem,
+            FunctionApplication(
+                valueOf,
+                mult(
+                    FunctionApplication(
+                        intValue,
+                        FunctionApplication(integerSelect, heapAnonLoopTerm, input, ithInputElem)
+                    ), iAnonTerm
+                )
+            )
+        )
+
+        val loopLeafSES = analysis.getLoopLeafSESs().values.toList()[0]
+
+        compareResultForVariable(loopHeapExpr, loopLeafSES, heap)
     }
 
-    // TODO: Add test case for nested loop, maybe even w/ labeled break
+// TODO: Add test case for nested loop, maybe even w/ labeled break
 }
