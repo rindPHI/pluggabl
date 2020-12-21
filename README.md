@@ -16,6 +16,12 @@ the resulting states, information about dependencies is extracted and used to
 create abstractions. Afterward, the execution result is added to the main
 analysis.
 
+The result of a symbolic execution are sets of input and output symbolic states
+attached to CFG nodes of the input program. *pluggabl* uses [nondeterministic
+value summaries](https://www.dominic-steinhoefel.de/post/precise-symbolic-state-merging/)
+to merge states after the execution of branches in an automatic, fully precise
+manner.
+
 Further analyses can be plugged in afterward, thus the name. For instance, you
 can feed path conditions to an SMT solver to check their satisfiability and
 eliminate dead branches. Or you can evaluate a postcondition in all leaf
