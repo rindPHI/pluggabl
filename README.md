@@ -83,8 +83,8 @@ Below you find the results of running *pluggabl* for the `test` method:
     > javac Test.java 
     > java -jar pluggabl-exe.jar -c "Test" -m "int test(int)" -cp "./" -cp "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/rt.jar"
 
-    Soot started on Fri Dec 18 10:07:24 CET 2020
-    Soot finished on Fri Dec 18 10:07:25 CET 2020
+    Soot started on Mon Dec 21 18:17:30 CET 2020
+    Soot finished on Mon Dec 21 18:17:31 CET 2020
     Soot has run for 0 min. 1 sec.
     Node "l0 := @this: Test":
     Input States:  ({}, [])
@@ -112,7 +112,7 @@ Below you find the results of running *pluggabl* for the `test` method:
     
     Node "return l2":
     Input States:  ({!((l1)==(42))}, [l2 -> mulInt(l1, l1)]), ({(l1)==(42)}, [l2 -> 17])
-    Output States: ({}, [l2 -> if ((l1)==(42)) then (17) else (mulInt(l1, l1))]++[result -> if ((l1)==(42)) then (17) else (mulInt(l1, l1))])
+    Output States: ({}, [l2 -> {(!((l1)==(42)) | mulInt(l1, l1)), ((l1)==(42) | 17)}]++[result -> {(!((l1)==(42)) | mulInt(l1, l1)), ((l1)==(42) | 17)}])
 
 # Who's To Blame?
 
