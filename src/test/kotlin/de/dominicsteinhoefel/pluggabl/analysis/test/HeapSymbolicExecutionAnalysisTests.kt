@@ -110,7 +110,7 @@ class HeapSymbolicExecutionAnalysisTests {
         val arrVar = analysis.getLocal("arr")
         val heapVar = analysis.getLocal("heap")
         val resultVar = analysis.getLocal("result")
-        val integerType = ReferenceType("java.lang.Integer")
+        val integerType = ReferenceType("java.lang.Integer", OBJECT_TYPE)
 
         fun makeSelectTerm(v: Int) = FunctionApplication(
             HeapTheory.Select.create(integerType), heapVar, arrVar, FunctionApplication(

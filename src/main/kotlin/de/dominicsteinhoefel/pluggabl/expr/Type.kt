@@ -7,7 +7,7 @@ import soot.IntType
 import java.util.*
 import kotlin.collections.LinkedHashMap
 
-open class Type(val type: String, private val superType: Type? = null) {
+open class Type(val type: String, private val superType: Type = ANY_TYPE) {
     override fun hashCode() = Objects.hash(Type::class, type)
     override fun equals(other: Any?) = (other as? Type)?.type == type
     override fun toString() = type
@@ -17,6 +17,11 @@ open class Type(val type: String, private val superType: Type? = null) {
     }
 
     fun extends(other: Type) = other == ANY_TYPE || allSuperTypes.contains(other)
+
+    fun commonSuperType(other: Type): Type =
+        if (other.extends(this)) this
+        else if (this.extends(other)) other
+        else superType.commonSuperType(other)
 
     companion object {
         private fun allSuperTypes(type: Type?): Set<Type> =
@@ -29,8 +34,9 @@ open class Type(val type: String, private val superType: Type? = null) {
 val ANY_TYPE = Type("any")
 val OBJECT_TYPE = Type("java.lang.Object", ANY_TYPE)
 
-open class ReferenceType(type: String, superType: Type? = null) : Type(type, superType)
-class ArrayType(val baseType: Type) : ReferenceType("[$baseType") // super type?
+open class ReferenceType(type: String, superType: Type) : Type(type, superType)
+class ArrayType(val baseType: Type) :
+    ReferenceType("[$baseType", if (baseType is ArrayType) baseType else OBJECT_TYPE)
 
 class TypeConverter(private val theories: Set<Theory>) {
     private val typesRegistry = LinkedHashMap<soot.Type, Type>()
@@ -45,10 +51,10 @@ class TypeConverter(private val theories: Set<Theory>) {
     }
 
     fun typeByName(name: String): Type? =
-        typesRegistry.values.firstOrNull{ it.type == name }
+        typesRegistry.values.firstOrNull { it.type == name }
 
     private fun superType(type: soot.RefType) =
         if (type.sootClass.hasSuperclass())
             convert(type.sootClass.superclass.type)
-        else null
+        else OBJECT_TYPE
 }
