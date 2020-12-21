@@ -119,7 +119,7 @@ object SymbolicConstraintSimplifier {
             return constraints
         }
 
-        val result = LinkedList<SymbolicConstraint>(constraints)
+        val result = LinkedList(constraints)
 
         for (i in result.indices) {
             val trueFacts = LinkedHashSet<SymbolicConstraint>()

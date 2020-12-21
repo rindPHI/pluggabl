@@ -1,13 +1,14 @@
 package de.dominicsteinhoefel.pluggabl.theories
 
 import de.dominicsteinhoefel.pluggabl.expr.*
+import de.dominicsteinhoefel.pluggabl.expr.Type.Companion.ANY_TYPE
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.INT_TYPE
 import de.dominicsteinhoefel.pluggabl.theories.LocationSetTheory.LOCATION_SET_TYPE
 import soot.Value
 
 object HeapTheory : Theory {
-    val HEAP_TYPE = Type("Heap")
-    val FIELD_TYPE = Type("Field")
+    val HEAP_TYPE = Type.create("Heap", ANY_TYPE)
+    val FIELD_TYPE = Type.create("Field", ANY_TYPE)
 
     val HEAP_VAR = LocalVariable("heap", HEAP_TYPE)
 

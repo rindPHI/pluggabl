@@ -5,7 +5,7 @@ import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.FIELD_TYPE
 import soot.Value
 
 object LocationSetTheory : Theory {
-    val LOCATION_SET_TYPE = Type("LocationSet")
+    val LOCATION_SET_TYPE = Type.create("LocationSet", Type.ANY_TYPE)
 
     val EMPTY = FunctionSymbol("empty", LOCATION_SET_TYPE)
     val ALL_LOCS = FunctionSymbol("allLocs", LOCATION_SET_TYPE)

@@ -134,6 +134,54 @@ class StoreApplExpression private constructor(val applied: SymbolicStore, val ta
     }
 }
 
+class GuardedExpression(val condition: SymbolicConstraint, val value: SymbolicExpression) {
+    val type = value.type()
+
+    override fun toString() = "($condition | $value)"
+    override fun hashCode() = Objects.hash(GuardedExpression::class, condition, value)
+    override fun equals(other: Any?) =
+        (other as? GuardedExpression).let { it?.condition == condition && it.value == value }
+}
+
+class ValueSummary private constructor(val expressions: Set<GuardedExpression>) : SymbolicExpression {
+    override fun type() =
+        expressions.fold(expressions.toList()[0].type, { acc, elem -> acc.commonSuperType(elem.type) })
+
+    override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
+
+    override fun toString() = "{${expressions.joinToString(", ")}}"
+    override fun hashCode() = Objects.hash(ValueSummary::class, expressions)
+    override fun equals(other: Any?) = (other as? ValueSummary).let { it?.expressions == expressions }
+
+    companion object {
+        fun create(expressions: Set<GuardedExpression>): SymbolicExpression =
+            ValueSummary(
+                compressGuardedExpressions(expressions)
+                    // Remove expressions with unsatisfiable guards
+                    .filterNot { it.condition == False }.toSet()
+            ).let { result ->
+                // Convert to unsummarized expression if there's only one guarded expression
+                if (result.expressions.size == 1) result.expressions.toList()[0].value
+                else result
+            }
+
+        /**
+         * Returns a set of guarded expressions where each value occurs exactly once.
+         * Conditions for equal values are merged by disjunction.
+         */
+        private fun compressGuardedExpressions(expressions: Set<GuardedExpression>) =
+            expressions.map { it.value }.map { value ->
+                GuardedExpression(expressions.filter { expr -> expr.value == value }
+                    .fold(False as SymbolicConstraint, { acc, elem -> Or.create(acc, elem.condition) }),
+                    value
+                )
+            }.toSet()
+
+        fun create(vararg expressions: GuardedExpression) = create(expressions.toSet())
+        fun create(expressions: List<GuardedExpression>) = create(expressions.toSet())
+    }
+}
+
 class ConditionalExpression private constructor(
     val condition: SymbolicConstraint,
     val vThen: SymbolicExpression,

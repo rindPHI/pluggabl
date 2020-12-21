@@ -10,7 +10,7 @@ import soot.jimple.internal.JSubExpr
 import java.util.*
 
 object IntTheory : Theory {
-    val INT_TYPE = Type("int")
+    val INT_TYPE = Type.create("int", Type.ANY_TYPE)
 
     val ADD_INT = FunctionSymbol("plusInt", INT_TYPE, INT_TYPE, INT_TYPE, unique = true)
     val SUB_INT = FunctionSymbol("subInt", INT_TYPE, INT_TYPE, INT_TYPE, unique = true)

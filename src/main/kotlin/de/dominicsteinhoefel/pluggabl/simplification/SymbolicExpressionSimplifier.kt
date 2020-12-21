@@ -35,6 +35,14 @@ object SymbolicExpressionSimplifier {
                     e.vThen,
                     e.vElse
                 )
+                is ValueSummary -> ValueSummary.create(
+                    e.expressions.map {
+                        GuardedExpression(
+                            SymbolicConstraintSimplifier.simplify(it.condition),
+                            it.value
+                        )
+                    }
+                )
                 else -> e
             }
         })

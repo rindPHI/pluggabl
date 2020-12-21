@@ -38,10 +38,15 @@ class LoopSymbolicExecutionAnalysisTests {
         val sResult = analysis.getLocal("result")
         val resultVar = analysis.symbolsManager.getResultVariable()
 
-        val conditional = ConditionalExpression.create(
-            GreaterEqualConstr(sInput, IntTheory.IntValue(0)),
-            sInput,
-            mult(sInput, IntTheory.IntValue(-1))
+        val conditional = ValueSummary.create(
+            GuardedExpression(
+                GreaterEqualConstr(sInput, IntTheory.IntValue(0)),
+                sInput
+            ),
+            GuardedExpression(
+                NegatedConstr.create(GreaterEqualConstr(sInput, IntTheory.IntValue(0))),
+                mult(sInput, IntTheory.IntValue(-1))
+            )
         )
 
         val sILoopResult =
@@ -108,10 +113,15 @@ class LoopSymbolicExecutionAnalysisTests {
         val sI = analysis.getLocal("i")
         val sResult = analysis.getLocal("result")
 
-        val conditional = ConditionalExpression.create(
-            GreaterEqualConstr(sInput, IntTheory.IntValue(0)),
-            sInput,
-            mult(sInput, IntTheory.IntValue(-1))
+        val conditional = ValueSummary.create(
+            GuardedExpression(
+                GreaterEqualConstr(sInput, IntTheory.IntValue(0)),
+                sInput
+            ),
+            GuardedExpression(
+                NegatedConstr.create(GreaterEqualConstr(sInput, IntTheory.IntValue(0))),
+                mult(sInput, IntTheory.IntValue(-1))
+            )
         )
 
         val sILoopResult =

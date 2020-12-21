@@ -76,7 +76,9 @@ class SymbolicExecutionState() {
                 .map {
                     ElementaryStore(
                         it,
-                        ConditionalExpression.create(mc1, subst1[it] ?: it, subst2[it] ?: it)
+                        ValueSummary.create(
+                            GuardedExpression(mc1, subst1[it] ?: it),
+                            GuardedExpression(mc2, subst2[it] ?: it))
                     )
                 }
                 .fold(EmptyStore, { acc: SymbolicStore, elem -> ParallelStore.create(acc, elem) })

@@ -80,6 +80,17 @@ class SimpleSymbolicExecutionAnalysisTests {
 
         val inputPlusOne = plus(sInput, IntValue(1))
 
+        val summary = ValueSummary.create(
+            GuardedExpression(
+                NegatedConstr.create(EqualityConstr.create(inputPlusOne, IntValue(42))),
+                plus(inputPlusOne, IntValue(3))
+            ),
+            GuardedExpression(
+                EqualityConstr.create(inputPlusOne, IntValue(42)),
+                plus(inputPlusOne, IntValue(2))
+            )
+        )
+
         val expected = listOf(
             SymbolicExecutionState(
                 SymbolicConstraintSet(),
@@ -87,21 +98,13 @@ class SimpleSymbolicExecutionAnalysisTests {
                     ElementaryStore(
                         sTest,
                         plus(
-                            ConditionalExpression.create(
-                                EqualityConstr.create(inputPlusOne, IntValue(42)),
-                                plus(inputPlusOne, IntValue(2)),
-                                plus(inputPlusOne, IntValue(3))
-                            ), IntValue(4)
+                            summary, IntValue(4)
                         )
                     ),
                     ElementaryStore(
                         sResult,
                         plus(
-                            ConditionalExpression.create(
-                                EqualityConstr.create(inputPlusOne, IntValue(42)),
-                                plus(inputPlusOne, IntValue(2)),
-                                plus(inputPlusOne, IntValue(3))
-                            ), IntValue(4)
+                            summary, IntValue(4)
                         )
                     )
                 )

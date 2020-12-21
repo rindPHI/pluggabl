@@ -1,5 +1,6 @@
 package de.dominicsteinhoefel.pluggabl.expr
 
+import de.dominicsteinhoefel.pluggabl.expr.Type.Companion.ANY_TYPE
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory
 import de.dominicsteinhoefel.pluggabl.theories.Theory
 import soot.CharType
@@ -7,7 +8,7 @@ import soot.IntType
 import java.util.*
 import kotlin.collections.LinkedHashMap
 
-open class Type(val type: String, private val superType: Type = ANY_TYPE) {
+open class Type protected constructor(val type: String, private val superType: Type? = null) {
     override fun hashCode() = Objects.hash(Type::class, type)
     override fun equals(other: Any?) = (other as? Type)?.type == type
     override fun toString() = type
@@ -21,18 +22,20 @@ open class Type(val type: String, private val superType: Type = ANY_TYPE) {
     fun commonSuperType(other: Type): Type =
         if (other.extends(this)) this
         else if (this.extends(other)) other
-        else superType.commonSuperType(other)
+        else superType!!.commonSuperType(other)
 
     companion object {
+        val ANY_TYPE = Type("any", null)
+
+        fun create(type: String, superType: Type) = Type(type, superType)
+
         private fun allSuperTypes(type: Type?): Set<Type> =
             if (type == null) emptySet()
             else setOf(setOf(type), allSuperTypes(type.superType)).flatten().toSet()
     }
-
 }
 
-val ANY_TYPE = Type("any")
-val OBJECT_TYPE = Type("java.lang.Object", ANY_TYPE)
+val OBJECT_TYPE = Type.create("java.lang.Object", ANY_TYPE)
 
 open class ReferenceType(type: String, superType: Type) : Type(type, superType)
 class ArrayType(val baseType: Type) :

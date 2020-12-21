@@ -3,7 +3,6 @@ package de.dominicsteinhoefel.pluggabl.analysis.test
 import de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis
 import de.dominicsteinhoefel.pluggabl.expr.*
 import de.dominicsteinhoefel.pluggabl.simplification.SymbolicExpressionSimplifier
-import de.dominicsteinhoefel.pluggabl.analysis.test.SymbolicExecutionTestHelper.printSESs
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.ARRAY_FIELD
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.HEAP_VAR
@@ -12,10 +11,8 @@ import de.dominicsteinhoefel.pluggabl.theories.IntTheory
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.INT_TYPE
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.minus
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory.plus
-import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import soot.Scene
 import soot.jimple.Stmt
 
 class HeapSymbolicExecutionAnalysisTests {
@@ -69,12 +66,15 @@ class HeapSymbolicExecutionAnalysisTests {
 
         fun replaceConditionWith(newCondition: SymbolicConstraint) =
             fun(e: SymbolicExpression) =
-                if (e is ConditionalExpression && e.condition == condition)
-                    ConditionalExpression.create(
-                        newCondition,
-                        e.vThen,
-                        e.vElse
-                    )
+                if (e is ValueSummary)
+                    ValueSummary.create(e.expressions.map {
+                        when (it.condition) {
+                            condition -> GuardedExpression(newCondition, it.value)
+                            NegatedConstr.create(condition) ->
+                                GuardedExpression(NegatedConstr.create(newCondition), it.value)
+                            else -> it
+                        }
+                    })
                 else e
 
         val expr1 = SymbolicExpressionSimplifier.simplify(
@@ -85,8 +85,8 @@ class HeapSymbolicExecutionAnalysisTests {
             evaluatedExpression.accept(ExpressionReplacer(replaceConditionWith(False)))
         )
 
-        Assert.assertEquals(plus(plus(selectInput, IntTheory.IntValue(2)), IntTheory.IntValue(4)), expr1)
-        Assert.assertEquals(plus(plus(selectInput, IntTheory.IntValue(3)), IntTheory.IntValue(4)), expr2)
+        assertEquals(plus(plus(selectInput, IntTheory.IntValue(2)), IntTheory.IntValue(4)), expr1)
+        assertEquals(plus(plus(selectInput, IntTheory.IntValue(3)), IntTheory.IntValue(4)), expr2)
     }
 
     @Test

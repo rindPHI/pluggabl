@@ -10,6 +10,7 @@ interface SymbolicExpressionsVisitor<T> {
     fun visit(e: ArrayRef): T
     fun visit(e: FunctionApplication): T
     fun visit(e: ConditionalExpression): T
+    fun visit(e: ValueSummary): T
     fun visit(e: StoreApplExpression): T
 }
 
@@ -23,14 +24,17 @@ open class ExpressionCollector<T>(private val coll: (SymbolicExpression) -> Set<
     override fun visit(e: FieldRef) = union(coll(e), e.obj.accept(this))
     override fun visit(e: ArrayRef) = union(coll(e), e.base.accept(this), e.index.accept(this))
 
-    override fun visit(e: StoreApplExpression) = union(coll(e), e.target.accept(this))
-
     override fun visit(e: ConditionalExpression) =
         union(
             coll(e),
             e.vThen.accept(this),
             e.vElse.accept(this)
         )
+
+    override fun visit(e: ValueSummary) =
+        union(coll(e), e.expressions.map { it.value.accept(this) }.flatten().toSet())
+
+    override fun visit(e: StoreApplExpression) = union(coll(e), e.target.accept(this))
 }
 
 class HeapExpressionInExpressionCollector() : ExpressionCollector<HeapExpression>({ e ->
@@ -56,6 +60,8 @@ class LocalVariableExpressionCollector() : ExpressionCollector<LocalVariable>({ 
         is LocalVariable -> setOf(e)
         is StoreApplExpression -> e.applied.accept(LocalVariableStoreCollector())
         is ConditionalExpression -> e.condition.accept(LocalVariableConstraintCollector())
+        is ValueSummary -> e.expressions.map { it.condition }.map { it.accept(LocalVariableConstraintCollector()) }
+            .flatten().toSet()
         else -> emptySet()
     }
 })
@@ -63,8 +69,10 @@ class LocalVariableExpressionCollector() : ExpressionCollector<LocalVariable>({ 
 class FunctionSymbolExpressionCollector() : ExpressionCollector<FunctionSymbol>({ e ->
     when (e) {
         is FunctionApplication -> setOf(e.f)
-        is StoreApplExpression -> e.applied.accept(FunctionSymbolStoreCollector())
         is ConditionalExpression -> e.condition.accept(FunctionSymbolConstraintCollector())
+        is ValueSummary -> e.expressions.map { it.condition }.map { it.accept(FunctionSymbolConstraintCollector()) }
+            .flatten().toSet()
+        is StoreApplExpression -> e.applied.accept(FunctionSymbolStoreCollector())
         else -> emptySet()
     }
 })
@@ -77,9 +85,6 @@ open class ExpressionReplacer(private val repl: (SymbolicExpression) -> Symbolic
     override fun visit(e: FieldRef) = repl(FieldRef(e.obj.accept(this), e.field))
     override fun visit(e: ArrayRef) = repl(ArrayRef(e.base.accept(this), e.index.accept(this)))
 
-    override fun visit(e: StoreApplExpression) =
-        repl(StoreApplExpression.create(e.applied, e.target.accept(this)))
-
     override fun visit(e: ConditionalExpression) =
         repl(
             ConditionalExpression.create(
@@ -89,6 +94,11 @@ open class ExpressionReplacer(private val repl: (SymbolicExpression) -> Symbolic
             )
         )
 
+    override fun visit(e: ValueSummary) =
+        repl(ValueSummary.create(e.expressions.map { GuardedExpression(it.condition, it.value.accept(this)) }))
+
+    override fun visit(e: StoreApplExpression) =
+        repl(StoreApplExpression.create(e.applied, e.target.accept(this)))
 }
 
 class SymbolReplaceExprVisitor(val replMap: Map<LocalVariable, SymbolicExpression>) : ExpressionReplacer({ e ->
@@ -99,6 +109,13 @@ class SymbolReplaceExprVisitor(val replMap: Map<LocalVariable, SymbolicExpressio
             e.vThen,
             e.vElse
         )
+        is ValueSummary ->
+            ValueSummary.create(e.expressions.map {
+                GuardedExpression(
+                    it.condition.accept(SymbolReplaceConstrVisitor(replMap)),
+                    it.value
+                )
+            })
         is StoreApplExpression ->
             throw UnsupportedOperationException("Symbol replacement below the scope of store application unsupported, normalize first")
         else -> e
