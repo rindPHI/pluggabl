@@ -160,7 +160,7 @@ class SymbolicExecutionAnalysis private constructor(
             if (loop != null && !stmtIsHeadOfAnalyzedLoop) {
                 analyzeLoop(loop)
 
-                queue.addAll(loop.loopExits.map { cfg.getSuccsOf(it) }.flatten().map { it as Stmt }
+                queue.addAll(loop.loopExits.map { cfg.getUnexceptionalSuccsOf(it) }.flatten().map { it as Stmt }
                     .filterNot(loop.loopStatements::contains))
 
                 continue
@@ -189,10 +189,10 @@ class SymbolicExecutionAnalysis private constructor(
                 constrConverter
             ).map { it.simplify() }
 
-            if (result.size != cfg.getSuccsOf(currStmt).size && currStmt !is JReturnStmt) {
+            if (result.size != cfg.getUnexceptionalSuccsOf(currStmt).size && currStmt !is JReturnStmt) {
                 throw IllegalStateException(
                     "Expected number ${result.size} of successors in SE graph " +
-                            "does not match number of successors in CFG (${cfg.getSuccsOf(currStmt).size})"
+                            "does not match number of successors in CFG (${cfg.getUnexceptionalSuccsOf(currStmt).size})"
                 )
             }
 
@@ -200,7 +200,7 @@ class SymbolicExecutionAnalysis private constructor(
 
             if (loops.none { it.backJumpStatements.contains(currStmt) }) {
                 propagateResultStateToSuccs(currStmt, result)
-                cfg.getSuccsOf(currStmt).map { it as Stmt }.forEach(queue::addLastDistinct)
+                cfg.getUnexceptionalSuccsOf(currStmt).map { it as Stmt }.forEach(queue::addLastDistinct)
             }
         }
     }
@@ -248,7 +248,7 @@ class SymbolicExecutionAnalysis private constructor(
         }
 
         loop.loopExits.forEach { loopExitStmt ->
-            for ((idx, succ) in cfg.getSuccsOf(loopExitStmt).map { it as Stmt }.withIndex()) {
+            for ((idx, succ) in cfg.getUnexceptionalSuccsOf(loopExitStmt).map { it as Stmt }.withIndex()) {
                 if (loop.loopStatements.contains(succ)) continue
                 stmtToInputSESMap[succ] = listOf(
                     stmtToInputSESMap[succ].orEmpty(),
@@ -264,7 +264,7 @@ class SymbolicExecutionAnalysis private constructor(
         currStmt: Stmt,
         result: List<SymbolicExecutionState>
     ) {
-        cfg.getSuccsOf(currStmt).map { it as Stmt }
+        cfg.getUnexceptionalSuccsOf(currStmt).map { it as Stmt }
             .zip(result).forEach { (cfgNode, ses) ->
                 stmtToInputSESMap[cfgNode] =
                     listOf(

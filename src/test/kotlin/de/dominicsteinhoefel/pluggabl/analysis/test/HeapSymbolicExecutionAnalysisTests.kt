@@ -33,7 +33,7 @@ class HeapSymbolicExecutionAnalysisTests {
 
         analysis.symbolicallyExecute()
 
-        assertEquals(1, analysis.cfg.tails.size)
+        assertEquals(2, analysis.cfg.tails.size)
 
         val leafState = analysis.getInputSESs(analysis.cfg.tails[0] as Stmt)[0].also {
             assertEquals(
@@ -134,7 +134,7 @@ class HeapSymbolicExecutionAnalysisTests {
 
         val resultStores = SymbolicStore.elementaries(
             analysis.getOutputSESs(
-                analysis.cfg.tails.also { assertEquals(1, it.size) }[0] as Stmt
+                analysis.cfg.tails.also { assertEquals(2, it.size) }[0] as Stmt
             ).also { assertEquals(1, it.size) }[0].store
         )
 

@@ -116,12 +116,12 @@ class LoopAnalysis(
     ) {
         for (stmt in loop.loopStatements.filter(loopExits::contains)) {
             val outputSESs = LinkedList<SymbolicExecutionState>()
-            for ((idx, succ) in loopAnalysis.cfg.getSuccsOf(stmt).withIndex()) {
+            for ((idx, succ) in loopAnalysis.cfg.getUnexceptionalSuccsOf(stmt).withIndex()) {
                 val anonState =
                     if (loop.loopStatements.contains(succ)) anonymizingState
                     else anonymizingFinalState
 
-                outputSESs.add(loopAnalysis.getOutputSESs(stmt).get(idx).apply(anonState).apply(initState).simplify())
+                outputSESs.add(loopAnalysis.getOutputSESs(stmt)[idx].apply(anonState).apply(initState).simplify())
             }
 
             stmtToOutputSESMap[stmt] = outputSESs

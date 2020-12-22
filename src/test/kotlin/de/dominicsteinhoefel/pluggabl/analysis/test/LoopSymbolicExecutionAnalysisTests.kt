@@ -244,7 +244,7 @@ class LoopSymbolicExecutionAnalysisTests {
                 ParallelStore.create(ElementaryStore(i, iAfterLoopTerm), ElementaryStore(result, iAfterLoopTerm))
             )
 
-        val leafSES = analysis.getLeavesWithOutputSESs().values.toList().also { assertEquals(1, it.size) }[0]
+        val leafSES = analysis.getLeavesWithOutputSESs().values.toList().also { assertEquals(2, it.size) }[0]
 
         assertEquals(listOf(expectedLeafSES), leafSES)
 
@@ -340,7 +340,7 @@ class LoopSymbolicExecutionAnalysisTests {
                 )
             )
 
-        val leafSES = analysis.getLeavesWithOutputSESs().values.toList().also { assertEquals(1, it.size) }[0]
+        val leafSES = analysis.getLeavesWithOutputSESs().values.toList().also { assertEquals(2, it.size) }[0]
 
         assertEquals(listOf(expectedLeafSES), leafSES)
     }
@@ -370,7 +370,7 @@ class LoopSymbolicExecutionAnalysisTests {
         val integerSelect = HeapTheory.Select.create(analysis.typeConverter.typeByName("java.lang.Integer")!!)
 
         val resultSES = analysis.getLeavesWithOutputSESs().values
-            .also { assertEquals(1, it.size) }.toList()[0]
+            .also { assertEquals(2, it.size) }.toList()[0]
             .also { assertEquals(1, it.size) }[0]
 
         val heapAfterLoop = FunctionApplication(

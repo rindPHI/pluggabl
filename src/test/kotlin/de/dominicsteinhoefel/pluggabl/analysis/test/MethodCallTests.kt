@@ -59,9 +59,13 @@ class MethodCallTests {
         val finalHeapValue =
             FunctionApplication(testHeapResultSymbol, selectFieldValue, IntTheory.mult(input, two))
 
+        // TODO: The method contains an exceptional leaf, this also has to be tested.
+
         val resultSES = analysis.getLeavesWithOutputSESs().values
-            .also { Assert.assertEquals(1, it.size) }.toList()[0]
+            .also { Assert.assertEquals(2, it.size) }.toList()[0]
             .also { Assert.assertEquals(1, it.size) }[0]
+
+        SymbolicExecutionTestHelper.printSESs(analysis)
 
         SymbolicExecutionTestHelper.compareResultForVariable(finalHeapValue, resultSES, heap)
         SymbolicExecutionTestHelper.compareResultForVariable(resultValue, resultSES, result)

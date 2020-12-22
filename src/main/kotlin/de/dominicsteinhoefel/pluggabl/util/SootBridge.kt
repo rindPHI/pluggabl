@@ -1,6 +1,7 @@
 package de.dominicsteinhoefel.pluggabl.util
 
 import soot.*
+import soot.jimple.Jimple
 import kotlin.system.exitProcess
 
 class SootBridge {
@@ -14,7 +15,7 @@ class SootBridge {
                     if (b == null) return
 
                     if (b.method.signature == sig) {
-                        body = b
+                        body = addGlobalTrap(b)
                     }
                 }
             })
@@ -23,7 +24,7 @@ class SootBridge {
 
             if (sootClassPathElems.isNotEmpty()) {
                 Scene.v().sootClassPath = sootClassPathElems[0]
-                sootClassPathElems.subList(1).forEach{ Scene.v().extendSootClassPath(it) }
+                sootClassPathElems.subList(1).forEach { Scene.v().extendSootClassPath(it) }
             }
 
             PhaseOptions.v().setPhaseOption("jb", "use-original-names")
@@ -40,8 +41,9 @@ class SootBridge {
 
             try {
                 Main.v().run(arrayOf(clazz))
-            } catch(classNotFoundExc: SootResolver.SootClassNotFoundException) {
-                val regex = Regex("^soot.SootResolver\\\$SootClassNotFoundException: couldn't find class: (.*) \\(is your soot-class-path set properly\\?\\)\$")
+            } catch (classNotFoundExc: SootResolver.SootClassNotFoundException) {
+                val regex =
+                    Regex("^soot.SootResolver\\\$SootClassNotFoundException: couldn't find class: (.*) \\(is your soot-class-path set properly\\?\\)\$")
                 val missingClass = regex.matchEntire(classNotFoundExc.toString())?.groups?.get(1)
 
                 if (missingClass == null) {
@@ -61,6 +63,26 @@ class SootBridge {
             }
 
             return body
+        }
+
+        private fun addGlobalTrap(b: Body): Body {
+            val units = b.units
+            val trapEndUnit = units.last
+
+            val throwable = Scene.v().getRefType("java.lang.Throwable")
+            val caughtExceptionLocal = Jimple.v().newLocal("globalCaughtExceptionLocal", throwable)
+            b.locals.add(caughtExceptionLocal)
+
+            val caughtExceptionHandler =
+                Jimple.v().newIdentityStmt(caughtExceptionLocal, Jimple.v().newCaughtExceptionRef())
+            units.add(caughtExceptionHandler)
+            units.add(Jimple.v().newThrowStmt(caughtExceptionLocal))
+
+            b.traps.add(
+                Jimple.v().newTrap(throwable.sootClass, units.first, trapEndUnit, caughtExceptionHandler)
+            )
+
+            return b
         }
     }
 }

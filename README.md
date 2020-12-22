@@ -131,7 +131,8 @@ TOODs. If you encounter some problem in using pluggabl, it's likely that this is
 to some of these issues. If there's another problem, feel free to send me a mail!
 
 * Increase support of operations on standard types (numbers, strings)
-* Consider exceptions thrown by unknown method calls (custom ThrowAnalysis?)
+* Propagate states for exceptional edges. Currently, a standard trap is added
+  around the code, but edges to any trap are currently ignored.
 * Test behavior for complex loops (nested, labeled breaks etc.)
 * Test behavior for functional constructs (lambdas...)
 * Add example plug-in analysis (e.g., accepting invariants & contracts 
