@@ -5,7 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6acfca55-121b-469b-8da1-6c2ed7a17d5f" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/util/SootBridge.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/util/SootBridge.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -80,7 +81,7 @@
       <recent name="de.dominicsteinhoefel.pluggabl" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.Tests in 'de.dominicsteinhoefel.pluggabl'">
+  <component name="RunManager" selected="Application.Main">
     <configuration name="HeapSymbolicExecutionAnalysisTests.testSimpleTwoBranchedMethodWithMergeFieldAccess" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -144,27 +145,6 @@
       <DebugAllEnabled>false</DebugAllEnabled>
       <method v="2" />
     </configuration>
-    <configuration name="SimpleSymbolicExecutionAnalysisTests.testSimpleTwoBranchedMethodWithMerge" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="--tests &quot;de.dominicsteinhoefel.pluggabl.analysis.test.SimpleSymbolicExecutionAnalysisTests.testSimpleTwoBranchedMethodWithMerge&quot;" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value=":test" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <method v="2" />
-    </configuration>
     <configuration name="Tests in 'de.dominicsteinhoefel.pluggabl'" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -186,13 +166,33 @@
       <DebugAllEnabled>false</DebugAllEnabled>
       <method v="2" />
     </configuration>
+    <configuration name="Main" type="JetRunConfigurationType" temporary="true" nameIsGenerated="true">
+      <module name="pluggabl.main" />
+      <option name="VM_PARAMETERS" value="" />
+      <option name="PROGRAM_PARAMETERS" value="-c &quot;Test&quot; -m &quot;int test(int)&quot; -cp &quot;./&quot; -cp &quot;/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/rt.jar&quot;" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="MAIN_CLASS_NAME" value="de.dominicsteinhoefel.pluggabl.Main" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="Gradle.HeapSymbolicExecutionAnalysisTests.testSimpleTwoBranchedMethodWithMergeFieldAccess" />
+      <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testSimpleLoop" />
+      <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testSimpleLoopWithContinueAndBreak" />
+      <item itemvalue="Gradle.Tests in 'de.dominicsteinhoefel.pluggabl'" />
+      <item itemvalue="Application.Main" />
+    </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.Main" />
         <item itemvalue="Gradle.Tests in 'de.dominicsteinhoefel.pluggabl'" />
         <item itemvalue="Gradle.HeapSymbolicExecutionAnalysisTests.testSimpleTwoBranchedMethodWithMergeFieldAccess" />
         <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testSimpleLoopWithContinueAndBreak" />
         <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testSimpleLoop" />
-        <item itemvalue="Gradle.SimpleSymbolicExecutionAnalysisTests.testSimpleTwoBranchedMethodWithMerge" />
       </list>
     </recent_temporary>
   </component>

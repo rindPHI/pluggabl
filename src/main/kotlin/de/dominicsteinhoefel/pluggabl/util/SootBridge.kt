@@ -54,6 +54,10 @@ class SootBridge {
                 System.err.println("Consider adding the class / containing library to Soot's classpath")
 
                 exitProcess(1)
+            } catch (rte: RuntimeException) {
+                System.err.println("Something went wrong: ${rte::class.qualifiedName}")
+                System.err.println("Did you forget to compile the Java file to analyze?")
+                rte.printStackTrace(System.err)
             }
 
             return body
