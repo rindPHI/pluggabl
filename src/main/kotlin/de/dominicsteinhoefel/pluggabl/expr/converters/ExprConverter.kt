@@ -4,7 +4,9 @@ import de.dominicsteinhoefel.pluggabl.analysis.SymbolsManager
 import de.dominicsteinhoefel.pluggabl.expr.FunctionApplication
 import de.dominicsteinhoefel.pluggabl.expr.SymbolicExpression
 import de.dominicsteinhoefel.pluggabl.theories.Theory
+import de.dominicsteinhoefel.pluggabl.util.concat
 import soot.jimple.IntConstant
+import soot.jimple.NullConstant
 import soot.jimple.internal.*
 
 class ExprConverter(private val symbolsManager: SymbolsManager, private val theories: Set<Theory>) {
@@ -27,11 +29,11 @@ class ExprConverter(private val symbolsManager: SymbolsManager, private val theo
     fun convert(value: soot.Value): SymbolicExpression =
         when (value) {
             is JimpleLocal -> symbolsManager.localVariableFor(value)
-            is JVirtualInvokeExpr -> {
+            is NullConstant -> de.dominicsteinhoefel.pluggabl.expr.NullConstant
+            is AbstractInstanceInvokeExpr -> {
                 FunctionApplication(
                     symbolsManager.getMethodResultSymbol(value.methodRef),
-                    listOf(listOf(convert(value.base)),
-                        value.args.map { convert(it) }).flatten()
+                    concat(convert(value.base), value.args.map { convert(it) })
                 )
             }
             is JStaticInvokeExpr -> {

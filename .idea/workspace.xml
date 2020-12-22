@@ -5,9 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6acfca55-121b-469b-8da1-6c2ed7a17d5f" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/theories/StringTheory.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/analysis/test/MethodCallTests.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/kotlin/de/dominicsteinhoefel/pluggabl/testcase/MethodCall.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolicExecutionAnalysis.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolicExecutionAnalysis.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolsManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolsManager.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/SymbolicExpressions.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/SymbolicExpressions.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/Type.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/Type.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/converters/ExprConverter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/expr/converters/ExprConverter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/rules/AssignmentRules.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/rules/AssignmentRules.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/rules/MiscRules.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/rules/MiscRules.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/util/MiscUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/util/MiscUtils.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/de/dominicsteinhoefel/pluggabl/pureMethods.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/de/dominicsteinhoefel/pluggabl/pureMethods.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -79,16 +89,17 @@
       <recent name="de.dominicsteinhoefel.pluggabl.simplification" />
     </key>
     <key name="CopyKotlinDeclarationDialog.RECENTS_KEY">
+      <recent name="de.dominicsteinhoefel.pluggabl.theories" />
       <recent name="de.dominicsteinhoefel.pluggabl" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.Main">
-    <configuration name="HeapSymbolicExecutionAnalysisTests.testSimpleTwoBranchedMethodWithMergeFieldAccess" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+  <component name="RunManager" selected="Gradle.Tests in 'de.dominicsteinhoefel.pluggabl'">
+    <configuration name="MethodCallTests" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="--tests &quot;de.dominicsteinhoefel.pluggabl.analysis.test.HeapSymbolicExecutionAnalysisTests.testSimpleTwoBranchedMethodWithMergeFieldAccess&quot;" />
+        <option name="scriptParameters" value="--tests &quot;de.dominicsteinhoefel.pluggabl.analysis.test.MethodCallTests&quot;" />
         <option name="taskDescriptions">
           <list />
         </option>
@@ -104,12 +115,12 @@
       <DebugAllEnabled>false</DebugAllEnabled>
       <method v="2" />
     </configuration>
-    <configuration name="LoopSymbolicExecutionAnalysisTests.testSimpleLoop" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="MethodCallTests.testCallToUnknownIFMethod" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="--tests &quot;de.dominicsteinhoefel.pluggabl.analysis.test.LoopSymbolicExecutionAnalysisTests.testSimpleLoop&quot;" />
+        <option name="scriptParameters" value="--tests &quot;de.dominicsteinhoefel.pluggabl.analysis.test.MethodCallTests.testCallToUnknownIFMethod&quot;" />
         <option name="taskDescriptions">
           <list />
         </option>
@@ -125,12 +136,12 @@
       <DebugAllEnabled>false</DebugAllEnabled>
       <method v="2" />
     </configuration>
-    <configuration name="LoopSymbolicExecutionAnalysisTests.testSimpleLoopWithContinueAndBreak" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ParenthesisParserTest.testParenthesisParserAnalysis" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="--tests &quot;de.dominicsteinhoefel.pluggabl.analysis.test.LoopSymbolicExecutionAnalysisTests.testSimpleLoopWithContinueAndBreak&quot;" />
+        <option name="scriptParameters" value="--tests &quot;de.dominicsteinhoefel.pluggabl.analysis.test.ParenthesisParserTest.testParenthesisParserAnalysis&quot;" />
         <option name="taskDescriptions">
           <list />
         </option>
@@ -167,33 +178,41 @@
       <DebugAllEnabled>false</DebugAllEnabled>
       <method v="2" />
     </configuration>
-    <configuration name="Main" type="JetRunConfigurationType" temporary="true" nameIsGenerated="true">
-      <module name="pluggabl.main" />
-      <option name="VM_PARAMETERS" value="" />
-      <option name="PROGRAM_PARAMETERS" value="-c &quot;Test&quot; -m &quot;int test(int)&quot; -cp &quot;./&quot; -cp &quot;/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/rt.jar&quot;" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
-      <option name="PASS_PARENT_ENVS" value="true" />
-      <option name="MAIN_CLASS_NAME" value="de.dominicsteinhoefel.pluggabl.Main" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
+    <configuration name="Tests in 'pluggabl.test'" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="--tests *" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Gradle.HeapSymbolicExecutionAnalysisTests.testSimpleTwoBranchedMethodWithMergeFieldAccess" />
-      <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testSimpleLoop" />
-      <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testSimpleLoopWithContinueAndBreak" />
       <item itemvalue="Gradle.Tests in 'de.dominicsteinhoefel.pluggabl'" />
-      <item itemvalue="Application.Main" />
+      <item itemvalue="Gradle.MethodCallTests" />
+      <item itemvalue="Gradle.Tests in 'pluggabl.test'" />
+      <item itemvalue="Gradle.MethodCallTests.testCallToUnknownIFMethod" />
+      <item itemvalue="Gradle.ParenthesisParserTest.testParenthesisParserAnalysis" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.Main" />
         <item itemvalue="Gradle.Tests in 'de.dominicsteinhoefel.pluggabl'" />
-        <item itemvalue="Gradle.HeapSymbolicExecutionAnalysisTests.testSimpleTwoBranchedMethodWithMergeFieldAccess" />
-        <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testSimpleLoopWithContinueAndBreak" />
-        <item itemvalue="Gradle.LoopSymbolicExecutionAnalysisTests.testSimpleLoop" />
+        <item itemvalue="Gradle.ParenthesisParserTest.testParenthesisParserAnalysis" />
+        <item itemvalue="Gradle.MethodCallTests.testCallToUnknownIFMethod" />
+        <item itemvalue="Gradle.Tests in 'pluggabl.test'" />
+        <item itemvalue="Gradle.MethodCallTests" />
       </list>
     </recent_temporary>
   </component>
@@ -241,8 +260,17 @@
         </breakpoint>
         <line-breakpoint enabled="true" type="kotlin-line">
           <url>file://$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolicExecutionAnalysis.kt</url>
-          <line>280</line>
+          <line>288</line>
           <option name="timeStamp" value="62" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="kotlin-function">
+          <condition expression="methodSig.contains(&quot;checkNotNull&quot;)" language="kotlin" />
+          <url>file://$PROJECT_DIR$/src/main/kotlin/de/dominicsteinhoefel/pluggabl/analysis/SymbolicExecutionAnalysis.kt</url>
+          <line>106</line>
+          <properties class="de.dominicsteinhoefel.pluggabl.analysis.SymbolicExecutionAnalysis.Companion" method="isPureMethod">
+            <option name="EMULATED" value="true" />
+          </properties>
+          <option name="timeStamp" value="76" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

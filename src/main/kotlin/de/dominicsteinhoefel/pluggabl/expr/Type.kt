@@ -5,6 +5,7 @@ import de.dominicsteinhoefel.pluggabl.theories.IntTheory
 import de.dominicsteinhoefel.pluggabl.theories.Theory
 import soot.CharType
 import soot.IntType
+import soot.VoidType
 import java.util.*
 import kotlin.collections.LinkedHashMap
 
@@ -36,6 +37,8 @@ open class Type protected constructor(val type: String, private val superType: T
 }
 
 val OBJECT_TYPE = Type.create("java.lang.Object", ANY_TYPE)
+val NULL_TYPE = Type.create("null", ANY_TYPE)
+val VOID_TYPE = Type.create("void", ANY_TYPE)
 
 open class ReferenceType(type: String, superType: Type) : Type(type, superType)
 class ArrayType(val baseType: Type) :
@@ -46,6 +49,7 @@ class TypeConverter(private val theories: Set<Theory>) {
 
     fun convert(type: soot.Type): Type {
         return typesRegistry[type] ?: when (type) {
+            is VoidType -> VOID_TYPE
             is IntType, is CharType -> IntTheory.getType()
             is soot.RefType -> ReferenceType(type.className, superType(type))
             is soot.ArrayType -> ArrayType(convert(type.baseType))

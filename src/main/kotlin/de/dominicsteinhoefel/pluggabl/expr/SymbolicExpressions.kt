@@ -35,6 +35,15 @@ class LocalVariable(
     override fun equals(other: Any?) = (other as? LocalVariable).let { it?.name == name && it.type == type }
 }
 
+object NullConstant: Value() {
+    override fun type() = NULL_TYPE
+    override fun <T> accept(visitor: SymbolicExpressionsVisitor<T>) = visitor.visit(this)
+
+    override fun toString() = "null"
+    override fun hashCode() = Objects.hash(NullConstant::class)
+    override fun equals(other: Any?) = other === this
+}
+
 open class FunctionSymbol(
     val name: String,
     val type: Type,

@@ -1,3 +1,9 @@
 java.lang.Character: char charValue()
 java.lang.Integer: int intValue()
 java.lang.Integer: java.lang.Integer valueOf(int)
+
+# Below: Those are Kotlin checker methods that either don't do anything
+# or throw an exception. Currently, exceptions are ignored in calls to
+# unknown methods. These should be changed in the future.
+kotlin.jvm.internal.Intrinsics: void throwUninitializedPropertyAccessException(java.lang.String)
+kotlin.jvm.internal.Intrinsics: void checkNotNullParameter(java.lang.Object,java.lang.String)

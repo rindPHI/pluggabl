@@ -1,7 +1,9 @@
 package de.dominicsteinhoefel.pluggabl.analysis
 
 import de.dominicsteinhoefel.pluggabl.analysis.rules.SERule
-import de.dominicsteinhoefel.pluggabl.expr.*
+import de.dominicsteinhoefel.pluggabl.expr.LocalVariable
+import de.dominicsteinhoefel.pluggabl.expr.SymbolicExecutionState
+import de.dominicsteinhoefel.pluggabl.expr.TypeConverter
 import de.dominicsteinhoefel.pluggabl.expr.converters.ConstrConverter
 import de.dominicsteinhoefel.pluggabl.expr.converters.ExprConverter
 import de.dominicsteinhoefel.pluggabl.rules.*
@@ -9,6 +11,7 @@ import de.dominicsteinhoefel.pluggabl.theories.HeapTheory
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.HEAP_VAR
 import de.dominicsteinhoefel.pluggabl.theories.IntTheory
 import de.dominicsteinhoefel.pluggabl.theories.LocationSetTheory
+import de.dominicsteinhoefel.pluggabl.theories.StringTheory
 import de.dominicsteinhoefel.pluggabl.util.SootBridge
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -50,17 +53,18 @@ class SymbolicExecutionAnalysis private constructor(
             AssignToFieldRule,
             AssignFromArrayRule,
             AssignToArrayRule,
-            AssignFromPureVirtualInvokationRule,
-            AssignFromPureStaticInvokationRule,
+            AssignFromPureInvokationRule,
+            AssignFromImpureInvokationRule,
             AssignArrayLengthRule,
+            ImpureInvokationRule,
+            PureInvokationRule,
             ReturnValueRule,
             ReturnVoidRule,
             IfRule,
-            DummyRule,
-            IgnoreAndWarnRule
+            DummyRule
         )
 
-        private val THEORIES = setOf(HeapTheory, IntTheory)
+        private val THEORIES = setOf(HeapTheory, IntTheory, StringTheory)
 
         fun create(clazz: String, methodSig: String, sootClassPathElems: List<String>): SymbolicExecutionAnalysis {
             G.reset()
@@ -90,6 +94,10 @@ class SymbolicExecutionAnalysis private constructor(
                 pureMethods =
                     SymbolicExecutionAnalysis::class.java.getResource(PURE_METHODS_LIST_FILE)
                         .readText().split("\n")
+                        .asSequence()
+                        .map { it.trim() }
+                        .filterNot { it.isBlank() }
+                        .filterNot { it.startsWith("#") }
                         .map { "<$it>" }.toSet()
             }
 
@@ -279,8 +287,7 @@ class SymbolicExecutionAnalysis private constructor(
 
         if (applicableRules.size != 1) {
             throw IllegalStateException(
-                "Expected exactly one applicable rules for statement type " +
-                        "${currStmt::class.simpleName}, found ${applicableRules.size}"
+                "${applicableRules.size} rules found for statement \"$currStmt\", expected 1"
             )
         }
 

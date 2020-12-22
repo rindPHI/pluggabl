@@ -10,6 +10,7 @@ import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.ARRAY_FIELD
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.ARRAY_LENGTH
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.HEAP_VAR
 import de.dominicsteinhoefel.pluggabl.theories.HeapTheory.STORE
+import de.dominicsteinhoefel.pluggabl.util.concat
 import soot.jimple.Stmt
 import soot.jimple.internal.*
 
@@ -170,10 +171,10 @@ object AssignToArrayRule : SERule {
     override fun toString() = "AssignToArrayRule"
 }
 
-object AssignFromPureVirtualInvokationRule : SERule {
+object AssignFromPureInvokationRule : SERule {
     override fun accepts(stmt: Stmt, inpStates: List<SymbolicExecutionState>) =
         stmt is JAssignStmt && stmt.leftOp is JimpleLocal && stmt.rightOp.let {
-            it is JVirtualInvokeExpr && SymbolicExecutionAnalysis.isPureMethod(it.methodRef.toString())
+            it is AbstractInvokeExpr && SymbolicExecutionAnalysis.isPureMethod(it.methodRef.toString())
         }
 
     override fun apply(
@@ -193,13 +194,13 @@ object AssignFromPureVirtualInvokationRule : SERule {
             )
         }
 
-    override fun toString() = "AssignSimpleRule"
+    override fun toString() = "AssignFromPureInvokationRule"
 }
 
-object AssignFromPureStaticInvokationRule : SERule {
+object AssignFromImpureInvokationRule : SERule {
     override fun accepts(stmt: Stmt, inpStates: List<SymbolicExecutionState>) =
         stmt is JAssignStmt && stmt.leftOp is JimpleLocal && stmt.rightOp.let {
-            it is JStaticInvokeExpr && SymbolicExecutionAnalysis.isPureMethod(it.methodRef.toString())
+            it is AbstractInstanceInvokeExpr && !SymbolicExecutionAnalysis.isPureMethod(it.methodRef.toString())
         }
 
     override fun apply(
@@ -210,16 +211,26 @@ object AssignFromPureStaticInvokationRule : SERule {
         exprConverter: ExprConverter,
         constrConverter: ConstrConverter
     ) =
-        (stmt as JAssignStmt).let {
-            listOf(
-                SymbolicExecutionState.merge(inpStates).addAssignment(
-                    symbolsManager.localVariableFor(it.leftOp as JimpleLocal),
-                    exprConverter.convert(it.rightOp)
+        (stmt as JAssignStmt).let { assgnStmt ->
+            (assgnStmt.rightOp as AbstractInstanceInvokeExpr).let { invokeExpr ->
+                listOf(
+                    SymbolicExecutionState.merge(inpStates).addAssignment(
+                        symbolsManager.localVariableFor(assgnStmt.leftOp as JimpleLocal),
+                        exprConverter.convert(assgnStmt.rightOp)
+                    ).addAssignment(
+                        HEAP_VAR,
+                        FunctionApplication(
+                            symbolsManager.getMethodHeapResultSymbol(invokeExpr.methodRef),
+                            concat(
+                                exprConverter.convert(invokeExpr.base),
+                                invokeExpr.args.map { exprConverter.convert(it) })
+                        )
+                    )
                 )
-            )
+            }
         }
 
-    override fun toString() = "AssignSimpleRule"
+    override fun toString() = "AssignFromImpureInvokationRule"
 }
 
 object AssignArrayLengthRule : SERule {

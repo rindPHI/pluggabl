@@ -18,6 +18,7 @@ class SymbolsManager(private val typeConverter: TypeConverter) {
     private val funcSymbNamesCreator = NewNamesCreator()
     private val classNameFieldNameToFieldSymbolsMap = LinkedHashMap<Pair<String, String>, FunctionApplication>()
     private val classMethodSigToMethodResultSymbolsMap = LinkedHashMap<Pair<String, String>, FunctionSymbol>()
+    private val classMethodSigToMethodHeapResultSymbolsMap = LinkedHashMap<Pair<String, String>, FunctionSymbol>()
 
     fun getLocalVariables() = localVariables.toSet()
 
@@ -108,8 +109,28 @@ class SymbolsManager(private val typeConverter: TypeConverter) {
             .also { functionSymbols.add(it) }
     }
 
+    fun getMethodHeapResultSymbol(methodRef: SootMethodRef): FunctionSymbol {
+        val className = methodRef.declaringClass.toString()
+        val methodSig = "${methodRef.returnType} ${methodRef.name}(${methodRef.parameterTypes.joinToString(", ")})"
+
+        return getMethodHeapResultSymbol(className, methodSig) ?: FunctionSymbol(
+            funcSymbNamesCreator.newName(
+                "HEAP_After_<$className: $methodSig>"
+            ),
+            typeConverter.convert(methodRef.returnType),
+            methodRef.parameterTypes.map { typeConverter.convert(it) }.let {
+                if (methodRef.isStatic) it
+                else listOf(listOf(typeConverter.convert(methodRef.declaringClass.type)), it).flatten()
+            }
+        ).also { classMethodSigToMethodHeapResultSymbolsMap[Pair(className, methodSig)] = it }
+            .also { functionSymbols.add(it) }
+    }
+
     fun getFieldSymbol(className: String, fieldName: String) =
         classNameFieldNameToFieldSymbolsMap[Pair(className, fieldName)]
+
+    fun getMethodHeapResultSymbol(className: String, methodSig: String) =
+        classMethodSigToMethodHeapResultSymbolsMap[Pair(className, methodSig)]
 
     fun getMethodResultSymbol(className: String, methodSig: String) =
         classMethodSigToMethodResultSymbolsMap[Pair(className, methodSig)]
