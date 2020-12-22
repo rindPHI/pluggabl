@@ -8,6 +8,8 @@ contract verification, or test case generation. User-provided specifications
 are neither required nor possible; for loops and calls, *pluggabl* creates
 abstractions (store updates using abstract function symbols).
 
+## Introduction
+
 *pluggabl* applies quick simplifications (which do not require inference) of
 symbolic execution states. Furthermore, abstract function symbols created for
 variables changed in loops are parametrized in the values they actually
@@ -22,13 +24,20 @@ value summaries](https://www.dominic-steinhoefel.de/post/precise-symbolic-state-
 to merge states after the execution of branches in an automatic, fully precise
 manner.
 
+### Pluggable *pluggabl*
+
 Further analyses can be plugged in afterward, thus the name. For instance, you
 can feed path conditions to an SMT solver to check their satisfiability and
 eliminate dead branches. Or you can evaluate a postcondition in all leaf
 states by using an external program prover.
 
 Loop invariants or contracts can be used by post-hoc substitutions of the
-generated abstract symbols by concrete expressions.
+generated abstract symbols by concrete expressions. For method calls, *pluggabl*
+maintains a list of known pure methods for which the heap will not be changed.
+Add method signatures to this list if you want to simplify the result for calls
+to a method that's known to be pure.
+
+### Implementation
 
 *pluggabl* is based on the Soot framework and written in Kotlin. In fact, it
 executes Jimple code which Soot generates from Java bytecode.
@@ -40,8 +49,9 @@ invocation expressions.
 
 Disclaimer: This is work in progress, and the analysis will currently crash for many
 input programs (probably because I missed to support a particular expression type).
+See TODO list below for more information.
 
-# Getting Started
+## Getting Started
 
 You can either use *pluggabl* as a library (see shipped tests) or as a command line tool.
 For the latter, proceed as follows:
@@ -62,7 +72,7 @@ Currently, the command line tool will print all statements of the analyzed progr
 along with input/output symbolic execution states. When using *pluggabl* as a library,
 you have more possibilities to deal with the outcome.
 
-# Example Run
+## Example Run
 
 Consider the following simple program:
 
@@ -114,6 +124,22 @@ Below you find the results of running *pluggabl* for the `test` method:
     Input States:  ({!((l1)==(42))}, [l2 -> mulInt(l1, l1)]), ({(l1)==(42)}, [l2 -> 17])
     Output States: ({}, [l2 -> {(mulInt(l1, l1) | !((l1)==(42))), (17 | (l1)==(42))}]++[result -> {(mulInt(l1, l1) | !((l1)==(42))), (17 | (l1)==(42))}])
 
-# Who's To Blame?
+## TODO List
+
+The below list is most problably incomplete and contains some of the most pressing
+TOODs. If you encounter some problem in using pluggabl, it's likely that this is due
+to some of these issues. If there's another problem, feel free to send me a mail!
+
+* Increase support of operations on standard types (numbers, strings)
+* Consider exceptions thrown by unknown method calls (custom ThrowAnalysis?)
+* Test behavior for complex loops (nested, labeled breaks etc.)
+* Test behavior for functional constructs (lambdas...)
+* Add example plug-in analysis (e.g., accepting invariants & contracts 
+  and interfacing to an SMT solver)
+
+## *pluggabl*'s Developer
 
 This project is maintained by [Dominic Steinhöfel](https://www.dominic-steinhoefel.de).
+
+If you want to support the development by contributing to the code, feel free
+to open a pull request!
