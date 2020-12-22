@@ -137,7 +137,7 @@ class StoreApplExpression private constructor(val applied: SymbolicStore, val ta
 class GuardedExpression(val condition: SymbolicConstraint, val value: SymbolicExpression) {
     val type = value.type()
 
-    override fun toString() = "($condition | $value)"
+    override fun toString() = "($value | $condition)"
     override fun hashCode() = Objects.hash(GuardedExpression::class, condition, value)
     override fun equals(other: Any?) =
         (other as? GuardedExpression).let { it?.condition == condition && it.value == value }

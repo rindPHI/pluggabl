@@ -112,7 +112,7 @@ Below you find the results of running *pluggabl* for the `test` method:
     
     Node "return l2":
     Input States:  ({!((l1)==(42))}, [l2 -> mulInt(l1, l1)]), ({(l1)==(42)}, [l2 -> 17])
-    Output States: ({}, [l2 -> {(!((l1)==(42)) | mulInt(l1, l1)), ((l1)==(42) | 17)}]++[result -> {(!((l1)==(42)) | mulInt(l1, l1)), ((l1)==(42) | 17)}])
+    Output States: ({}, [l2 -> {(mulInt(l1, l1) | !((l1)==(42))), (17 | (l1)==(42))}]++[result -> {(mulInt(l1, l1) | !((l1)==(42))), (17 | (l1)==(42))}])
 
 # Who's To Blame?
 
